@@ -196,6 +196,53 @@ For best OCR accuracy:
   RELIANCE BUY ABOVE 2500 SL 2450 TGT 2550 2600
   ```
 
+## Scheduled Trade Agent
+
+The application includes a built-in scheduled agent that automatically:
+1. Logs into InvestRight at a configured time daily
+2. Downloads trade signal images from cloud storage (S3, Google Drive, etc.)
+3. Parses them via OCR
+4. Places buy/sell orders automatically
+
+### Setup
+
+Set the following environment variables:
+
+```bash
+export SCHEDULER_ENABLED=true
+export TRADE_IMAGE_URL=https://your-s3-bucket.s3.amazonaws.com/trades/daily-signals.png
+export IR_USERNAME=your_investright_username
+export IR_PASSWORD=your_investright_password
+export IR_2FA_ANSWER=your_2fa_totp_code
+export IR_USER_ID=your_client_id
+```
+
+### Configuration
+
+The scheduler runs daily at **8:55 AM IST** by default. Customize in `application.yml`:
+
+```yaml
+scheduler:
+  enabled: true
+  cron: "0 55 8 * * *"       # 8:55 AM daily
+  timezone: Asia/Kolkata
+  image-source-url: https://s3.example.com/trades.png
+  image-source-urls:          # multiple images supported
+    - https://s3.example.com/signals1.png
+    - https://s3.example.com/signals2.png
+  auto-login: true
+  retry-attempts: 3
+```
+
+### Cloud Storage Options
+
+| Provider | URL Format |
+|---|---|
+| **AWS S3** | Pre-signed URL: `https://bucket.s3.region.amazonaws.com/key?X-Amz-...` |
+| **Google Drive** | Direct download: `https://drive.google.com/uc?export=download&id=FILE_ID` |
+| **Azure Blob** | SAS URL: `https://account.blob.core.windows.net/container/blob?sv=...` |
+| **Direct URL** | Any publicly accessible image URL |
+
 ## Configuration Reference
 
 | Property | Description | Default |
@@ -209,17 +256,25 @@ For best OCR accuracy:
 | `trading.default-product` | Default order product type | `INTRADAY` |
 | `trading.default-validity` | Default order validity | `DAY` |
 | `trading.slippage-percent` | Price slippage buffer (%) | `0.5` |
+| `scheduler.enabled` | Enable scheduled trade agent | `false` |
+| `scheduler.cron` | Cron expression for schedule | `0 55 8 * * *` |
+| `scheduler.timezone` | Timezone for cron | `Asia/Kolkata` |
+| `scheduler.image-source-url` | Cloud image URL (env: `TRADE_IMAGE_URL`) | — |
+| `scheduler.username` | Auto-login username (env: `IR_USERNAME`) | — |
+| `scheduler.password` | Auto-login password (env: `IR_PASSWORD`) | — |
+| `scheduler.two-fa-answer` | 2FA code (env: `IR_2FA_ANSWER`) | — |
 
 ## Project Structure
 
 ```
 com.trading.investright
-├── config/          # WebClient, Tesseract, Security, Properties configs
+├── config/          # WebClient, Tesseract, Security, Scheduler, Properties configs
 ├── controller/      # AuthController, OrderController, TradeSignalController
-├── service/         # OrderService, SymbolMappingService
+├── service/         # OrderService, SymbolMappingService, CloudImageFetcher
 ├── client/          # InvestRightAuthClient, InvestRightOrderClient
 ├── model/           # DTOs (request/response), TradeSignal, AuthSession
 ├── ocr/             # ImageParserService, TradeSignalParser
+├── scheduler/       # ScheduledTradeExecutor (daily cron agent)
 └── exception/       # GlobalExceptionHandler, custom exceptions
 ```
 

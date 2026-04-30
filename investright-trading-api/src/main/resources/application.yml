@@ -30,6 +30,20 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
 
+scheduler:
+  enabled: ${SCHEDULER_ENABLED:false}
+  cron: "0 55 8 * * *"
+  timezone: Asia/Kolkata
+  image-source-url: ${TRADE_IMAGE_URL:}
+  image-source-urls: []
+  user-id: ${IR_USER_ID:}
+  username: ${IR_USERNAME:}
+  password: ${IR_PASSWORD:}
+  two-fa-answer: ${IR_2FA_ANSWER:}
+  auto-login: true
+  retry-attempts: 3
+  retry-delay-ms: 2000
+
 logging:
   level:
     com.trading.investright: DEBUG
