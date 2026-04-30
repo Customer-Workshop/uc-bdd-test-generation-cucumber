@@ -60,10 +60,64 @@ public class PriceMonitorService {
 
         for (TradePosition position : activePositions) {
             try {
+                if (!position.isAmoExecuted() && !position.isRegularOrderPlaced()) {
+                    retryAsRegularOrder(position, userId, accessToken);
+                    continue;
+                }
                 checkPositionPrice(position, accessToken);
             } catch (Exception ex) {
                 log.error("Error checking price for position {}: {}", position.getPositionId(), ex.getMessage());
             }
+        }
+    }
+
+    void retryAsRegularOrder(TradePosition position, String userId, String accessToken) {
+        log.info("AMO order not executed for {}. Cancelling AMO and placing regular order at market open.",
+                position.getInstrumentName());
+
+        try {
+            orderService.cancelOrder(position.getOrderId(), userId);
+            log.info("Cancelled AMO order {} for {}", position.getOrderId(), position.getInstrumentName());
+        } catch (Exception ex) {
+            log.warn("Could not cancel AMO order {} (may already be cancelled): {}",
+                    position.getOrderId(), ex.getMessage());
+        }
+
+        OrderRequest regularOrder = OrderRequest.builder()
+                .exchange(position.getExchange())
+                .instrumentSegment(position.getInstrumentSegment() != null ? position.getInstrumentSegment() : "EQUITY")
+                .securityId(position.getTradingSymbol())
+                .transactionType(position.getTransactionType())
+                .orderType("SL")
+                .quantity(position.getRemainingQuantity())
+                .triggerPrice(position.getEntryPrice())
+                .price(calculateRegularOrderPrice(position.getEntryPrice(), position.getTransactionType()))
+                .product("BUY".equalsIgnoreCase(position.getTransactionType()) ? "DELIVERY" : "OVERNIGHT")
+                .validity("DAY")
+                .amo(false)
+                .disclosedQuantity(0)
+                .build();
+
+        try {
+            OrderResponse response = orderService.placeOrder(regularOrder, userId);
+            String newOrderId = (response.getData() != null) ? response.getData().getOrderId() : "unknown";
+            position.setOrderId(newOrderId);
+            position.setRegularOrderPlaced(true);
+            position.setAmoExecuted(true);
+            positionTracker.updatePosition(position);
+            log.info("Regular order placed for {} orderId={} (replaces AMO)",
+                    position.getInstrumentName(), newOrderId);
+        } catch (Exception ex) {
+            log.error("Failed to place regular order for {}: {}", position.getInstrumentName(), ex.getMessage());
+        }
+    }
+
+    private double calculateRegularOrderPrice(double entryPrice, String transactionType) {
+        double slippage = entryPrice * 0.005;
+        if ("BUY".equalsIgnoreCase(transactionType)) {
+            return Math.round((entryPrice + slippage) * 100.0) / 100.0;
+        } else {
+            return Math.round((entryPrice - slippage) * 100.0) / 100.0;
         }
     }
 

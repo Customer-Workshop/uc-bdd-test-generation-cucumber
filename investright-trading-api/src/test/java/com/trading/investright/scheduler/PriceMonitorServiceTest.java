@@ -251,4 +251,67 @@ class PriceMonitorServiceTest {
                         order.getQuantity() == 653
         ), eq("testuser"));
     }
+
+    @Test
+    void shouldRetryAsRegularOrderWhenAmoNotExecuted() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        OrderResponse cancelResponse = OrderResponse.builder().status("success").build();
+        when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(cancelResponse);
+
+        OrderResponse placeResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("REG001").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(placeResponse);
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).cancelOrder("ORD001", "testuser");
+        verify(orderService).placeOrder(argThat(order ->
+                "BUY".equals(order.getTransactionType()) &&
+                        "SL".equals(order.getOrderType()) &&
+                        order.getQuantity() == 653 &&
+                        order.getTriggerPrice() == 153.0 &&
+                        Boolean.FALSE.equals(order.getAmo())
+        ), eq("testuser"));
+        assertEquals("REG001", activePosition.getOrderId());
+        assertTrue(activePosition.isRegularOrderPlaced());
+        assertTrue(activePosition.isAmoExecuted());
+    }
+
+    @Test
+    void shouldHandleCancelFailureAndStillPlaceRegularOrder() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        when(orderService.cancelOrder("ORD001", "testuser"))
+                .thenThrow(new RuntimeException("Already cancelled"));
+
+        OrderResponse placeResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("REG002").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(placeResponse);
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
+        assertEquals("REG002", activePosition.getOrderId());
+        assertTrue(activePosition.isRegularOrderPlaced());
+    }
+
+    @Test
+    void shouldSkipRetryIfAmoAlreadyExecuted() {
+        activePosition.setAmoExecuted(true);
+
+        String accessToken = "test-token";
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(155.0);
+        when(schedulerProperties.getTimezone()).thenReturn("Asia/Kolkata");
+
+        priceMonitorService.checkPositionPrice(activePosition, accessToken);
+
+        verify(orderService, never()).cancelOrder(anyString(), anyString());
+    }
 }

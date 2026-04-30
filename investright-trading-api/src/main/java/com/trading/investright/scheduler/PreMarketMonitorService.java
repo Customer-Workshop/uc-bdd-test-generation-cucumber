@@ -121,6 +121,7 @@ public class PreMarketMonitorService {
                     position.getOrderId(), position.getInstrumentName());
             placeProtectiveSlOrder(position, accessToken);
             position.setProtectiveSlPlaced(true);
+            position.setAmoExecuted(true);
             positionTracker.updatePosition(position);
         } else {
             log.debug("AMO order {} status: {} for {}", position.getOrderId(), status, position.getInstrumentName());
