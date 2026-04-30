@@ -1,5 +1,6 @@
 package com.trading.investright.service;
 
+import com.trading.investright.config.SchedulerProperties;
 import com.trading.investright.exception.OcrProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -25,7 +27,9 @@ class LocalImageFetcherTest {
 
     @BeforeEach
     void setUp() {
-        fetcher = new LocalImageFetcher();
+        SchedulerProperties schedulerProperties = new SchedulerProperties();
+        schedulerProperties.setTimezone("Asia/Kolkata");
+        fetcher = new LocalImageFetcher(schedulerProperties);
     }
 
     @Test
@@ -69,7 +73,7 @@ class LocalImageFetcherTest {
 
     @Test
     void shouldUseDateSubfolderWhenPresent() throws IOException {
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String today = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         Path dateFolder = tempDir.resolve(today);
         Files.createDirectories(dateFolder);
         createTestImage(dateFolder.resolve("today-signal.png"));

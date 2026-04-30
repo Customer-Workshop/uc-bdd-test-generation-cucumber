@@ -1,6 +1,8 @@
 package com.trading.investright.service;
 
+import com.trading.investright.config.SchedulerProperties;
 import com.trading.investright.exception.OcrProcessingException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -12,13 +14,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LocalImageFetcher {
+
+    private final SchedulerProperties schedulerProperties;
 
     private static final List<String> SUPPORTED_EXTENSIONS = List.of(".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp");
 
@@ -59,7 +65,8 @@ public class LocalImageFetcher {
     }
 
     public List<BufferedImage> fetchTodaysImages(String folderPath) {
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String timezone = schedulerProperties.getTimezone() != null ? schedulerProperties.getTimezone() : "Asia/Kolkata";
+        String today = LocalDate.now(ZoneId.of(timezone)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         Path todayFolder = Paths.get(folderPath, today);
 
         if (Files.exists(todayFolder) && Files.isDirectory(todayFolder)) {
