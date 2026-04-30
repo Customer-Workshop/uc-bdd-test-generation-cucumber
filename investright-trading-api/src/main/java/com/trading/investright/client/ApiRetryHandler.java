@@ -10,9 +10,10 @@ import java.util.function.Supplier;
 @Slf4j
 public final class ApiRetryHandler {
 
-    private static final int DEFAULT_MAX_RETRIES = 3;
+    private static final int DEFAULT_MAX_RETRIES = 30;
     private static final long DEFAULT_INITIAL_DELAY_MS = 500;
     private static final double DEFAULT_BACKOFF_MULTIPLIER = 2.0;
+    private static final long MAX_DELAY_MS = 30_000;
     private static final Set<Integer> NON_RETRYABLE_STATUS_CODES = Set.of(400, 401, 403, 422);
 
     private ApiRetryHandler() {}
@@ -49,7 +50,7 @@ public final class ApiRetryHandler {
                 log.warn("{} attempt {}/{} failed (HTTP {}). Retrying in {}ms...",
                         operationName, attempt, maxRetries, ex.getStatusCode().value(), delayMs);
                 sleep(delayMs);
-                delayMs = (long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER);
+                delayMs = Math.min((long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER), MAX_DELAY_MS);
             } catch (InvestRightApiException ex) {
                 if (NON_RETRYABLE_STATUS_CODES.contains(ex.getStatusCode())) {
                     throw ex;
@@ -62,7 +63,7 @@ public final class ApiRetryHandler {
                 log.warn("{} attempt {}/{} failed. Retrying in {}ms...",
                         operationName, attempt, maxRetries, delayMs);
                 sleep(delayMs);
-                delayMs = (long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER);
+                delayMs = Math.min((long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER), MAX_DELAY_MS);
             } catch (Exception ex) {
                 attempt++;
                 if (attempt > maxRetries) {
@@ -72,7 +73,7 @@ public final class ApiRetryHandler {
                 log.warn("{} attempt {}/{} failed ({}). Retrying in {}ms...",
                         operationName, attempt, maxRetries, ex.getMessage(), delayMs);
                 sleep(delayMs);
-                delayMs = (long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER);
+                delayMs = Math.min((long) (delayMs * DEFAULT_BACKOFF_MULTIPLIER), MAX_DELAY_MS);
             }
         }
     }
