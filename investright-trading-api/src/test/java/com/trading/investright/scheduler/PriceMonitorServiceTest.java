@@ -78,51 +78,68 @@ class PriceMonitorServiceTest {
     }
 
     @Test
-    void shouldSellFullPositionOnStopLoss() {
+    void shouldMarkPositionClosedOnStopLossHit() {
         String accessToken = "test-token";
+        activePosition.setActiveSlOrderId("SL-ORDER-001");
 
         when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(130.0);
 
-        OrderResponse response = OrderResponse.builder()
-                .status("success")
-                .data(OrderResponse.OrderData.builder().orderId("SELL001").build())
-                .build();
-        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
-
         priceMonitorService.checkPositionPrice(activePosition, accessToken);
 
-        verify(orderService).placeOrder(argThat(order ->
-                "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 653
-        ), eq("testuser"));
         assertTrue(activePosition.isStopLossHit());
+        verify(positionTracker).closePosition("pos-001", TradePosition.PositionStatus.EXITED_STOPLOSS);
+        verify(orderService, never()).placeOrder(any(OrderRequest.class), anyString());
     }
 
     @Test
-    void shouldTrailSlToEntryOnTarget1Hit() {
+    void shouldCancelOldSlAndPlaceNewSlOnTarget1Hit() {
         String accessToken = "test-token";
+        activePosition.setActiveSlOrderId("OLD-SL-001");
+
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("NEW-SL-001").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+        when(orderService.cancelOrder("OLD-SL-001", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
 
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
 
         assertTrue(activePosition.isTarget1Hit());
         assertEquals(153.0, activePosition.getStopLoss());
-        assertEquals(653, activePosition.getRemainingQuantity());
-        assertEquals(TradePosition.PositionStatus.PARTIALLY_EXITED, activePosition.getStatus());
-        verifyNoInteractions(orderService);
+        verify(orderService).cancelOrder("OLD-SL-001", "testuser");
+        verify(orderService).placeOrder(argThat(order ->
+                "SL".equals(order.getOrderType()) &&
+                        order.getTriggerPrice() == 153.0
+        ), eq("testuser"));
+        assertEquals("NEW-SL-001", activePosition.getActiveSlOrderId());
     }
 
     @Test
-    void shouldTrailSlToTarget1OnTarget2Hit() {
+    void shouldCancelOldSlAndPlaceNewSlAtT1OnTarget2Hit() {
         String accessToken = "test-token";
+        activePosition.setActiveSlOrderId("OLD-SL-002");
+
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("NEW-SL-002").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+        when(orderService.cancelOrder("OLD-SL-002", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
 
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
 
         assertTrue(activePosition.isTarget1Hit());
         assertTrue(activePosition.isTarget2Hit());
         assertEquals(160.0, activePosition.getStopLoss());
-        assertEquals(653, activePosition.getRemainingQuantity());
-        assertEquals(TradePosition.PositionStatus.PARTIALLY_EXITED, activePosition.getStatus());
-        verifyNoInteractions(orderService);
+        verify(orderService).cancelOrder("OLD-SL-002", "testuser");
+        verify(orderService).placeOrder(argThat(order ->
+                "SL".equals(order.getOrderType()) &&
+                        order.getTriggerPrice() == 160.0
+        ), eq("testuser"));
+        assertEquals("NEW-SL-002", activePosition.getActiveSlOrderId());
     }
 
     @Test
@@ -147,52 +164,55 @@ class PriceMonitorServiceTest {
     }
 
     @Test
-    void shouldExitAtBreakevenAfterTarget1Hit() {
+    void shouldMarkClosedAtBreakevenAfterTarget1SlHit() {
         String accessToken = "test-token";
+        activePosition.setActiveSlOrderId("OLD-SL");
 
-        // T1 hit → SL moves to entry (153)
+        OrderResponse slResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("NEW-SL-BRK").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(slResponse);
+        when(orderService.cancelOrder("OLD-SL", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+
+        // T1 hit → cancel old SL, place new SL at entry (153)
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
         assertEquals(153.0, activePosition.getStopLoss());
+        assertEquals("NEW-SL-BRK", activePosition.getActiveSlOrderId());
 
-        // Price drops back to entry → trailing SL hit → full exit
+        // Price drops back to entry → SL order executes on broker → just mark closed
         when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(152.0);
-        OrderResponse response = OrderResponse.builder()
-                .status("success")
-                .data(OrderResponse.OrderData.builder().orderId("SELL_SL").build())
-                .build();
-        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
 
         priceMonitorService.checkPositionPrice(activePosition, accessToken);
 
-        verify(orderService).placeOrder(argThat(order ->
-                "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 653
-        ), eq("testuser"));
         assertTrue(activePosition.isStopLossHit());
+        verify(positionTracker).closePosition("pos-001", TradePosition.PositionStatus.EXITED_STOPLOSS);
     }
 
     @Test
-    void shouldExitAtTarget1LevelAfterTarget2Hit() {
+    void shouldMarkClosedAtTarget1LevelAfterTarget2SlHit() {
         String accessToken = "test-token";
+        activePosition.setActiveSlOrderId("OLD-SL-T2");
 
-        // T2 hit → SL moves to T1 (160)
+        OrderResponse slResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("NEW-SL-T1").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(slResponse);
+        when(orderService.cancelOrder("OLD-SL-T2", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+
+        // T2 hit → cancel old SL, place new SL at T1 (160)
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
         assertEquals(160.0, activePosition.getStopLoss());
 
-        // Price drops to below T1 → trailing SL hit → full exit at T1-level profit
+        // Price drops below T1 → SL order executes on broker → just mark closed
         when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(158.0);
-        OrderResponse response = OrderResponse.builder()
-                .status("success")
-                .data(OrderResponse.OrderData.builder().orderId("SELL_SL").build())
-                .build();
-        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
 
         priceMonitorService.checkPositionPrice(activePosition, accessToken);
 
-        verify(orderService).placeOrder(argThat(order ->
-                "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 653
-        ), eq("testuser"));
+        assertTrue(activePosition.isStopLossHit());
     }
 
     @Test
@@ -220,36 +240,47 @@ class PriceMonitorServiceTest {
     }
 
     @Test
-    void shouldProgressThroughTrailingSl() {
+    void shouldProgressThroughTrailingSlWithOrderManagement() {
         String accessToken = "test-token";
-        OrderResponse response = OrderResponse.builder()
-                .status("success")
-                .data(OrderResponse.OrderData.builder().orderId("SELL").build())
-                .build();
-        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+        activePosition.setActiveSlOrderId("INITIAL-SL");
 
-        // T1 hit → SL moves to entry (153)
+        OrderResponse slResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SL-T1").build())
+                .build();
+        OrderResponse cancelResponse = OrderResponse.builder().status("success").build();
+        OrderResponse sellResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SELL-T3").build())
+                .build();
+
+        when(orderService.cancelOrder(anyString(), eq("testuser"))).thenReturn(cancelResponse);
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser")))
+                .thenReturn(slResponse)
+                .thenReturn(OrderResponse.builder().status("success")
+                        .data(OrderResponse.OrderData.builder().orderId("SL-T2").build()).build())
+                .thenReturn(sellResponse);
+
+        // T1 hit → cancel old SL, place new SL at entry (153)
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
         assertTrue(activePosition.isTarget1Hit());
         assertFalse(activePosition.isTarget2Hit());
         assertEquals(153.0, activePosition.getStopLoss());
         assertEquals(653, activePosition.getRemainingQuantity());
 
-        // T2 hit → SL moves to T1 (160)
+        // T2 hit → cancel T1 SL, place new SL at T1 (160)
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
         assertTrue(activePosition.isTarget2Hit());
         assertFalse(activePosition.isTarget3Hit());
         assertEquals(160.0, activePosition.getStopLoss());
         assertEquals(653, activePosition.getRemainingQuantity());
 
-        // T3 hit → full exit with all 653 qty
+        // T3 hit → cancel T2 SL, place market sell for full exit
         priceMonitorService.checkAndHandleTargets(activePosition, 195.0, accessToken);
         assertTrue(activePosition.isTarget3Hit());
 
-        verify(orderService).placeOrder(argThat(order ->
-                "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 653
-        ), eq("testuser"));
+        verify(orderService, times(3)).cancelOrder(anyString(), eq("testuser"));
+        verify(orderService, times(3)).placeOrder(any(OrderRequest.class), eq("testuser"));
     }
 
     @Test

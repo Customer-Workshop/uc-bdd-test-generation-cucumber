@@ -192,21 +192,21 @@ public class PriceMonitorService {
     }
 
     private void handleStopLossHit(TradePosition position, double ltp, String accessToken) {
-        log.warn("STOP LOSS HIT for {} at LTP={} (SL={}). Exiting full position of {} qty.",
-                position.getInstrumentName(), ltp, position.getStopLoss(), position.getRemainingQuantity());
+        log.warn("STOP LOSS HIT for {} at LTP={} (SL={}). Active SL order {} should execute on broker side.",
+                position.getInstrumentName(), ltp, position.getStopLoss(), position.getActiveSlOrderId());
 
         position.setStopLossHit(true);
-        placeSellOrder(position, position.getRemainingQuantity(), ltp, "SL_EXIT", accessToken);
         positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_STOPLOSS);
     }
 
     void checkAndHandleTargets(TradePosition position, double ltp, String accessToken) {
         if (isTargetHit(position.getTarget3(), position, ltp) && !position.isTarget3Hit()) {
-            log.info("TARGET 3 HIT for {} at LTP={} (T3={}). Full exit — selling entire position of {} qty.",
+            log.info("TARGET 3 HIT for {} at LTP={} (T3={}). Cancelling SL order and placing market sell for {} qty.",
                     position.getInstrumentName(), ltp, position.getTarget3(), position.getRemainingQuantity());
             position.setTarget3Hit(true);
             position.setTarget2Hit(true);
             position.setTarget1Hit(true);
+            cancelActiveSlOrder(position);
             placeSellOrder(position, position.getRemainingQuantity(), ltp, "T3_FULL_EXIT", accessToken);
             positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
             return;
@@ -214,23 +214,73 @@ public class PriceMonitorService {
 
         if (isTargetHit(position.getTarget2(), position, ltp) && !position.isTarget2Hit()) {
             double newSl = position.getTarget1() != null ? position.getTarget1() : position.getEntryPrice();
-            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Trailing SL moved to {} (above T1). Holding full qty.",
+            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Cancelling old SL and placing new SL at {} (above T1).",
                     position.getInstrumentName(), ltp, position.getTarget2(), newSl);
             position.setTarget2Hit(true);
             position.setTarget1Hit(true);
+            cancelActiveSlOrder(position);
             position.setStopLoss(newSl);
+            placeNewSlOrder(position, newSl, accessToken);
             position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
-        }
-
-        if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
-            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Trailing SL moved to entry price {} (breakeven). Holding full qty.",
+        } else if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
+            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Cancelling old SL and placing new SL at entry price {} (breakeven).",
                     position.getInstrumentName(), ltp, position.getTarget1(), position.getEntryPrice());
             position.setTarget1Hit(true);
+            cancelActiveSlOrder(position);
             position.setStopLoss(position.getEntryPrice());
+            placeNewSlOrder(position, position.getEntryPrice(), accessToken);
             position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         }
 
         positionTracker.updatePosition(position);
+    }
+
+    private void cancelActiveSlOrder(TradePosition position) {
+        if (position.getActiveSlOrderId() == null) {
+            return;
+        }
+        try {
+            orderService.cancelOrder(position.getActiveSlOrderId(), position.getUserId());
+            log.info("Cancelled active SL order {} for {}", position.getActiveSlOrderId(), position.getInstrumentName());
+        } catch (Exception ex) {
+            log.warn("Could not cancel SL order {} for {} (may already be executed): {}",
+                    position.getActiveSlOrderId(), position.getInstrumentName(), ex.getMessage());
+        }
+        position.setActiveSlOrderId(null);
+    }
+
+    private void placeNewSlOrder(TradePosition position, double slPrice, String accessToken) {
+        String exitType = "BUY".equalsIgnoreCase(position.getTransactionType()) ? "SELL" : "BUY";
+        double slippage = slPrice * 0.005;
+        double limitPrice = "SELL".equalsIgnoreCase(exitType)
+                ? Math.round((slPrice - slippage) * 100.0) / 100.0
+                : Math.round((slPrice + slippage) * 100.0) / 100.0;
+
+        OrderRequest slOrder = OrderRequest.builder()
+                .exchange(position.getExchange())
+                .instrumentSegment(position.getInstrumentSegment() != null ? position.getInstrumentSegment() : "EQUITY")
+                .securityId(position.getTradingSymbol())
+                .transactionType(exitType)
+                .orderType("SL")
+                .quantity(position.getRemainingQuantity())
+                .triggerPrice(slPrice)
+                .price(limitPrice)
+                .product("BUY".equalsIgnoreCase(position.getTransactionType()) ? "DELIVERY" : "OVERNIGHT")
+                .validity("DAY")
+                .amo(false)
+                .disclosedQuantity(0)
+                .build();
+
+        try {
+            OrderResponse response = orderService.placeOrder(slOrder, position.getUserId());
+            String orderId = (response.getData() != null) ? response.getData().getOrderId() : "unknown";
+            position.setActiveSlOrderId(orderId);
+            log.info("New SL order placed for {} at SL={} orderId={}",
+                    position.getInstrumentName(), slPrice, orderId);
+        } catch (Exception ex) {
+            log.error("Failed to place new SL order for {} at SL={}: {}",
+                    position.getInstrumentName(), slPrice, ex.getMessage());
+        }
     }
 
     private boolean isTargetHit(Double target, TradePosition position, double ltp) {
@@ -258,10 +308,11 @@ public class PriceMonitorService {
 
     private void handleEndOfDayExit(TradePosition position, double ltp, String accessToken) {
         double profit = ltp - position.getEntryPrice();
-        log.info("END-OF-DAY EXIT for {} at LTP={} (entry={}, profit=₹{}/unit). Selling {} qty before market close.",
+        log.info("END-OF-DAY EXIT for {} at LTP={} (entry={}, profit=₹{}/unit). Cancelling SL and selling {} qty before market close.",
                 position.getInstrumentName(), ltp, position.getEntryPrice(),
                 String.format("%.2f", profit), position.getRemainingQuantity());
 
+        cancelActiveSlOrder(position);
         placeSellOrder(position, position.getRemainingQuantity(), ltp, "EOD_PROFIT_EXIT", accessToken);
         positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
     }

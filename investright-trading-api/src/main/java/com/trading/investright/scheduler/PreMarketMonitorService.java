@@ -149,6 +149,7 @@ public class PreMarketMonitorService {
         try {
             OrderResponse response = orderService.placeOrder(slOrder, position.getUserId());
             String orderId = (response.getData() != null) ? response.getData().getOrderId() : "unknown";
+            position.setActiveSlOrderId(orderId);
             log.info("Protective SL order placed for {} at SL={} orderId={}",
                     position.getInstrumentName(), position.getStopLoss(), orderId);
         } catch (Exception ex) {

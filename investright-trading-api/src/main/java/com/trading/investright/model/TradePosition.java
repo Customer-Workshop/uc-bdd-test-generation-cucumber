@@ -36,6 +36,7 @@ public class TradePosition {
     private boolean amoExecuted;
     private boolean regularOrderPlaced;
     private Double openPrice;
+    private String activeSlOrderId;
     private String userId;
     private Instant createdAt;
     private Instant lastCheckedAt;
