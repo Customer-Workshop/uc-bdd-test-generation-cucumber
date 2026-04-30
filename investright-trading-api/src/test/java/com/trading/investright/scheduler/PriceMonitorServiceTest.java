@@ -71,8 +71,6 @@ class PriceMonitorServiceTest {
     void shouldNotCheckPricesWhenNoActivePositions() {
         when(positionTracker.getActivePositions()).thenReturn(List.of());
 
-        // Call checkAndHandleTargets directly to avoid market hours check
-        // With no active positions, no market calls should happen
         List<TradePosition> positions = positionTracker.getActivePositions();
         assertTrue(positions.isEmpty());
         verifyNoInteractions(marketClient);
@@ -97,38 +95,39 @@ class PriceMonitorServiceTest {
                 "SELL".equals(order.getTransactionType()) &&
                         order.getQuantity() == 653
         ), eq("testuser"));
+        assertTrue(activePosition.isStopLossHit());
     }
 
     @Test
-    void shouldPartialSellOnTarget1Hit() {
+    void shouldTrailSlToEntryOnTarget1Hit() {
         String accessToken = "test-token";
-
-        OrderResponse response = OrderResponse.builder()
-                .status("success")
-                .data(OrderResponse.OrderData.builder().orderId("SELL001").build())
-                .build();
-        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
 
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
 
-        verify(orderService).placeOrder(argThat(order ->
-                "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 217
-        ), eq("testuser"));
-
         assertTrue(activePosition.isTarget1Hit());
-        assertEquals(436, activePosition.getRemainingQuantity());
+        assertEquals(153.0, activePosition.getStopLoss());
+        assertEquals(653, activePosition.getRemainingQuantity());
         assertEquals(TradePosition.PositionStatus.PARTIALLY_EXITED, activePosition.getStatus());
+        verifyNoInteractions(orderService);
     }
 
     @Test
-    void shouldSellRemainingOnTarget3Hit() {
+    void shouldTrailSlToTarget1OnTarget2Hit() {
         String accessToken = "test-token";
 
-        activePosition.setTarget1Hit(true);
-        activePosition.setTarget2Hit(true);
-        activePosition.setRemainingQuantity(219);
-        activePosition.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
+        priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
+
+        assertTrue(activePosition.isTarget1Hit());
+        assertTrue(activePosition.isTarget2Hit());
+        assertEquals(160.0, activePosition.getStopLoss());
+        assertEquals(653, activePosition.getRemainingQuantity());
+        assertEquals(TradePosition.PositionStatus.PARTIALLY_EXITED, activePosition.getStatus());
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void shouldFullExitOnTarget3Hit() {
+        String accessToken = "test-token";
 
         OrderResponse response = OrderResponse.builder()
                 .status("success")
@@ -140,10 +139,60 @@ class PriceMonitorServiceTest {
 
         verify(orderService).placeOrder(argThat(order ->
                 "SELL".equals(order.getTransactionType()) &&
-                        order.getQuantity() == 219
+                        order.getQuantity() == 653
         ), eq("testuser"));
-
         assertTrue(activePosition.isTarget3Hit());
+        assertTrue(activePosition.isTarget2Hit());
+        assertTrue(activePosition.isTarget1Hit());
+    }
+
+    @Test
+    void shouldExitAtBreakevenAfterTarget1Hit() {
+        String accessToken = "test-token";
+
+        // T1 hit → SL moves to entry (153)
+        priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
+        assertEquals(153.0, activePosition.getStopLoss());
+
+        // Price drops back to entry → trailing SL hit → full exit
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(152.0);
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SELL_SL").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+
+        priceMonitorService.checkPositionPrice(activePosition, accessToken);
+
+        verify(orderService).placeOrder(argThat(order ->
+                "SELL".equals(order.getTransactionType()) &&
+                        order.getQuantity() == 653
+        ), eq("testuser"));
+        assertTrue(activePosition.isStopLossHit());
+    }
+
+    @Test
+    void shouldExitAtTarget1LevelAfterTarget2Hit() {
+        String accessToken = "test-token";
+
+        // T2 hit → SL moves to T1 (160)
+        priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
+        assertEquals(160.0, activePosition.getStopLoss());
+
+        // Price drops to below T1 → trailing SL hit → full exit at T1-level profit
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(158.0);
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SELL_SL").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+
+        priceMonitorService.checkPositionPrice(activePosition, accessToken);
+
+        verify(orderService).placeOrder(argThat(order ->
+                "SELL".equals(order.getTransactionType()) &&
+                        order.getQuantity() == 653
+        ), eq("testuser"));
     }
 
     @Test
@@ -162,15 +211,16 @@ class PriceMonitorServiceTest {
         String accessToken = "test-token";
 
         activePosition.setTarget1Hit(true);
-        activePosition.setRemainingQuantity(436);
+        activePosition.setStopLoss(153.0);
 
         priceMonitorService.checkAndHandleTargets(activePosition, 165.0, accessToken);
 
         verifyNoInteractions(orderService);
+        assertEquals(153.0, activePosition.getStopLoss());
     }
 
     @Test
-    void shouldProgressThroughAllTargets() {
+    void shouldProgressThroughTrailingSl() {
         String accessToken = "test-token";
         OrderResponse response = OrderResponse.builder()
                 .status("success")
@@ -178,17 +228,27 @@ class PriceMonitorServiceTest {
                 .build();
         when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
 
+        // T1 hit → SL moves to entry (153)
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
         assertTrue(activePosition.isTarget1Hit());
         assertFalse(activePosition.isTarget2Hit());
-        assertEquals(436, activePosition.getRemainingQuantity());
+        assertEquals(153.0, activePosition.getStopLoss());
+        assertEquals(653, activePosition.getRemainingQuantity());
 
+        // T2 hit → SL moves to T1 (160)
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
         assertTrue(activePosition.isTarget2Hit());
         assertFalse(activePosition.isTarget3Hit());
-        assertEquals(219, activePosition.getRemainingQuantity());
+        assertEquals(160.0, activePosition.getStopLoss());
+        assertEquals(653, activePosition.getRemainingQuantity());
 
+        // T3 hit → full exit with all 653 qty
         priceMonitorService.checkAndHandleTargets(activePosition, 195.0, accessToken);
         assertTrue(activePosition.isTarget3Hit());
+
+        verify(orderService).placeOrder(argThat(order ->
+                "SELL".equals(order.getTransactionType()) &&
+                        order.getQuantity() == 653
+        ), eq("testuser"));
     }
 }

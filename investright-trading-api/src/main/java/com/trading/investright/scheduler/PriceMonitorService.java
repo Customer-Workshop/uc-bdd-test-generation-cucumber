@@ -114,30 +114,33 @@ public class PriceMonitorService {
     }
 
     void checkAndHandleTargets(TradePosition position, double ltp, String accessToken) {
-        if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
-            log.info("TARGET 1 HIT for {} at LTP={} (T1={})", position.getInstrumentName(), ltp, position.getTarget1());
+        if (isTargetHit(position.getTarget3(), position, ltp) && !position.isTarget3Hit()) {
+            log.info("TARGET 3 HIT for {} at LTP={} (T3={}). Full exit — selling entire position of {} qty.",
+                    position.getInstrumentName(), ltp, position.getTarget3(), position.getRemainingQuantity());
+            position.setTarget3Hit(true);
+            position.setTarget2Hit(true);
             position.setTarget1Hit(true);
-            int sellQty = position.getPartialQuantity();
-            placeSellOrder(position, sellQty, ltp, "T1_EXIT", accessToken);
-            position.setRemainingQuantity(position.getRemainingQuantity() - sellQty);
-            updatePositionStatus(position);
+            placeSellOrder(position, position.getRemainingQuantity(), ltp, "T3_FULL_EXIT", accessToken);
+            positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
+            return;
         }
 
         if (isTargetHit(position.getTarget2(), position, ltp) && !position.isTarget2Hit()) {
-            log.info("TARGET 2 HIT for {} at LTP={} (T2={})", position.getInstrumentName(), ltp, position.getTarget2());
+            double newSl = position.getTarget1() != null ? position.getTarget1() : position.getEntryPrice();
+            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Trailing SL moved to {} (above T1). Holding full qty.",
+                    position.getInstrumentName(), ltp, position.getTarget2(), newSl);
             position.setTarget2Hit(true);
-            int sellQty = Math.min(position.getPartialQuantity(), position.getRemainingQuantity());
-            placeSellOrder(position, sellQty, ltp, "T2_EXIT", accessToken);
-            position.setRemainingQuantity(position.getRemainingQuantity() - sellQty);
-            updatePositionStatus(position);
+            position.setTarget1Hit(true);
+            position.setStopLoss(newSl);
+            position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         }
 
-        if (isTargetHit(position.getTarget3(), position, ltp) && !position.isTarget3Hit()) {
-            log.info("TARGET 3 HIT for {} at LTP={} (T3={}). Exiting remaining position.",
-                    position.getInstrumentName(), ltp, position.getTarget3());
-            position.setTarget3Hit(true);
-            placeSellOrder(position, position.getRemainingQuantity(), ltp, "T3_EXIT", accessToken);
-            positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
+        if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
+            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Trailing SL moved to entry price {} (breakeven). Holding full qty.",
+                    position.getInstrumentName(), ltp, position.getTarget1(), position.getEntryPrice());
+            position.setTarget1Hit(true);
+            position.setStopLoss(position.getEntryPrice());
+            position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         }
 
         positionTracker.updatePosition(position);
@@ -204,14 +207,6 @@ public class PriceMonitorService {
         } catch (Exception ex) {
             log.error("Failed to place {} order for {} qty={} reason={}: {}",
                     exitType, position.getInstrumentName(), quantity, reason, ex.getMessage());
-        }
-    }
-
-    private void updatePositionStatus(TradePosition position) {
-        if (position.getRemainingQuantity() <= 0) {
-            position.setStatus(TradePosition.PositionStatus.EXITED_TARGET);
-        } else if (position.isTarget1Hit() || position.isTarget2Hit()) {
-            position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         }
     }
 
