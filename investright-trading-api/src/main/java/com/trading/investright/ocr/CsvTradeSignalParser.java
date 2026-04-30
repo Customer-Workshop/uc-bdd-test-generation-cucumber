@@ -80,7 +80,7 @@ public class CsvTradeSignalParser {
         return allSignals;
     }
 
-    String[] parseHeaders(String headerLine) {
+    public String[] parseHeaders(String headerLine) {
         String[] raw = headerLine.split(",");
         String[] headers = new String[raw.length];
         for (int i = 0; i < raw.length; i++) {
@@ -91,7 +91,7 @@ public class CsvTradeSignalParser {
         return headers;
     }
 
-    TradeSignal parseCsvRow(String[] headers, String line) {
+    public TradeSignal parseCsvRow(String[] headers, String line) {
         String[] values = splitCsvLine(line);
         if (values.length < 2) return null;
 

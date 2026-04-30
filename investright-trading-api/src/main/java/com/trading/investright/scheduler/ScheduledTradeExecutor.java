@@ -13,8 +13,9 @@ import com.trading.investright.service.CloudImageFetcher;
 import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
 import com.trading.investright.service.PositionTracker;
-import lombok.RequiredArgsConstructor;
+import com.trading.investright.service.S3TradeSignalFetcher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,7 +28,6 @@ import java.util.List;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "scheduler.enabled", havingValue = "true")
 public class ScheduledTradeExecutor {
 
@@ -40,6 +40,32 @@ public class ScheduledTradeExecutor {
     private final OrderService orderService;
     private final PositionTracker positionTracker;
     private final InvestRightAuthClient authClient;
+    private S3TradeSignalFetcher s3TradeSignalFetcher;
+
+    public ScheduledTradeExecutor(SchedulerProperties schedulerProperties,
+                                  CloudImageFetcher cloudImageFetcher,
+                                  LocalImageFetcher localImageFetcher,
+                                  ImageParserService imageParserService,
+                                  TradeSignalParser tradeSignalParser,
+                                  CsvTradeSignalParser csvTradeSignalParser,
+                                  OrderService orderService,
+                                  PositionTracker positionTracker,
+                                  InvestRightAuthClient authClient) {
+        this.schedulerProperties = schedulerProperties;
+        this.cloudImageFetcher = cloudImageFetcher;
+        this.localImageFetcher = localImageFetcher;
+        this.imageParserService = imageParserService;
+        this.tradeSignalParser = tradeSignalParser;
+        this.csvTradeSignalParser = csvTradeSignalParser;
+        this.orderService = orderService;
+        this.positionTracker = positionTracker;
+        this.authClient = authClient;
+    }
+
+    @Autowired(required = false)
+    public void setS3TradeSignalFetcher(S3TradeSignalFetcher s3TradeSignalFetcher) {
+        this.s3TradeSignalFetcher = s3TradeSignalFetcher;
+    }
 
     @Scheduled(cron = "${scheduler.cron:0 55 8 * * *}", zone = "${scheduler.timezone:Asia/Kolkata}")
     public void executeScheduledTrades() {
@@ -70,11 +96,21 @@ public class ScheduledTradeExecutor {
 
     List<TradeSignal> loadAndParseImages() {
         String source = schedulerProperties.getImageSource();
-        if ("local".equalsIgnoreCase(source)) {
+        if ("s3".equalsIgnoreCase(source)) {
+            return loadFromS3();
+        } else if ("local".equalsIgnoreCase(source)) {
             return loadFromLocalFolder();
         } else {
             return loadFromCloudUrls();
         }
+    }
+
+    private List<TradeSignal> loadFromS3() {
+        if (s3TradeSignalFetcher == null) {
+            log.error("S3 source configured but S3TradeSignalFetcher is not available. Check AWS/S3 configuration.");
+            return List.of();
+        }
+        return s3TradeSignalFetcher.fetchAndParseSignals();
     }
 
     private List<TradeSignal> loadFromLocalFolder() {

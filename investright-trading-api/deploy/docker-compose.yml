@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  investright:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: investright-trading-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # InvestRight API credentials
+      IR_API_KEY: ${IR_API_KEY}
+      IR_API_SECRET: ${IR_API_SECRET}
+      IR_USERNAME: ${IR_USERNAME}
+      IR_PASSWORD: ${IR_PASSWORD}
+      IR_2FA_ANSWER: ${IR_2FA_ANSWER}
+      # Scheduler
+      SCHEDULER_ENABLED: "true"
+      # Trade signals
+      TRADE_IMAGE_SOURCE: ${TRADE_IMAGE_SOURCE:-local}
+      TRADE_FOLDER_PATH: /app/trades
+      # S3 (optional)
+      AWS_REGION: ${AWS_REGION:-ap-south-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_PREFIX: ${S3_PREFIX:-trade-signals/}
+      # JVM
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    volumes:
+      - trade-data:/app/trades
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  trade-data:
+    driver: local

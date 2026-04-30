@@ -49,6 +49,15 @@ scheduler:
   retry-delay-ms: 2000
   price-check-interval-ms: ${PRICE_CHECK_INTERVAL_MS:5000}
 
+aws:
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket-name: ${S3_BUCKET_NAME:}
+    prefix: ${S3_PREFIX:trade-signals/}
+  secrets-manager:
+    enabled: ${AWS_SECRETS_MANAGER_ENABLED:false}
+    secret-name: ${AWS_SECRET_NAME:investright/trading-api/credentials}
+
 logging:
   level:
     com.trading.investright: DEBUG

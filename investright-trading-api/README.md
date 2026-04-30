@@ -274,6 +274,52 @@ C:\trades\
 ├── 2024-04-24\      ← yesterday (ignored)
 ```
 
+### S3 Source (AWS)
+
+Upload trade signal CSV/image files to an S3 bucket, and the app reads them automatically:
+
+```yaml
+scheduler:
+  image-source: s3
+  use-date-subfolder: true   # reads from s3://bucket/trade-signals/2024-04-25/
+
+aws:
+  region: ap-south-1
+  s3:
+    bucket-name: my-trade-signals
+    prefix: trade-signals/
+```
+
+**S3 bucket structure:**
+```
+my-trade-signals/
+├── trade-signals/
+│   ├── 2024-04-25/          ← today (auto-selected when use-date-subfolder=true)
+│   │   ├── signals.csv
+│   │   └── chart.png
+│   └── 2024-04-24/          ← yesterday (ignored)
+```
+
+**IAM permissions needed:**
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject", "s3:ListBucket"],
+    "Resource": [
+      "arn:aws:s3:::my-trade-signals",
+      "arn:aws:s3:::my-trade-signals/*"
+    ]
+  }]
+}
+```
+
+**Authentication options:**
+- **IAM Role (recommended on EC2):** Attach a role to the EC2 instance — no keys needed
+- **Environment variables:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- **AWS credentials file:** `~/.aws/credentials`
+
 ### Cloud Source (Alternative)
 
 If you prefer cloud storage instead of a local folder, set `image-source: cloud`:
@@ -292,6 +338,88 @@ scheduler:
 | **Google Drive** | Direct download: `https://drive.google.com/uc?export=download&id=FILE_ID` |
 | **Azure Blob** | SAS URL: `https://account.blob.core.windows.net/container/blob?sv=...` |
 | **Direct URL** | Any publicly accessible image URL |
+
+## AWS Deployment
+
+### Option 1: Docker (Recommended)
+
+```bash
+# Build the Docker image
+docker build -t investright-trading-api .
+
+# Run with environment variables
+docker run -d --name investright \
+  -p 8080:8080 \
+  -e IR_API_KEY=your_key \
+  -e IR_API_SECRET=your_secret \
+  -e IR_USERNAME=your_username \
+  -e IR_PASSWORD=your_password \
+  -e IR_2FA_ANSWER=your_mpin \
+  -e SCHEDULER_ENABLED=true \
+  -e TRADE_IMAGE_SOURCE=s3 \
+  -e S3_BUCKET_NAME=my-trade-signals \
+  -e AWS_REGION=ap-south-1 \
+  -v trade-data:/app/trades \
+  investright-trading-api
+```
+
+Or use docker-compose:
+```bash
+cd deploy
+cp .env.example .env  # edit with your credentials
+docker-compose up -d
+```
+
+### Option 2: EC2 Direct
+
+```bash
+# 1. SSH into your EC2 instance (Mumbai region recommended)
+ssh ec2-user@your-ec2-ip
+
+# 2. Run the setup script
+chmod +x ec2-startup.sh
+sudo ./ec2-startup.sh
+
+# 3. Copy your JAR file
+scp target/investright-trading-api-0.0.1-SNAPSHOT.jar ec2-user@your-ec2-ip:/opt/investright-trading-api/app.jar
+
+# 4. Edit credentials
+sudo nano /opt/investright-trading-api/.env
+
+# 5. Start the service
+sudo systemctl start investright-trading-api
+```
+
+### Cost Optimization
+
+The app only runs during market hours (8:55 AM — 3:30 PM IST). Use AWS EventBridge to auto-start/stop your EC2 instance:
+- **Start rule:** Cron `45 3 ? * MON-FRI *` (UTC = 8:45 AM IST)
+- **Stop rule:** Cron `10 10 ? * MON-FRI *` (UTC = 3:40 PM IST)
+
+This reduces EC2 costs by ~70%.
+
+### AWS Secrets Manager (Recommended for Credentials)
+
+Instead of storing credentials in environment variables or config files, use AWS Secrets Manager:
+
+1. Store your credentials as a JSON secret named `investright/trading-api/credentials`
+2. Enable Secrets Manager in the app:
+```bash
+export AWS_SECRETS_MANAGER_ENABLED=true
+export AWS_SECRET_NAME=investright/trading-api/credentials
+export AWS_REGION=ap-south-1
+```
+
+The app loads credentials at startup from Secrets Manager and falls back to env vars if Secrets Manager is unavailable.
+
+**Required IAM permission:**
+```json
+{
+  "Effect": "Allow",
+  "Action": "secretsmanager:GetSecretValue",
+  "Resource": "arn:aws:secretsmanager:ap-south-1:ACCOUNT_ID:secret:investright/trading-api/credentials-*"
+}
+```
 
 ## Configuration Reference
 
@@ -316,19 +444,29 @@ scheduler:
 | `scheduler.username` | Auto-login username (env: `IR_USERNAME`) | — |
 | `scheduler.password` | Auto-login password (env: `IR_PASSWORD`) | — |
 | `scheduler.two-fa-answer` | 2FA code (env: `IR_2FA_ANSWER`) | — |
+| `aws.region` | AWS region (env: `AWS_REGION`) | `ap-south-1` |
+| `aws.s3.bucket-name` | S3 bucket name (env: `S3_BUCKET_NAME`) | — |
+| `aws.s3.prefix` | S3 key prefix (env: `S3_PREFIX`) | `trade-signals/` |
+| `aws.secrets-manager.enabled` | Enable Secrets Manager (env: `AWS_SECRETS_MANAGER_ENABLED`) | `false` |
+| `aws.secrets-manager.secret-name` | Secret name (env: `AWS_SECRET_NAME`) | `investright/trading-api/credentials` |
 
 ## Project Structure
 
 ```
 com.trading.investright
-├── config/          # WebClient, Tesseract, Security, Scheduler, Properties configs
+├── config/          # WebClient, Tesseract, Security, Scheduler, AWS/S3, Properties configs
 ├── controller/      # AuthController, OrderController, TradeSignalController
-├── service/         # OrderService, SymbolMappingService, CloudImageFetcher, LocalImageFetcher
-├── client/          # InvestRightAuthClient, InvestRightOrderClient
-├── model/           # DTOs (request/response), TradeSignal, AuthSession
-├── ocr/             # ImageParserService, TradeSignalParser
-├── scheduler/       # ScheduledTradeExecutor (daily cron agent)
+├── service/         # OrderService, SymbolMappingService, CloudImageFetcher, LocalImageFetcher, S3TradeSignalFetcher
+├── client/          # InvestRightAuthClient, InvestRightOrderClient, ApiRetryHandler
+├── model/           # DTOs (request/response), TradeSignal, TradePosition, AuthSession
+├── ocr/             # ImageParserService, TradeSignalParser, CsvTradeSignalParser
+├── scheduler/       # ScheduledTradeExecutor, PriceMonitorService, PreMarketMonitorService, DailyReportService
 └── exception/       # GlobalExceptionHandler, custom exceptions
+
+deploy/
+├── ec2-startup.sh       # EC2 setup script (installs Java, Tesseract, creates systemd service)
+├── docker-compose.yml   # Docker Compose for one-command deployment
+Dockerfile               # Multi-stage Docker build
 ```
 
 ## Running Tests
