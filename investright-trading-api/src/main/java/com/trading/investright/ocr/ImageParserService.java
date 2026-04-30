@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,7 +20,7 @@ import java.io.InputStream;
 @RequiredArgsConstructor
 public class ImageParserService {
 
-    private final Tesseract tesseract;
+    private final ObjectProvider<Tesseract> tesseractProvider;
 
     public String extractText(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {
@@ -28,6 +29,7 @@ public class ImageParserService {
                 throw new OcrProcessingException("Unable to read image file. Supported formats: PNG, JPG, TIFF, BMP");
             }
             BufferedImage processed = preprocessImage(image);
+            Tesseract tesseract = tesseractProvider.getObject();
             String text = tesseract.doOCR(processed);
             log.debug("OCR extracted text:\n{}", text);
             return text;
@@ -41,6 +43,7 @@ public class ImageParserService {
     public String extractText(BufferedImage image) {
         try {
             BufferedImage processed = preprocessImage(image);
+            Tesseract tesseract = tesseractProvider.getObject();
             return tesseract.doOCR(processed);
         } catch (TesseractException ex) {
             throw new OcrProcessingException("OCR processing failed: " + ex.getMessage(), ex);
