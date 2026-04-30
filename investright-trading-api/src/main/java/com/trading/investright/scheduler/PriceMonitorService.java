@@ -33,6 +33,7 @@ public class PriceMonitorService {
 
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 15);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(15, 30);
+    private static final LocalTime EOD_EXIT_TIME = LocalTime.of(15, 25);
 
     @Scheduled(fixedRateString = "${scheduler.price-check-interval-ms:5000}")
     public void checkPrices() {
@@ -47,7 +48,8 @@ public class PriceMonitorService {
 
         log.debug("Checking prices for {} active positions", activePositions.size());
 
-        String userId = schedulerProperties.getUserId();
+        String userId = schedulerProperties.getUserId() != null && !schedulerProperties.getUserId().isBlank() ?
+                schedulerProperties.getUserId() : schedulerProperties.getUsername();
         String accessToken;
         try {
             accessToken = authClient.getAccessToken(userId);
@@ -81,6 +83,11 @@ public class PriceMonitorService {
 
         if (isStopLossHit(position, ltp)) {
             handleStopLossHit(position, ltp, accessToken);
+            return;
+        }
+
+        if (isEndOfDay() && isProfitable(position, ltp) && !position.isTarget1Hit()) {
+            handleEndOfDayExit(position, ltp, accessToken);
             return;
         }
 
@@ -146,6 +153,29 @@ public class PriceMonitorService {
         }
     }
 
+    private boolean isProfitable(TradePosition position, double ltp) {
+        if ("BUY".equalsIgnoreCase(position.getTransactionType())) {
+            return ltp > position.getEntryPrice();
+        } else {
+            return ltp < position.getEntryPrice();
+        }
+    }
+
+    private boolean isEndOfDay() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of(schedulerProperties.getTimezone()));
+        return !now.toLocalTime().isBefore(EOD_EXIT_TIME);
+    }
+
+    private void handleEndOfDayExit(TradePosition position, double ltp, String accessToken) {
+        double profit = ltp - position.getEntryPrice();
+        log.info("END-OF-DAY EXIT for {} at LTP={} (entry={}, profit=₹{}/unit). Selling {} qty before market close.",
+                position.getInstrumentName(), ltp, position.getEntryPrice(),
+                String.format("%.2f", profit), position.getRemainingQuantity());
+
+        placeSellOrder(position, position.getRemainingQuantity(), ltp, "EOD_PROFIT_EXIT", accessToken);
+        positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
+    }
+
     private void placeSellOrder(TradePosition position, int quantity, double ltp, String reason, String accessToken) {
         if (quantity <= 0) return;
 
@@ -153,6 +183,7 @@ public class PriceMonitorService {
 
         OrderRequest sellOrder = OrderRequest.builder()
                 .exchange(position.getExchange())
+                .instrumentSegment(position.getInstrumentSegment() != null ? position.getInstrumentSegment() : "EQUITY")
                 .securityId(position.getTradingSymbol())
                 .transactionType(exitType)
                 .orderType("MARKET")
@@ -167,9 +198,9 @@ public class PriceMonitorService {
 
         try {
             OrderResponse response = orderService.placeOrder(sellOrder, position.getUserId());
+            String orderId = (response.getData() != null) ? response.getData().getOrderId() : "unknown";
             log.info("{} order placed for {} qty={} reason={} orderId={}",
-                    exitType, position.getInstrumentName(), quantity, reason,
-                    response.getData() != null ? response.getData().getOrderId() : "unknown");
+                    exitType, position.getInstrumentName(), quantity, reason, orderId);
         } catch (Exception ex) {
             log.error("Failed to place {} order for {} qty={} reason={}: {}",
                     exitType, position.getInstrumentName(), quantity, reason, ex.getMessage());

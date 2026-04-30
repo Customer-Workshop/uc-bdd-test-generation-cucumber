@@ -230,19 +230,19 @@ public class ScheduledTradeExecutor {
         int failed = 0;
         for (int i = 0; i < responses.size(); i++) {
             OrderResponse response = responses.get(i);
+            String orderId = response.getData() != null ? response.getData().getOrderId() : "unknown";
             if ("success".equalsIgnoreCase(response.getStatus())) {
                 success++;
-                String orderId = response.getData().getOrderId();
                 log.info("Order placed successfully: {}", orderId);
 
-                if (i < validSignals.size()) {
+                if (i < validSignals.size() && orderId != null) {
                     TradeSignal signal = validSignals.get(i);
                     int qty = orderRequests.get(i).getQuantity();
                     positionTracker.registerPosition(signal, orderId, qty, userId);
                 }
             } else {
                 failed++;
-                log.error("Order failed: {}", response.getData().getOrderId());
+                log.error("Order failed: {}", orderId);
             }
         }
         log.info("Order placement summary: {} succeeded, {} failed out of {} total",

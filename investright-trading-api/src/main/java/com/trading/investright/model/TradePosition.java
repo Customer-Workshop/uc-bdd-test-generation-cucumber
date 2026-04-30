@@ -18,6 +18,7 @@ public class TradePosition {
     private String instrumentName;
     private String tradingSymbol;
     private String exchange;
+    private String instrumentSegment;
     private String transactionType;
     private double entryPrice;
     private double stopLoss;

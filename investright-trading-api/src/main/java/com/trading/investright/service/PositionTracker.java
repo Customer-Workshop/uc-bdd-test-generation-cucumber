@@ -25,8 +25,9 @@ public class PositionTracker {
                 .instrumentName(signal.getInstrumentName())
                 .tradingSymbol(signal.getTradingSymbol() != null ? signal.getTradingSymbol() : signal.getInstrumentName())
                 .exchange(signal.getExchange() != null ? signal.getExchange() : "NSE")
+                .instrumentSegment(determineInstrumentSegment(signal))
                 .transactionType(signal.getTransactionType())
-                .entryPrice(signal.getEntryPrice())
+                .entryPrice(signal.getEntryPrice() != null ? signal.getEntryPrice() : 0.0)
                 .stopLoss(signal.getStopLoss() != null ? signal.getStopLoss() : 0.0)
                 .target1(signal.getTarget1())
                 .target2(signal.getTarget2())
@@ -83,5 +84,16 @@ public class PositionTracker {
 
     public void clearAll() {
         activePositions.clear();
+    }
+
+    private String determineInstrumentSegment(TradeSignal signal) {
+        if (signal.getInstrumentType() == null || signal.getInstrumentType() == TradeSignal.InstrumentType.EQUITY) {
+            return "EQUITY";
+        }
+        String underlying = signal.getUnderlying() != null ? signal.getUnderlying().toUpperCase() : "";
+        if (underlying.contains("NIFTY") || underlying.contains("BANKNIFTY") || underlying.contains("FINNIFTY")) {
+            return "OPTIDX";
+        }
+        return "OPTSTK";
     }
 }
