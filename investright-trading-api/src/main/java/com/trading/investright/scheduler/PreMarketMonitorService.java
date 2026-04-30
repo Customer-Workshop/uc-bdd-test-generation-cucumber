@@ -117,12 +117,32 @@ public class PreMarketMonitorService {
 
         String status = extractOrderStatus(orderStatus);
         if ("EXECUTED".equalsIgnoreCase(status) || "COMPLETE".equalsIgnoreCase(status)) {
-            log.info("AMO order {} EXECUTED for {}. Placing protective SL sell order.",
-                    position.getOrderId(), position.getInstrumentName());
+            int filled = extractFilledQuantity(orderStatus);
+            if (filled > 0) {
+                position.setFilledQuantity(filled);
+                position.setRemainingQuantity(filled);
+                log.info("AMO order {} EXECUTED for {} — filled {}/{} qty.",
+                        position.getOrderId(), position.getInstrumentName(), filled, position.getTotalQuantity());
+            } else {
+                log.info("AMO order {} EXECUTED for {} — fill qty unavailable, using total qty {}.",
+                        position.getOrderId(), position.getInstrumentName(), position.getTotalQuantity());
+            }
             placeProtectiveSlOrder(position, accessToken);
             position.setProtectiveSlPlaced(true);
             position.setAmoExecuted(true);
             positionTracker.updatePosition(position);
+        } else if ("PARTIALLY_EXECUTED".equalsIgnoreCase(status) || "PARTIAL".equalsIgnoreCase(status)) {
+            int filled = extractFilledQuantity(orderStatus);
+            if (filled > 0 && !position.isProtectiveSlPlaced()) {
+                position.setFilledQuantity(filled);
+                position.setRemainingQuantity(filled);
+                log.info("AMO order {} PARTIALLY FILLED for {} — filled {}/{} qty. Placing SL for filled qty.",
+                        position.getOrderId(), position.getInstrumentName(), filled, position.getTotalQuantity());
+                placeProtectiveSlOrder(position, accessToken);
+                position.setProtectiveSlPlaced(true);
+                position.setAmoExecuted(true);
+                positionTracker.updatePosition(position);
+            }
         } else {
             log.debug("AMO order {} status: {} for {}", position.getOrderId(), status, position.getInstrumentName());
         }
@@ -168,14 +188,41 @@ public class PreMarketMonitorService {
     }
 
     private String extractOrderStatus(Map<String, Object> orderStatus) {
-        if (orderStatus.containsKey("data") && orderStatus.get("data") instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> data = (Map<String, Object>) orderStatus.get("data");
+        Map<String, Object> data = extractDataMap(orderStatus);
+        if (data != null) {
             Object status = data.get("order_status");
             return status != null ? status.toString() : "UNKNOWN";
         }
         Object status = orderStatus.get("order_status");
         return status != null ? status.toString() : "UNKNOWN";
+    }
+
+    int extractFilledQuantity(Map<String, Object> orderStatus) {
+        Map<String, Object> data = extractDataMap(orderStatus);
+        if (data == null) data = orderStatus;
+
+        Object filledQty = data.get("filled_quantity");
+        if (filledQty == null) filledQty = data.get("filledQuantity");
+        if (filledQty == null) filledQty = data.get("traded_quantity");
+        if (filledQty instanceof Number number) {
+            return number.intValue();
+        }
+        if (filledQty instanceof String str) {
+            try {
+                return Integer.parseInt(str);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractDataMap(Map<String, Object> response) {
+        if (response.containsKey("data") && response.get("data") instanceof Map) {
+            return (Map<String, Object>) response.get("data");
+        }
+        return null;
     }
 
     boolean isPreMarketWindow() {

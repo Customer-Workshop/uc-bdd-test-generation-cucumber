@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -147,6 +148,54 @@ public class PriceMonitorService {
         }
     }
 
+    void pollOrderFillStatus(TradePosition position, String userId) {
+        try {
+            Map<String, Object> orderStatus = orderService.getOrderStatus(position.getOrderId(), userId);
+            if (orderStatus == null) return;
+
+            Map<String, Object> data = extractDataMap(orderStatus);
+            if (data == null) data = orderStatus;
+
+            String status = data.get("order_status") != null ? data.get("order_status").toString() : "";
+            int filled = extractFilledQuantity(data);
+
+            if (("EXECUTED".equalsIgnoreCase(status) || "COMPLETE".equalsIgnoreCase(status)) && filled > 0) {
+                position.setFilledQuantity(filled);
+                position.setRemainingQuantity(filled);
+                log.info("Order {} FILLED for {} — actual qty: {}/{}", position.getOrderId(),
+                        position.getInstrumentName(), filled, position.getTotalQuantity());
+                positionTracker.updatePosition(position);
+            } else if (("PARTIALLY_EXECUTED".equalsIgnoreCase(status) || "PARTIAL".equalsIgnoreCase(status)) && filled > 0) {
+                position.setFilledQuantity(filled);
+                position.setRemainingQuantity(filled);
+                log.info("Order {} PARTIALLY FILLED for {} — actual qty: {}/{}", position.getOrderId(),
+                        position.getInstrumentName(), filled, position.getTotalQuantity());
+                positionTracker.updatePosition(position);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not poll fill status for order {}: {}", position.getOrderId(), ex.getMessage());
+        }
+    }
+
+    private int extractFilledQuantity(Map<String, Object> data) {
+        Object filledQty = data.get("filled_quantity");
+        if (filledQty == null) filledQty = data.get("filledQuantity");
+        if (filledQty == null) filledQty = data.get("traded_quantity");
+        if (filledQty instanceof Number number) return number.intValue();
+        if (filledQty instanceof String str) {
+            try { return Integer.parseInt(str); } catch (NumberFormatException e) { return 0; }
+        }
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractDataMap(Map<String, Object> response) {
+        if (response.containsKey("data") && response.get("data") instanceof Map) {
+            return (Map<String, Object>) response.get("data");
+        }
+        return null;
+    }
+
     private double calculateRegularOrderPrice(double entryPrice, String transactionType) {
         double slippage = entryPrice * 0.005;
         if ("BUY".equalsIgnoreCase(transactionType)) {
@@ -157,6 +206,14 @@ public class PriceMonitorService {
     }
 
     void checkPositionPrice(TradePosition position, String accessToken) {
+        if (position.getFilledQuantity() == 0 && position.getOrderId() != null) {
+            pollOrderFillStatus(position, position.getUserId());
+            if (position.getFilledQuantity() == 0) {
+                log.debug("Order {} not yet filled for {}", position.getOrderId(), position.getInstrumentName());
+                return;
+            }
+        }
+
         Double ltp = marketClient.getLastTradedPrice(
                 position.getTradingSymbol(), position.getExchange(), accessToken);
 
@@ -166,9 +223,10 @@ public class PriceMonitorService {
         }
 
         position.setLastCheckedAt(java.time.Instant.now());
-        log.debug("{} LTP={} Entry={} SL={} T1={} T2={} T3={}",
+        log.debug("{} LTP={} Entry={} SL={} T1={} T2={} T3={} FilledQty={}",
                 position.getInstrumentName(), ltp, position.getEntryPrice(),
-                position.getStopLoss(), position.getTarget1(), position.getTarget2(), position.getTarget3());
+                position.getStopLoss(), position.getTarget1(), position.getTarget2(), position.getTarget3(),
+                position.getFilledQuantity());
 
         if (isStopLossHit(position, ltp)) {
             handleStopLossHit(position, ltp, accessToken);

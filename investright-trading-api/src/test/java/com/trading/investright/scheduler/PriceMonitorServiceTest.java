@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -65,6 +66,7 @@ class PriceMonitorServiceTest {
                 .target3(190.0)
                 .totalQuantity(653)
                 .remainingQuantity(653)
+                .filledQuantity(653)
                 .status(TradePosition.PositionStatus.ACTIVE)
                 .userId("testuser")
                 .createdAt(Instant.now())
@@ -292,6 +294,67 @@ class PriceMonitorServiceTest {
 
         verify(orderService, times(3)).cancelOrder(anyString(), eq("testuser"));
         verify(orderService, times(3)).placeOrder(any(OrderRequest.class), eq("testuser"));
+    }
+
+    @Test
+    void shouldPollFillStatusAndUseActualFilledQuantity() {
+        activePosition.setFilledQuantity(0);
+        activePosition.setRemainingQuantity(653);
+
+        Map<String, Object> orderStatus = Map.of(
+                "data", Map.of("order_status", "COMPLETE", "filled_quantity", 500));
+        when(orderService.getOrderStatus("ORD001", "testuser")).thenReturn(orderStatus);
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token")).thenReturn(130.0);
+
+        priceMonitorService.checkPositionPrice(activePosition, "test-token");
+
+        assertEquals(500, activePosition.getFilledQuantity());
+        assertEquals(500, activePosition.getRemainingQuantity());
+        assertTrue(activePosition.isStopLossHit());
+    }
+
+    @Test
+    void shouldSkipPriceCheckWhenOrderNotYetFilled() {
+        activePosition.setFilledQuantity(0);
+
+        Map<String, Object> orderStatus = Map.of(
+                "data", Map.of("order_status", "PENDING", "filled_quantity", 0));
+        when(orderService.getOrderStatus("ORD001", "testuser")).thenReturn(orderStatus);
+
+        priceMonitorService.checkPositionPrice(activePosition, "test-token");
+
+        assertEquals(0, activePosition.getFilledQuantity());
+        verify(marketClient, never()).getLastTradedPrice(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void shouldHandlePartialFillAndSellOnlyFilledQty() {
+        activePosition.setFilledQuantity(0);
+        activePosition.setTarget1Hit(true);
+
+        Map<String, Object> orderStatus = Map.of(
+                "data", Map.of("order_status", "PARTIALLY_EXECUTED", "filled_quantity", 400));
+        when(orderService.getOrderStatus("ORD001", "testuser")).thenReturn(orderStatus);
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token")).thenReturn(192.0);
+        when(schedulerProperties.getTimezone()).thenReturn("Asia/Kolkata");
+
+        activePosition.setActiveSlOrderId("SL-OLD");
+        when(orderService.cancelOrder("SL-OLD", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SELL-T3").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+
+        priceMonitorService.checkPositionPrice(activePosition, "test-token");
+
+        assertEquals(400, activePosition.getFilledQuantity());
+        assertEquals(400, activePosition.getRemainingQuantity());
+        assertTrue(activePosition.isTarget3Hit());
+        verify(orderService).placeOrder(argThat(order ->
+                order.getQuantity() == 400
+        ), eq("testuser"));
     }
 
     @Test

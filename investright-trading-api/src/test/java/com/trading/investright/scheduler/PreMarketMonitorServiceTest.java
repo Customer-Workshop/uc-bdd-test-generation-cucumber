@@ -225,4 +225,68 @@ class PreMarketMonitorServiceTest {
         assertEquals(130.0, activePosition.getOpenPrice());
         verify(positionTracker).updatePosition(activePosition);
     }
+
+    @Test
+    void shouldUpdateFilledQuantityFromOrderStatus() {
+        String accessToken = "test-token";
+
+        Map<String, Object> orderStatus = Map.of(
+                "data", Map.of("order_status", "EXECUTED", "filled_quantity", 500)
+        );
+        when(orderService.getOrderStatus("AMO001", "testuser")).thenReturn(orderStatus);
+
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SL-PARTIAL").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+
+        preMarketMonitorService.checkAndPlaceProtectiveSl(activePosition, "testuser", accessToken);
+
+        assertEquals(500, activePosition.getFilledQuantity());
+        assertEquals(500, activePosition.getRemainingQuantity());
+        verify(orderService).placeOrder(argThat(order ->
+                order.getQuantity() == 500
+        ), eq("testuser"));
+    }
+
+    @Test
+    void shouldHandlePartiallyExecutedAmoOrder() {
+        String accessToken = "test-token";
+
+        Map<String, Object> orderStatus = Map.of(
+                "data", Map.of("order_status", "PARTIALLY_EXECUTED", "filled_quantity", 300)
+        );
+        when(orderService.getOrderStatus("AMO001", "testuser")).thenReturn(orderStatus);
+
+        OrderResponse response = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SL-PARTIAL-300").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(response);
+
+        preMarketMonitorService.checkAndPlaceProtectiveSl(activePosition, "testuser", accessToken);
+
+        assertEquals(300, activePosition.getFilledQuantity());
+        assertEquals(300, activePosition.getRemainingQuantity());
+        assertTrue(activePosition.isProtectiveSlPlaced());
+        verify(orderService).placeOrder(argThat(order ->
+                order.getQuantity() == 300
+        ), eq("testuser"));
+    }
+
+    @Test
+    void shouldExtractFilledQuantityFromVariousFieldNames() {
+        Map<String, Object> withFilledQty = Map.of("filled_quantity", 100);
+        assertEquals(100, preMarketMonitorService.extractFilledQuantity(withFilledQty));
+
+        Map<String, Object> withTradedQty = Map.of("traded_quantity", 200);
+        assertEquals(200, preMarketMonitorService.extractFilledQuantity(withTradedQty));
+
+        Map<String, Object> withStringQty = Map.of("filled_quantity", "350");
+        assertEquals(350, preMarketMonitorService.extractFilledQuantity(withStringQty));
+
+        Map<String, Object> withNoQty = Map.of("order_status", "PENDING");
+        assertEquals(0, preMarketMonitorService.extractFilledQuantity(withNoQty));
+    }
 }
