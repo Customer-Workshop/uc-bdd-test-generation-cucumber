@@ -143,7 +143,7 @@ public class TradeSignalParser {
                     .strikePrice(strikePrice)
                     .optionType(optionType)
                     .instrumentType(optionType.equals("CE") ? InstrumentType.CALL_OPTION : InstrumentType.PUT_OPTION)
-                    .exchange("NSE");
+                    .exchange("NFO");
         } else {
             builder.underlying(instrumentName.trim())
                     .instrumentType(InstrumentType.EQUITY)
