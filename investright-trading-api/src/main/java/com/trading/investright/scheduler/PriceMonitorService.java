@@ -72,7 +72,7 @@ public class PriceMonitorService {
     }
 
     void retryAsRegularOrder(TradePosition position, String userId, String accessToken) {
-        log.info("AMO order not executed for {}. Cancelling AMO and placing regular order at market open.",
+        log.info("AMO order not executed for {}. Checking open price before placing regular order.",
                 position.getInstrumentName());
 
         try {
@@ -81,6 +81,18 @@ public class PriceMonitorService {
         } catch (Exception ex) {
             log.warn("Could not cancel AMO order {} (may already be cancelled): {}",
                     position.getOrderId(), ex.getMessage());
+        }
+
+        Double openPrice = fetchOpenPrice(position, accessToken);
+        if (openPrice != null && shouldSkipTrade(position, openPrice)) {
+            log.warn("SKIPPING trade for {} — opened at ₹{} which is at/below SL (₹{}). No position taken.",
+                    position.getInstrumentName(), openPrice, position.getStopLoss());
+            positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.CLOSED);
+            return;
+        }
+
+        if (openPrice != null) {
+            position.setOpenPrice(openPrice);
         }
 
         OrderRequest regularOrder = OrderRequest.builder()
@@ -109,6 +121,27 @@ public class PriceMonitorService {
                     position.getInstrumentName(), newOrderId);
         } catch (Exception ex) {
             log.error("Failed to place regular order for {}: {}", position.getInstrumentName(), ex.getMessage());
+        }
+    }
+
+    private Double fetchOpenPrice(TradePosition position, String accessToken) {
+        if (position.getOpenPrice() != null) {
+            return position.getOpenPrice();
+        }
+        try {
+            return marketClient.getLastTradedPrice(
+                    position.getTradingSymbol(), position.getExchange(), accessToken);
+        } catch (Exception ex) {
+            log.warn("Could not fetch open price for {}: {}", position.getInstrumentName(), ex.getMessage());
+            return null;
+        }
+    }
+
+    boolean shouldSkipTrade(TradePosition position, double openPrice) {
+        if ("BUY".equalsIgnoreCase(position.getTransactionType())) {
+            return openPrice <= position.getStopLoss();
+        } else {
+            return openPrice >= position.getStopLoss();
         }
     }
 

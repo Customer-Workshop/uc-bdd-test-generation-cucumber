@@ -259,6 +259,8 @@ class PriceMonitorServiceTest {
 
         OrderResponse cancelResponse = OrderResponse.builder().status("success").build();
         when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(cancelResponse);
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(150.0); // between SL and entry — normal entry
 
         OrderResponse placeResponse = OrderResponse.builder()
                 .status("success")
@@ -288,6 +290,8 @@ class PriceMonitorServiceTest {
 
         when(orderService.cancelOrder("ORD001", "testuser"))
                 .thenThrow(new RuntimeException("Already cancelled"));
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(150.0);
 
         OrderResponse placeResponse = OrderResponse.builder()
                 .status("success")
@@ -313,5 +317,100 @@ class PriceMonitorServiceTest {
         priceMonitorService.checkPositionPrice(activePosition, accessToken);
 
         verify(orderService, never()).cancelOrder(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSkipTradeWhenOpenPriceAtOrBelowStopLoss() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(130.0); // below SL of 135
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).cancelOrder("ORD001", "testuser");
+        verify(orderService, never()).placeOrder(any(OrderRequest.class), anyString());
+        verify(positionTracker).closePosition("pos-001", TradePosition.PositionStatus.CLOSED);
+    }
+
+    @Test
+    void shouldStillEnterWhenOpenPriceAboveTarget1() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(165.0); // above T1 of 160
+
+        OrderResponse placeResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("REG003").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(placeResponse);
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
+        assertTrue(activePosition.isRegularOrderPlaced());
+        assertEquals(165.0, activePosition.getOpenPrice());
+    }
+
+    @Test
+    void shouldEnterWhenOpenPriceBetweenSlAndEntry() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(145.0); // between SL (135) and entry (153)
+
+        OrderResponse placeResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("REG004").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(placeResponse);
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
+        assertTrue(activePosition.isRegularOrderPlaced());
+    }
+
+    @Test
+    void shouldSkipTradeForSellWhenOpenPriceAboveStopLoss() {
+        activePosition.setTransactionType("SELL");
+        activePosition.setStopLoss(170.0);
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        assertTrue(priceMonitorService.shouldSkipTrade(activePosition, 175.0));
+        assertFalse(priceMonitorService.shouldSkipTrade(activePosition, 160.0));
+    }
+
+    @Test
+    void shouldProceedWhenOpenPriceNotAvailable() {
+        activePosition.setAmoExecuted(false);
+        activePosition.setRegularOrderPlaced(false);
+
+        when(orderService.cancelOrder("ORD001", "testuser")).thenReturn(
+                OrderResponse.builder().status("success").build());
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token"))
+                .thenReturn(null); // price not available
+
+        OrderResponse placeResponse = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("REG005").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(placeResponse);
+
+        priceMonitorService.retryAsRegularOrder(activePosition, "testuser", "test-token");
+
+        verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
+        assertTrue(activePosition.isRegularOrderPlaced());
     }
 }
