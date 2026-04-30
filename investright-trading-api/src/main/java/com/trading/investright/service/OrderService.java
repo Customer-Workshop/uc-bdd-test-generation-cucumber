@@ -140,9 +140,10 @@ public class OrderService {
         }
 
         String exchange = request.getExchange().toUpperCase();
-        if (!List.of("NSE", "BSE").contains(exchange)) {
-            throw new OrderValidationException("Invalid exchange: " + exchange + ". Must be NSE or BSE");
+        if (!List.of("NSE", "BSE", "NFO", "BFO").contains(exchange)) {
+            throw new OrderValidationException("Invalid exchange: " + exchange + ". Must be NSE, BSE, NFO, or BFO");
         }
+        request.setExchange(exchange);
 
         if (request.getTransactionType() == null || request.getTransactionType().isBlank()) {
             throw new OrderValidationException("Transaction type is required");
@@ -152,6 +153,7 @@ public class OrderService {
         if (!List.of("BUY", "SELL").contains(txnType)) {
             throw new OrderValidationException("Invalid transaction type: " + txnType);
         }
+        request.setTransactionType(txnType);
 
         if (request.getQuantity() == null || request.getQuantity() < 1) {
             throw new OrderValidationException("Quantity must be at least 1");
@@ -160,6 +162,7 @@ public class OrderService {
         String orderType = request.getOrderType();
         if (orderType != null) {
             orderType = orderType.toUpperCase();
+            request.setOrderType(orderType);
             if (("SL".equals(orderType) || "SL-M".equals(orderType)) &&
                     (request.getTriggerPrice() == null || request.getTriggerPrice() <= 0)) {
                 throw new OrderValidationException("Trigger price is required for stop-loss orders");

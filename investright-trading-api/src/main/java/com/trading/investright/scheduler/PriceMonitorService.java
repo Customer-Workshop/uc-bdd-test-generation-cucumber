@@ -307,7 +307,9 @@ public class PriceMonitorService {
     }
 
     private void handleEndOfDayExit(TradePosition position, double ltp, String accessToken) {
-        double profit = ltp - position.getEntryPrice();
+        double profit = "BUY".equalsIgnoreCase(position.getTransactionType())
+                ? ltp - position.getEntryPrice()
+                : position.getEntryPrice() - ltp;
         log.info("END-OF-DAY EXIT for {} at LTP={} (entry={}, profit=₹{}/unit). Cancelling SL and selling {} qty before market close.",
                 position.getInstrumentName(), ltp, position.getEntryPrice(),
                 String.format("%.2f", profit), position.getRemainingQuantity());
