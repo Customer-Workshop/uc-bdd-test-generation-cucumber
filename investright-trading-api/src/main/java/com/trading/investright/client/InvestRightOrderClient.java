@@ -25,103 +25,113 @@ public class InvestRightOrderClient {
 
     public OrderResponse placeOrder(OrderRequest orderRequest, String accessToken) {
         log.debug("Placing order: {}", orderRequest);
-        try {
-            return investRightWebClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/orders/regular")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build())
-                    .header("Authorization", accessToken)
-                    .bodyValue(orderRequest)
-                    .retrieve()
-                    .bodyToMono(OrderResponse.class)
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Order placement failed: " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/orders/regular")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build())
+                        .header("Authorization", accessToken)
+                        .bodyValue(orderRequest)
+                        .retrieve()
+                        .bodyToMono(OrderResponse.class)
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Order placement failed: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Place order for " + orderRequest.getSecurityId());
     }
 
     public OrderResponse modifyOrder(String orderId, ModifyOrderRequest modifyRequest, String accessToken) {
         log.debug("Modifying order {}: {}", orderId, modifyRequest);
-        try {
-            return investRightWebClient.put()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/orders/regular/{orderId}")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build(orderId))
-                    .header("Authorization", accessToken)
-                    .bodyValue(modifyRequest)
-                    .retrieve()
-                    .bodyToMono(OrderResponse.class)
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Order modification failed: " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.put()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/orders/regular/{orderId}")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build(orderId))
+                        .header("Authorization", accessToken)
+                        .bodyValue(modifyRequest)
+                        .retrieve()
+                        .bodyToMono(OrderResponse.class)
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Order modification failed: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Modify order " + orderId);
     }
 
     public OrderResponse cancelOrder(String orderId, String accessToken) {
         log.debug("Cancelling order: {}", orderId);
-        try {
-            return investRightWebClient.delete()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/orders/regular/{orderId}")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build(orderId))
-                    .header("Authorization", accessToken)
-                    .retrieve()
-                    .bodyToMono(OrderResponse.class)
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Order cancellation failed: " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.delete()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/orders/regular/{orderId}")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build(orderId))
+                        .header("Authorization", accessToken)
+                        .retrieve()
+                        .bodyToMono(OrderResponse.class)
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Order cancellation failed: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Cancel order " + orderId);
     }
 
     public Map<String, Object> getOrderStatus(String accessToken) {
         log.debug("Fetching all order statuses");
-        try {
-            return investRightWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/orders")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build())
-                    .header("Authorization", accessToken)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Failed to fetch order status: " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/orders")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build())
+                        .header("Authorization", accessToken)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Failed to fetch order status: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Fetch all order statuses");
     }
 
     public Map<String, Object> getSingleOrderStatus(String orderId, String accessToken) {
         log.debug("Fetching order status for: {}", orderId);
-        try {
-            return investRightWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/orders/{orderId}")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build(orderId))
-                    .header("Authorization", accessToken)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Failed to fetch order status: " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/orders/{orderId}")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build(orderId))
+                        .header("Authorization", accessToken)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Failed to fetch order status: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Fetch order status for " + orderId);
     }
 }

@@ -32,18 +32,20 @@ public class InvestRightAuthClient {
 
     public TokenIdResponse fetchTokenId() {
         log.debug("Fetching token ID from InvestRight");
-        try {
-            return investRightWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/login")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build())
-                    .retrieve()
-                    .bodyToMono(TokenIdResponse.class)
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException("Failed to fetch token ID", ex.getStatusCode().value(), ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/login")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build())
+                        .retrieve()
+                        .bodyToMono(TokenIdResponse.class)
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException("Failed to fetch token ID", ex.getStatusCode().value(), ex.getResponseBodyAsString());
+            }
+        }, "Fetch token ID");
     }
 
     public LoginResponse loginWithCredentials(String username, String password, String tokenId) {
@@ -103,20 +105,22 @@ public class InvestRightAuthClient {
 
     public AccessTokenResponse fetchAccessToken(String requestToken) {
         log.debug("Fetching access token");
-        try {
-            return investRightWebClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/access-token")
-                            .queryParam("api_key", properties.getApiKey())
-                            .queryParam("request_token", requestToken)
-                            .build())
-                    .bodyValue(Map.of("apiSecret", properties.getApiSecret()))
-                    .retrieve()
-                    .bodyToMono(AccessTokenResponse.class)
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new AuthenticationException("Failed to fetch access token: " + ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/access-token")
+                                .queryParam("api_key", properties.getApiKey())
+                                .queryParam("request_token", requestToken)
+                                .build())
+                        .bodyValue(Map.of("apiSecret", properties.getApiSecret()))
+                        .retrieve()
+                        .bodyToMono(AccessTokenResponse.class)
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new AuthenticationException("Failed to fetch access token: " + ex.getResponseBodyAsString());
+            }
+        }, "Fetch access token");
     }
 
     public Mono<Void> resendTwoFaCode(String tokenId) {

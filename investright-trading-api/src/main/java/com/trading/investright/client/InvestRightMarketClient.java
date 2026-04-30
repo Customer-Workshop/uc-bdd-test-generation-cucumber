@@ -24,24 +24,26 @@ public class InvestRightMarketClient {
 
     public Map<String, Object> getQuote(String securityId, String exchange, String accessToken) {
         log.debug("Fetching quote for {} on {}", securityId, exchange);
-        try {
-            return investRightWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/market/quote")
-                            .queryParam("api_key", properties.getApiKey())
-                            .queryParam("security_id", securityId)
-                            .queryParam("exchange", exchange)
-                            .build())
-                    .header("Authorization", accessToken)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
-        } catch (WebClientResponseException ex) {
-            throw new InvestRightApiException(
-                    "Failed to fetch quote for " + securityId + ": " + ex.getResponseBodyAsString(),
-                    ex.getStatusCode().value(),
-                    ex.getResponseBodyAsString());
-        }
+        return ApiRetryHandler.executeWithRetry(() -> {
+            try {
+                return investRightWebClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/market/quote")
+                                .queryParam("api_key", properties.getApiKey())
+                                .queryParam("security_id", securityId)
+                                .queryParam("exchange", exchange)
+                                .build())
+                        .header("Authorization", accessToken)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
+            } catch (WebClientResponseException ex) {
+                throw new InvestRightApiException(
+                        "Failed to fetch quote for " + securityId + ": " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
+            }
+        }, "Fetch quote for " + securityId);
     }
 
     public Double getLastTradedPrice(String securityId, String exchange, String accessToken) {
@@ -71,46 +73,49 @@ public class InvestRightMarketClient {
     }
 
     public Map<String, Double> getBatchLtp(List<Map<String, String>> instruments, String accessToken) {
-        Map<String, Double> ltpMap = new HashMap<>();
-        if (instruments == null || instruments.isEmpty()) return ltpMap;
+        if (instruments == null || instruments.isEmpty()) return new HashMap<>();
 
         try {
-            Map<String, Object> requestBody = Map.of("data", instruments);
+            return ApiRetryHandler.executeWithRetry(() -> {
+                Map<String, Object> requestBody = Map.of("data", instruments);
+                Map<String, Double> ltpMap = new HashMap<>();
 
-            Map<String, Object> response = investRightWebClient.put()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/fetch-ltp")
-                            .queryParam("api_key", properties.getApiKey())
-                            .build())
-                    .header("Authorization", accessToken)
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
+                Map<String, Object> response = investRightWebClient.put()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/fetch-ltp")
+                                .queryParam("api_key", properties.getApiKey())
+                                .build())
+                        .header("Authorization", accessToken)
+                        .bodyValue(requestBody)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .block();
 
-            if (response != null && response.containsKey("data") && response.get("data") instanceof List<?> dataList) {
-                for (Object item : dataList) {
-                    if (item instanceof Map<?, ?> entry) {
-                        String token = entry.get("token") != null ? entry.get("token").toString() : "";
-                        String exchange = entry.get("exchange") != null ? entry.get("exchange").toString() : "";
-                        String key = exchange + ":" + token;
+                if (response != null && response.containsKey("data") && response.get("data") instanceof List<?> dataList) {
+                    for (Object item : dataList) {
+                        if (item instanceof Map<?, ?> entry) {
+                            String token = entry.get("token") != null ? entry.get("token").toString() : "";
+                            String exchange = entry.get("exchange") != null ? entry.get("exchange").toString() : "";
+                            String key = exchange + ":" + token;
 
-                        Object ltp = entry.get("ltp");
-                        if (ltp == null) ltp = entry.get("last_traded_price");
-                        if (ltp instanceof Number number) {
-                            ltpMap.put(key, number.doubleValue());
-                        } else if (ltp instanceof String str) {
-                            try { ltpMap.put(key, Double.parseDouble(str)); } catch (NumberFormatException ignored) {}
+                            Object ltp = entry.get("ltp");
+                            if (ltp == null) ltp = entry.get("last_traded_price");
+                            if (ltp instanceof Number number) {
+                                ltpMap.put(key, number.doubleValue());
+                            } else if (ltp instanceof String str) {
+                                try { ltpMap.put(key, Double.parseDouble(str)); } catch (NumberFormatException ignored) {}
+                            }
                         }
                     }
                 }
-            }
 
-            log.debug("Batch LTP fetched for {} instruments", ltpMap.size());
+                log.debug("Batch LTP fetched for {} instruments", ltpMap.size());
+                return ltpMap;
+            }, "Batch fetch LTP for " + instruments.size() + " instruments");
         } catch (Exception ex) {
-            log.error("Failed to fetch batch LTP: {}", ex.getMessage());
+            log.error("Failed to fetch batch LTP after retries: {}", ex.getMessage());
+            return new HashMap<>();
         }
-        return ltpMap;
     }
 
     public static List<Map<String, String>> buildBatchRequest(List<? extends LtpRequest> requests) {
