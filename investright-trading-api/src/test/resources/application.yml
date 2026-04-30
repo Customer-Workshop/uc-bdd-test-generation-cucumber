@@ -1,0 +1,15 @@
+investright:
+  base-url: http://localhost:8080
+  api-key: test-api-key
+  api-secret: test-api-secret
+  user-agent: "TestAgent/1.0"
+
+tesseract:
+  data-path: /tmp/tessdata
+  language: eng
+
+trading:
+  default-lot-size: 1
+  default-product: INTRADAY
+  default-validity: DAY
+  slippage-percent: 0.5
