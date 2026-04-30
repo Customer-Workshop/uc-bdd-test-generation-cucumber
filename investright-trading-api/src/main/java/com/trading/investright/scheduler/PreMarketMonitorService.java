@@ -1,6 +1,7 @@
 package com.trading.investright.scheduler;
 
 import com.trading.investright.client.InvestRightAuthClient;
+import com.trading.investright.client.InvestRightMarketClient;
 import com.trading.investright.config.SchedulerProperties;
 import com.trading.investright.model.TradePosition;
 import com.trading.investright.model.request.OrderRequest;
@@ -28,6 +29,7 @@ public class PreMarketMonitorService {
     private final PositionTracker positionTracker;
     private final OrderService orderService;
     private final InvestRightAuthClient authClient;
+    private final InvestRightMarketClient marketClient;
     private final SchedulerProperties schedulerProperties;
 
     private static final LocalTime PRE_MARKET_START = LocalTime.of(9, 0);
@@ -59,10 +61,46 @@ public class PreMarketMonitorService {
         for (TradePosition position : activePositions) {
             try {
                 checkAndPlaceProtectiveSl(position, userId, accessToken);
+                fetchAndLogOpenPrice(position, accessToken);
             } catch (Exception ex) {
                 log.error("Error checking pre-market execution for {}: {}",
                         position.getPositionId(), ex.getMessage());
             }
+        }
+    }
+
+    void fetchAndLogOpenPrice(TradePosition position, String accessToken) {
+        if (position.getOpenPrice() != null) {
+            return;
+        }
+
+        try {
+            Double ltp = marketClient.getLastTradedPrice(
+                    position.getTradingSymbol(), position.getExchange(), accessToken);
+
+            if (ltp != null) {
+                position.setOpenPrice(ltp);
+                positionTracker.updatePosition(position);
+                log.info("PRE-MARKET OPEN PRICE for {}: ₹{} (Entry: ₹{}, SL: ₹{}, T1: ₹{})",
+                        position.getInstrumentName(), ltp, position.getEntryPrice(),
+                        position.getStopLoss(), position.getTarget1());
+
+                if (ltp > position.getEntryPrice()) {
+                    log.info("  → {} opened ABOVE entry price by ₹{} — bullish signal",
+                            position.getInstrumentName(),
+                            Math.round((ltp - position.getEntryPrice()) * 100.0) / 100.0);
+                } else if (ltp < position.getStopLoss()) {
+                    log.warn("  → {} opened BELOW stop loss at ₹{} — trade may gap down past SL",
+                            position.getInstrumentName(), ltp);
+                } else {
+                    log.info("  → {} opened between SL and entry — within expected range",
+                            position.getInstrumentName());
+                }
+            } else {
+                log.debug("Open price not yet available for {}", position.getInstrumentName());
+            }
+        } catch (Exception ex) {
+            log.debug("Could not fetch open price for {}: {}", position.getInstrumentName(), ex.getMessage());
         }
     }
 

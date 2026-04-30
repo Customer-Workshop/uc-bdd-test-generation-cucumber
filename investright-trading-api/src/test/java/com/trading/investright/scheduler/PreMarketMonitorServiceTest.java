@@ -1,6 +1,7 @@
 package com.trading.investright.scheduler;
 
 import com.trading.investright.client.InvestRightAuthClient;
+import com.trading.investright.client.InvestRightMarketClient;
 import com.trading.investright.config.SchedulerProperties;
 import com.trading.investright.model.TradePosition;
 import com.trading.investright.model.request.OrderRequest;
@@ -32,6 +33,9 @@ class PreMarketMonitorServiceTest {
 
     @Mock
     private InvestRightAuthClient authClient;
+
+    @Mock
+    private InvestRightMarketClient marketClient;
 
     @Mock
     private SchedulerProperties schedulerProperties;
@@ -171,5 +175,54 @@ class PreMarketMonitorServiceTest {
                 "OPTSTK".equals(order.getInstrumentSegment()) &&
                         "NFO".equals(order.getExchange())
         ), eq("testuser"));
+    }
+
+    @Test
+    void shouldFetchAndLogOpenPrice() {
+        String accessToken = "test-token";
+
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken))
+                .thenReturn(160.0);
+
+        preMarketMonitorService.fetchAndLogOpenPrice(activePosition, accessToken);
+
+        assertEquals(160.0, activePosition.getOpenPrice());
+        verify(positionTracker).updatePosition(activePosition);
+    }
+
+    @Test
+    void shouldSkipOpenPriceFetchIfAlreadySet() {
+        String accessToken = "test-token";
+        activePosition.setOpenPrice(155.0);
+
+        preMarketMonitorService.fetchAndLogOpenPrice(activePosition, accessToken);
+
+        verify(marketClient, never()).getLastTradedPrice(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void shouldHandleNullLtpGracefully() {
+        String accessToken = "test-token";
+
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken))
+                .thenReturn(null);
+
+        preMarketMonitorService.fetchAndLogOpenPrice(activePosition, accessToken);
+
+        assertNull(activePosition.getOpenPrice());
+        verify(positionTracker, never()).updatePosition(activePosition);
+    }
+
+    @Test
+    void shouldLogBelowStopLossWarning() {
+        String accessToken = "test-token";
+
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken))
+                .thenReturn(130.0);
+
+        preMarketMonitorService.fetchAndLogOpenPrice(activePosition, accessToken);
+
+        assertEquals(130.0, activePosition.getOpenPrice());
+        verify(positionTracker).updatePosition(activePosition);
     }
 }
