@@ -4,18 +4,28 @@ import com.trading.investright.model.TradePosition;
 import com.trading.investright.model.TradeSignal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class PositionTrackerTest {
+
+    @Mock
+    private CsvPositionPersistence csvPersistence;
 
     private PositionTracker tracker;
 
     @BeforeEach
     void setUp() {
-        tracker = new PositionTracker();
+        when(csvPersistence.loadPositions()).thenReturn(new ArrayList<>());
+        tracker = new PositionTracker(csvPersistence);
     }
 
     @Test
@@ -40,6 +50,7 @@ class PositionTrackerTest {
         assertEquals(40, position.getTotalQuantity());
         assertEquals(40, position.getRemainingQuantity());
         assertEquals(TradePosition.PositionStatus.ACTIVE, position.getStatus());
+        verify(csvPersistence).savePositions(anyList());
     }
 
     @Test

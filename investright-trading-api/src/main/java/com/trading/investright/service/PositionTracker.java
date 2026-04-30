@@ -17,6 +17,34 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PositionTracker {
 
     private final Map<String, TradePosition> activePositions = new ConcurrentHashMap<>();
+    private final CsvPositionPersistence csvPersistence;
+
+    public PositionTracker(CsvPositionPersistence csvPersistence) {
+        this.csvPersistence = csvPersistence;
+        loadFromCsv();
+    }
+
+    private void loadFromCsv() {
+        try {
+            List<TradePosition> loaded = csvPersistence.loadPositions();
+            for (TradePosition p : loaded) {
+                activePositions.put(p.getPositionId(), p);
+            }
+            if (!loaded.isEmpty()) {
+                log.info("Restored {} positions from CSV", loaded.size());
+            }
+        } catch (Exception ex) {
+            log.warn("Could not load positions from CSV: {}", ex.getMessage());
+        }
+    }
+
+    private void persistToCsv() {
+        try {
+            csvPersistence.savePositions(new ArrayList<>(activePositions.values()));
+        } catch (Exception ex) {
+            log.warn("Could not persist positions to CSV: {}", ex.getMessage());
+        }
+    }
 
     public TradePosition registerPosition(TradeSignal signal, String orderId, int quantity, String userId) {
         TradePosition position = TradePosition.builder()
@@ -40,6 +68,7 @@ public class PositionTracker {
                 .build();
 
         activePositions.put(position.getPositionId(), position);
+        persistToCsv();
         log.info("Registered position {} for {} qty={} entry={} SL={} T1={} T2={} T3={}",
                 position.getPositionId(), signal.getInstrumentName(), quantity,
                 signal.getEntryPrice(), signal.getStopLoss(),
@@ -64,6 +93,7 @@ public class PositionTracker {
 
     public void updatePosition(TradePosition position) {
         activePositions.put(position.getPositionId(), position);
+        persistToCsv();
     }
 
     public void closePosition(String positionId, TradePosition.PositionStatus status) {
@@ -71,6 +101,7 @@ public class PositionTracker {
         if (position != null) {
             position.setStatus(status);
             position.setRemainingQuantity(0);
+            persistToCsv();
             log.info("Closed position {} with status {}", positionId, status);
         }
     }
@@ -84,6 +115,7 @@ public class PositionTracker {
 
     public void clearAll() {
         activePositions.clear();
+        persistToCsv();
     }
 
     private String determineInstrumentSegment(TradeSignal signal) {
