@@ -12,6 +12,7 @@ import com.trading.investright.ocr.TradeSignalParser;
 import com.trading.investright.service.CloudImageFetcher;
 import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
+import com.trading.investright.service.PositionTracker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +51,9 @@ class ScheduledTradeExecutorTest {
 
     @Mock
     private OrderService orderService;
+
+    @Mock
+    private PositionTracker positionTracker;
 
     @Mock
     private InvestRightAuthClient authClient;

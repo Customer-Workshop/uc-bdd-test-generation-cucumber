@@ -12,6 +12,7 @@ import com.trading.investright.ocr.TradeSignalParser;
 import com.trading.investright.service.CloudImageFetcher;
 import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
+import com.trading.investright.service.PositionTracker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,6 +38,7 @@ public class ScheduledTradeExecutor {
     private final TradeSignalParser tradeSignalParser;
     private final CsvTradeSignalParser csvTradeSignalParser;
     private final OrderService orderService;
+    private final PositionTracker positionTracker;
     private final InvestRightAuthClient authClient;
 
     @Scheduled(cron = "${scheduler.cron:0 55 8 * * *}", zone = "${scheduler.timezone:Asia/Kolkata}")
@@ -197,11 +199,13 @@ public class ScheduledTradeExecutor {
                 schedulerProperties.getUserId() : schedulerProperties.getUsername();
 
         List<OrderRequest> orderRequests = new ArrayList<>();
+        List<TradeSignal> validSignals = new ArrayList<>();
         for (TradeSignal signal : signals) {
             if (signal.getTransactionType() != null) {
                 try {
                     OrderRequest order = orderService.buildOrderFromSignal(signal, null);
                     orderRequests.add(order);
+                    validSignals.add(signal);
                     log.info("Built order: {} {} {} @ {}",
                             signal.getTransactionType(),
                             signal.getInstrumentName(),
@@ -224,10 +228,18 @@ public class ScheduledTradeExecutor {
 
         int success = 0;
         int failed = 0;
-        for (OrderResponse response : responses) {
+        for (int i = 0; i < responses.size(); i++) {
+            OrderResponse response = responses.get(i);
             if ("success".equalsIgnoreCase(response.getStatus())) {
                 success++;
-                log.info("Order placed successfully: {}", response.getData().getOrderId());
+                String orderId = response.getData().getOrderId();
+                log.info("Order placed successfully: {}", orderId);
+
+                if (i < validSignals.size()) {
+                    TradeSignal signal = validSignals.get(i);
+                    int qty = orderRequests.get(i).getQuantity();
+                    positionTracker.registerPosition(signal, orderId, qty, userId);
+                }
             } else {
                 failed++;
                 log.error("Order failed: {}", response.getData().getOrderId());
@@ -235,5 +247,6 @@ public class ScheduledTradeExecutor {
         }
         log.info("Order placement summary: {} succeeded, {} failed out of {} total",
                 success, failed, responses.size());
+        log.info("Active positions being monitored: {}", positionTracker.getActivePositionCount());
     }
 }

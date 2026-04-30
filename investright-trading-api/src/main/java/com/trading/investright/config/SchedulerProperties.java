@@ -31,4 +31,5 @@ public class SchedulerProperties {
     private boolean autoLogin = true;
     private int retryAttempts = 3;
     private long retryDelayMs = 2000;
+    private long priceCheckIntervalMs = 5000;
 }

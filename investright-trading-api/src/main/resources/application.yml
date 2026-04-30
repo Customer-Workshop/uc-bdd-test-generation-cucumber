@@ -47,6 +47,7 @@ scheduler:
   auto-login: true
   retry-attempts: 3
   retry-delay-ms: 2000
+  price-check-interval-ms: ${PRICE_CHECK_INTERVAL_MS:5000}
 
 logging:
   level:
