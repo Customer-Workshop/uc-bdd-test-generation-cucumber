@@ -104,7 +104,7 @@ public class DailyReportService {
             writer.write(String.format("WINS:             %d%n", wins));
             writer.write(String.format("LOSSES:           %d%n", losses));
             writer.write(String.format("ACTIVE:           %d%n", active));
-            writer.write(String.format("WIN RATE:         %.1f%%%n", positions.size() > 0 ? (wins * 100.0 / positions.size()) : 0));
+            writer.write(String.format("WIN RATE:         %.1f%%%n", (wins + losses) > 0 ? (wins * 100.0 / (wins + losses)) : 0));
             writer.write(String.format("TOTAL INVESTED:   ₹%,.2f%n", totalInvested));
             writer.write(String.format("TOTAL P&L:        ₹%,.2f%n", totalPnl));
             writer.write(String.format("ROI:              %.2f%%%n", totalInvested > 0 ? (totalPnl / totalInvested * 100) : 0));
