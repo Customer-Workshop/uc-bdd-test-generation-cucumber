@@ -95,6 +95,11 @@ public class TradeSignalParser {
         Matcher slMatcher = STOP_LOSS_PATTERN.matcher(combined);
         if (slMatcher.find()) {
             builder.stopLoss(Double.parseDouble(slMatcher.group(1)));
+        } else if (entryPrice != null) {
+            Double inferredSl = inferStopLossFromContext(combined, entryPrice);
+            if (inferredSl != null) {
+                builder.stopLoss(inferredSl);
+            }
         }
 
         List<Double> targets = extractTargets(combined);
@@ -106,7 +111,9 @@ public class TradeSignalParser {
     }
 
     private String extractInstrumentName(String line) {
-        String[] tokens = line.split("\\s+");
+        String cleaned = line.replaceFirst("^\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}\\s*", "");
+
+        String[] tokens = cleaned.split("\\s+");
         if (tokens.length == 0) return null;
 
         StringBuilder name = new StringBuilder();
@@ -144,6 +151,20 @@ public class TradeSignalParser {
         }
     }
 
+    private Double inferStopLossFromContext(String text, double entryPrice) {
+        Pattern numberAfterEntry = Pattern.compile(
+                "(?:BUY\\s+ABOVE|SELL\\s+BELOW)\\s+\\d+(?:\\.\\d+)?\\s+(\\d+(?:\\.\\d+)?)",
+                Pattern.CASE_INSENSITIVE);
+        Matcher matcher = numberAfterEntry.matcher(text);
+        if (matcher.find()) {
+            double value = Double.parseDouble(matcher.group(1));
+            if (value < entryPrice && value > entryPrice * 0.5) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private List<Double> extractTargets(String text) {
         List<Double> targets = new ArrayList<>();
 
@@ -156,6 +177,19 @@ public class TradeSignalParser {
             for (int i = 1; i <= matcher.groupCount(); i++) {
                 if (matcher.group(i) != null) {
                     targets.add(Double.parseDouble(matcher.group(i)));
+                }
+            }
+        }
+
+        if (targets.isEmpty()) {
+            Pattern slashSeparated = Pattern.compile(
+                    "(\\d+(?:\\.\\d+)?)/(\\d+(?:\\.\\d+)?)(?:/(\\d+(?:\\.\\d+)?))?");
+            Matcher slashMatcher = slashSeparated.matcher(text);
+            if (slashMatcher.find()) {
+                for (int i = 1; i <= slashMatcher.groupCount(); i++) {
+                    if (slashMatcher.group(i) != null) {
+                        targets.add(Double.parseDouble(slashMatcher.group(i)));
+                    }
                 }
             }
         }

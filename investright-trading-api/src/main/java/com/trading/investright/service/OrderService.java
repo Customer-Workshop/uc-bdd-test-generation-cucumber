@@ -76,7 +76,17 @@ public class OrderService {
     }
 
     public OrderRequest buildOrderFromSignal(TradeSignal signal, Integer quantityOverride) {
-        int quantity = quantityOverride != null ? quantityOverride : tradingProperties.getDefaultLotSize();
+        int quantity;
+        if (quantityOverride != null) {
+            quantity = quantityOverride;
+        } else if (signal.getEntryPrice() != null && signal.getEntryPrice() > 0) {
+            quantity = (int) (tradingProperties.getCapitalPerTrade() / signal.getEntryPrice());
+            if (quantity < 1) quantity = 1;
+            log.info("Capital allocation: ₹{} / ₹{} = {} shares for {}",
+                    tradingProperties.getCapitalPerTrade(), signal.getEntryPrice(), quantity, signal.getInstrumentName());
+        } else {
+            quantity = tradingProperties.getDefaultLotSize();
+        }
 
         OrderRequest.OrderRequestBuilder builder = OrderRequest.builder()
                 .exchange(signal.getExchange() != null ? signal.getExchange() : "NSE")

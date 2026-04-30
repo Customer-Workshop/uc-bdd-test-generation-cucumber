@@ -6,6 +6,7 @@ import com.trading.investright.model.AuthSession;
 import com.trading.investright.model.TradeSignal;
 import com.trading.investright.model.request.OrderRequest;
 import com.trading.investright.model.response.OrderResponse;
+import com.trading.investright.ocr.CsvTradeSignalParser;
 import com.trading.investright.ocr.ImageParserService;
 import com.trading.investright.ocr.TradeSignalParser;
 import com.trading.investright.service.CloudImageFetcher;
@@ -34,6 +35,7 @@ public class ScheduledTradeExecutor {
     private final LocalImageFetcher localImageFetcher;
     private final ImageParserService imageParserService;
     private final TradeSignalParser tradeSignalParser;
+    private final CsvTradeSignalParser csvTradeSignalParser;
     private final OrderService orderService;
     private final InvestRightAuthClient authClient;
 
@@ -80,6 +82,15 @@ public class ScheduledTradeExecutor {
             return List.of();
         }
 
+        List<TradeSignal> allSignals = new ArrayList<>();
+
+        log.info("Reading CSV trade signals from folder: {}", folderPath);
+        List<TradeSignal> csvSignals = csvTradeSignalParser.parseCsvFilesFromFolder(folderPath);
+        if (!csvSignals.isEmpty()) {
+            log.info("Parsed {} trade signals from CSV files", csvSignals.size());
+            allSignals.addAll(csvSignals);
+        }
+
         log.info("Reading trade signal images from local folder: {}", folderPath);
         List<BufferedImage> images;
         if (schedulerProperties.isUseDateSubfolder()) {
@@ -88,12 +99,6 @@ public class ScheduledTradeExecutor {
             images = localImageFetcher.fetchImagesFromFolder(folderPath);
         }
 
-        if (images.isEmpty()) {
-            log.warn("No images found in folder: {}", folderPath);
-            return List.of();
-        }
-
-        List<TradeSignal> allSignals = new ArrayList<>();
         for (BufferedImage image : images) {
             try {
                 String ocrText = imageParserService.extractText(image);
@@ -105,6 +110,11 @@ public class ScheduledTradeExecutor {
                 log.error("Failed to process image: {}", ex.getMessage());
             }
         }
+
+        if (allSignals.isEmpty()) {
+            log.warn("No trade signals found in folder: {}", folderPath);
+        }
+
         return allSignals;
     }
 

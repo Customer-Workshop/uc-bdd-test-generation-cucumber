@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class TradingProperties {
 
     private int defaultLotSize = 1;
+    private double capitalPerTrade = 100000.0;
     private String defaultProduct = "INTRADAY";
     private String defaultValidity = "DAY";
     private double slippagePercent = 0.5;

@@ -6,6 +6,7 @@ import com.trading.investright.model.AuthSession;
 import com.trading.investright.model.TradeSignal;
 import com.trading.investright.model.request.OrderRequest;
 import com.trading.investright.model.response.OrderResponse;
+import com.trading.investright.ocr.CsvTradeSignalParser;
 import com.trading.investright.ocr.ImageParserService;
 import com.trading.investright.ocr.TradeSignalParser;
 import com.trading.investright.service.CloudImageFetcher;
@@ -45,6 +46,9 @@ class ScheduledTradeExecutorTest {
     private TradeSignalParser tradeSignalParser;
 
     @Mock
+    private CsvTradeSignalParser csvTradeSignalParser;
+
+    @Mock
     private OrderService orderService;
 
     @Mock
@@ -77,6 +81,8 @@ class ScheduledTradeExecutorTest {
         when(schedulerProperties.getLocalFolderPath()).thenReturn("C:\\trades");
         when(schedulerProperties.isUseDateSubfolder()).thenReturn(false);
         when(schedulerProperties.getUserId()).thenReturn("testuser");
+
+        when(csvTradeSignalParser.parseCsvFilesFromFolder("C:\\trades")).thenReturn(List.of());
 
         BufferedImage mockImage = new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB);
         when(localImageFetcher.fetchImagesFromFolder("C:\\trades")).thenReturn(List.of(mockImage));
@@ -172,6 +178,7 @@ class ScheduledTradeExecutorTest {
         when(schedulerProperties.getLocalFolderPath()).thenReturn("C:\\trades");
         when(schedulerProperties.isUseDateSubfolder()).thenReturn(false);
 
+        when(csvTradeSignalParser.parseCsvFilesFromFolder("C:\\trades")).thenReturn(List.of());
         when(localImageFetcher.fetchImagesFromFolder("C:\\trades")).thenReturn(List.of());
 
         executor.executeScheduledTrades();
@@ -186,6 +193,7 @@ class ScheduledTradeExecutorTest {
         when(schedulerProperties.getLocalFolderPath()).thenReturn("C:\\trades");
         when(schedulerProperties.isUseDateSubfolder()).thenReturn(true);
 
+        when(csvTradeSignalParser.parseCsvFilesFromFolder("C:\\trades")).thenReturn(List.of());
         when(localImageFetcher.fetchTodaysImages("C:\\trades")).thenReturn(List.of());
 
         executor.executeScheduledTrades();

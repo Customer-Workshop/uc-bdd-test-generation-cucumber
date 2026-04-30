@@ -127,4 +127,70 @@ class TradeSignalParserTest {
         assertEquals("SELL", signal.getTransactionType());
         assertEquals(600.0, signal.getEntryPrice());
     }
+
+    @Test
+    void shouldParseDatePrefixedLine() {
+        String ocrText = "29-04-2026 MAZDOCK 2760CE BUY ABOVE 153 SL 135 TGT 160 175 190";
+        List<TradeSignal> signals = parser.parseOcrText(ocrText);
+
+        assertFalse(signals.isEmpty());
+        TradeSignal signal = signals.get(0);
+        assertEquals("MAZDOCK", signal.getUnderlying());
+        assertEquals(2760.0, signal.getStrikePrice());
+        assertEquals("CE", signal.getOptionType());
+        assertEquals("BUY", signal.getTransactionType());
+        assertEquals(153.0, signal.getEntryPrice());
+    }
+
+    @Test
+    void shouldParseSlashSeparatedTargets() {
+        String ocrText = "MAZDOCK 2760CE BUY ABOVE 153 SL 135 160/175/190";
+        List<TradeSignal> signals = parser.parseOcrText(ocrText);
+
+        assertFalse(signals.isEmpty());
+        TradeSignal signal = signals.get(0);
+        assertEquals(160.0, signal.getTarget1());
+        assertEquals(175.0, signal.getTarget2());
+        assertEquals(190.0, signal.getTarget3());
+    }
+
+    @Test
+    void shouldInferStopLossFromContext() {
+        String ocrText = "MAZDOCK 2760CE BUY ABOVE 153 135 160/175/190";
+        List<TradeSignal> signals = parser.parseOcrText(ocrText);
+
+        assertFalse(signals.isEmpty());
+        TradeSignal signal = signals.get(0);
+        assertEquals(153.0, signal.getEntryPrice());
+        assertEquals(135.0, signal.getStopLoss());
+    }
+
+    @Test
+    void shouldParseSampleImageFormat() {
+        String ocrText = """
+                29-04-2026 MAZDOCK 2760CE BUY ABOVE 153 135 160/175/190
+                29-04-2026 INDUSINDBNK 900CE BUY ABOVE 37 33 39/42/45
+                29-04-2026 RECLTD 370PE BUY ABOVE 18.75 17.25 19.75/21/23
+                29-04-2026 RBLBANK 330CE BUY ABOVE 153 14 15.5/16.2/17
+                29-04-2026 ABCAPITAL 345CE BUY ABOVE 19.2 18.2 19.6/20.4/21.2
+                29-04-2026 CROMPTON 270CE BUY ABOVE 18.5 17 19.5/21/22.5
+                """;
+        List<TradeSignal> signals = parser.parseOcrText(ocrText);
+
+        assertEquals(6, signals.size());
+
+        assertEquals("MAZDOCK", signals.get(0).getUnderlying());
+        assertEquals(2760.0, signals.get(0).getStrikePrice());
+        assertEquals("BUY", signals.get(0).getTransactionType());
+        assertEquals(153.0, signals.get(0).getEntryPrice());
+
+        assertEquals("INDUSINDBNK", signals.get(1).getUnderlying());
+        assertEquals(900.0, signals.get(1).getStrikePrice());
+        assertEquals("CE", signals.get(1).getOptionType());
+        assertEquals(37.0, signals.get(1).getEntryPrice());
+
+        assertEquals("RECLTD", signals.get(2).getUnderlying());
+        assertEquals("PE", signals.get(2).getOptionType());
+        assertEquals(18.75, signals.get(2).getEntryPrice());
+    }
 }
