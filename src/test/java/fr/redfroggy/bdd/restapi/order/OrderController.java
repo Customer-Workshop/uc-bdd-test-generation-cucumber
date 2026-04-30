@@ -135,6 +135,8 @@ public final class OrderController {
             errorResponse.put("error", "Bad Request");
             errorResponse.put("errors", Map.of("status", "Invalid status. Valid values: " + VALID_STATUSES));
             return ResponseEntity.badRequest().body(errorResponse);
+        } else {
+            order.setStatus(order.getStatus().toUpperCase());
         }
 
         OrderDTO existing = orders.stream().filter(o -> o.getId().equals(order.getId()))
@@ -179,7 +181,7 @@ public final class OrderController {
                 o.setPrice(order.getPrice());
             }
             if (StringUtils.isNotBlank(order.getStatus())) {
-                o.setStatus(order.getStatus());
+                o.setStatus(order.getStatus().toUpperCase());
             }
             if (order.getTags() != null) {
                 o.setTags(order.getTags());
