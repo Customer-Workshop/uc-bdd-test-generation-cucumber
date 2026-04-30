@@ -215,9 +215,11 @@ public class PriceMonitorService {
         }
 
         if (isTargetHit(position.getTarget2(), position, ltp) && !position.isTarget2Hit()) {
-            double newSl = position.getTarget1() != null ? position.getTarget1() : position.getEntryPrice();
-            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Cancelling old SL and placing new SL at {} (above T1).",
-                    position.getInstrumentName(), ltp, position.getTarget2(), newSl);
+            double bufferPercent = tradingProperties.getTrailingSlBufferPercent();
+            double basePrice = position.getTarget1() != null ? position.getTarget1() : position.getEntryPrice();
+            double newSl = Math.round(basePrice * (1 + bufferPercent / 100.0) * 100.0) / 100.0;
+            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Cancelling old SL and placing new SL at T1+{}% = {} (profit locked).",
+                    position.getInstrumentName(), ltp, position.getTarget2(), bufferPercent, newSl);
             position.setTarget2Hit(true);
             position.setTarget1Hit(true);
             cancelActiveSlOrder(position);

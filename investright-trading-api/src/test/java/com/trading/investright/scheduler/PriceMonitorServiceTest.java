@@ -123,10 +123,11 @@ class PriceMonitorServiceTest {
     }
 
     @Test
-    void shouldCancelOldSlAndPlaceNewSlAtT1OnTarget2Hit() {
+    void shouldCancelOldSlAndPlaceNewSlAtT1PlusTwoPercentOnTarget2Hit() {
         String accessToken = "test-token";
         activePosition.setActiveSlOrderId("OLD-SL-002");
 
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
         OrderResponse response = OrderResponse.builder()
                 .status("success")
                 .data(OrderResponse.OrderData.builder().orderId("NEW-SL-002").build())
@@ -139,11 +140,12 @@ class PriceMonitorServiceTest {
 
         assertTrue(activePosition.isTarget1Hit());
         assertTrue(activePosition.isTarget2Hit());
-        assertEquals(160.0, activePosition.getStopLoss());
+        // T1=160 + 2% = 163.20
+        assertEquals(163.2, activePosition.getStopLoss());
         verify(orderService).cancelOrder("OLD-SL-002", "testuser");
         verify(orderService).placeOrder(argThat(order ->
                 "SL".equals(order.getOrderType()) &&
-                        order.getTriggerPrice() == 160.0
+                        order.getTriggerPrice() == 163.2
         ), eq("testuser"));
         assertEquals("NEW-SL-002", activePosition.getActiveSlOrderId());
     }
@@ -202,6 +204,7 @@ class PriceMonitorServiceTest {
         String accessToken = "test-token";
         activePosition.setActiveSlOrderId("OLD-SL-T2");
 
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
         OrderResponse slResponse = OrderResponse.builder()
                 .status("success")
                 .data(OrderResponse.OrderData.builder().orderId("NEW-SL-T1").build())
@@ -210,9 +213,9 @@ class PriceMonitorServiceTest {
         when(orderService.cancelOrder("OLD-SL-T2", "testuser")).thenReturn(
                 OrderResponse.builder().status("success").build());
 
-        // T2 hit → cancel old SL, place new SL at T1 (160)
+        // T2 hit → cancel old SL, place new SL at T1+2% (163.20)
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
-        assertEquals(160.0, activePosition.getStopLoss());
+        assertEquals(163.2, activePosition.getStopLoss());
 
         // Price drops below T1 → SL order executes on broker → just mark closed
         when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", accessToken)).thenReturn(158.0);
@@ -276,11 +279,11 @@ class PriceMonitorServiceTest {
         assertEquals(156.06, activePosition.getStopLoss());
         assertEquals(653, activePosition.getRemainingQuantity());
 
-        // T2 hit → cancel T1 SL, place new SL at T1 (160)
+        // T2 hit → cancel T1 SL, place new SL at T1+2% (163.20)
         priceMonitorService.checkAndHandleTargets(activePosition, 178.0, accessToken);
         assertTrue(activePosition.isTarget2Hit());
         assertFalse(activePosition.isTarget3Hit());
-        assertEquals(160.0, activePosition.getStopLoss());
+        assertEquals(163.2, activePosition.getStopLoss());
         assertEquals(653, activePosition.getRemainingQuantity());
 
         // T3 hit → cancel T2 SL, place market sell for full exit
