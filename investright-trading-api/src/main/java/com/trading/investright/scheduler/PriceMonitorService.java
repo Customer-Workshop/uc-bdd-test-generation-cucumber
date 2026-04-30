@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -61,17 +62,57 @@ public class PriceMonitorService {
             return;
         }
 
+        List<TradePosition> positionsToCheck = new ArrayList<>();
         for (TradePosition position : activePositions) {
             try {
                 if (!position.isAmoExecuted() && !position.isRegularOrderPlaced()) {
                     retryAsRegularOrder(position, userId, accessToken);
+                } else {
+                    if (position.getFilledQuantity() == 0 && position.getOrderId() != null) {
+                        pollOrderFillStatus(position, position.getUserId());
+                        if (position.getFilledQuantity() == 0) {
+                            log.debug("Order {} not yet filled for {}", position.getOrderId(), position.getInstrumentName());
+                            continue;
+                        }
+                    }
+                    positionsToCheck.add(position);
+                }
+            } catch (Exception ex) {
+                log.error("Error checking position {}: {}", position.getPositionId(), ex.getMessage());
+            }
+        }
+
+        if (positionsToCheck.isEmpty()) return;
+
+        Map<String, Double> batchLtp = fetchBatchLtp(positionsToCheck, accessToken);
+
+        for (TradePosition position : positionsToCheck) {
+            try {
+                String key = position.getExchange() + ":" + position.getTradingSymbol();
+                Double ltp = batchLtp.get(key);
+                if (ltp == null) {
+                    ltp = marketClient.getLastTradedPrice(
+                            position.getTradingSymbol(), position.getExchange(), accessToken);
+                }
+                if (ltp == null) {
+                    log.warn("Could not get LTP for {}", position.getTradingSymbol());
                     continue;
                 }
-                checkPositionPrice(position, accessToken);
+                processPositionWithLtp(position, ltp, accessToken);
             } catch (Exception ex) {
                 log.error("Error checking price for position {}: {}", position.getPositionId(), ex.getMessage());
             }
         }
+    }
+
+    Map<String, Double> fetchBatchLtp(List<TradePosition> positions, String accessToken) {
+        List<Map<String, String>> instruments = new ArrayList<>();
+        for (TradePosition p : positions) {
+            instruments.add(Map.of("exchange", p.getExchange(), "token", p.getTradingSymbol()));
+        }
+        Map<String, Double> result = marketClient.getBatchLtp(instruments, accessToken);
+        log.debug("Batch LTP response: {} prices for {} positions", result.size(), positions.size());
+        return result;
     }
 
     void retryAsRegularOrder(TradePosition position, String userId, String accessToken) {
@@ -222,6 +263,10 @@ public class PriceMonitorService {
             return;
         }
 
+        processPositionWithLtp(position, ltp, accessToken);
+    }
+
+    void processPositionWithLtp(TradePosition position, double ltp, String accessToken) {
         position.setLastCheckedAt(java.time.Instant.now());
         log.debug("{} LTP={} Entry={} SL={} T1={} T2={} T3={} FilledQty={}",
                 position.getInstrumentName(), ltp, position.getEntryPrice(),

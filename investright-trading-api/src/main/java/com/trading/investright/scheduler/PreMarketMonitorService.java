@@ -124,6 +124,8 @@ public class PreMarketMonitorService {
                 log.info("AMO order {} EXECUTED for {} — filled {}/{} qty.",
                         position.getOrderId(), position.getInstrumentName(), filled, position.getTotalQuantity());
             } else {
+                position.setFilledQuantity(position.getTotalQuantity());
+                position.setRemainingQuantity(position.getTotalQuantity());
                 log.info("AMO order {} EXECUTED for {} — fill qty unavailable, using total qty {}.",
                         position.getOrderId(), position.getInstrumentName(), position.getTotalQuantity());
             }

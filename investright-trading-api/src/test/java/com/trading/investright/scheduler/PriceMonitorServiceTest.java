@@ -518,4 +518,66 @@ class PriceMonitorServiceTest {
         verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
         assertTrue(activePosition.isRegularOrderPlaced());
     }
+
+    @Test
+    void shouldFetchBatchLtpForMultiplePositions() {
+        TradePosition pos2 = TradePosition.builder()
+                .positionId("pos-002").orderId("ORD002")
+                .instrumentName("INDUSINDBNK 900CE").tradingSymbol("INDUSINDBNK900CE")
+                .exchange("NFO").transactionType("BUY")
+                .entryPrice(37.0).stopLoss(33.0)
+                .target1(39.0).target2(42.0).target3(45.0)
+                .totalQuantity(2702).remainingQuantity(2702).filledQuantity(2702)
+                .status(TradePosition.PositionStatus.ACTIVE)
+                .userId("testuser").createdAt(Instant.now())
+                .build();
+
+        Map<String, Double> batchResult = Map.of(
+                "NFO:MAZDOCK2760CE", 165.0,
+                "NFO:INDUSINDBNK900CE", 40.0);
+        when(marketClient.getBatchLtp(anyList(), eq("test-token"))).thenReturn(batchResult);
+
+        Map<String, Double> result = priceMonitorService.fetchBatchLtp(
+                List.of(activePosition, pos2), "test-token");
+
+        assertEquals(2, result.size());
+        assertEquals(165.0, result.get("NFO:MAZDOCK2760CE"));
+        assertEquals(40.0, result.get("NFO:INDUSINDBNK900CE"));
+        verify(marketClient).getBatchLtp(argThat(instruments ->
+                instruments.size() == 2
+        ), eq("test-token"));
+    }
+
+    @Test
+    void shouldProcessPositionWithBatchLtp() {
+        activePosition.setActiveSlOrderId("SL-001");
+        activePosition.setTarget1Hit(true);
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
+        when(schedulerProperties.getTimezone()).thenReturn("Asia/Kolkata");
+
+        OrderResponse cancelResp = OrderResponse.builder().status("success").build();
+        when(orderService.cancelOrder("SL-001", "testuser")).thenReturn(cancelResp);
+        OrderResponse slResp = OrderResponse.builder()
+                .status("success")
+                .data(OrderResponse.OrderData.builder().orderId("SL-NEW").build())
+                .build();
+        when(orderService.placeOrder(any(OrderRequest.class), eq("testuser"))).thenReturn(slResp);
+
+        priceMonitorService.processPositionWithLtp(activePosition, 178.0, "test-token");
+
+        assertTrue(activePosition.isTarget2Hit());
+        verify(orderService).cancelOrder("SL-001", "testuser");
+        verify(orderService).placeOrder(any(OrderRequest.class), eq("testuser"));
+    }
+
+    @Test
+    void shouldFallbackToIndividualLtpWhenBatchMissesPosition() {
+        activePosition.setActiveSlOrderId("SL-001");
+
+        when(marketClient.getLastTradedPrice("MAZDOCK2760CE", "NFO", "test-token")).thenReturn(130.0);
+
+        priceMonitorService.checkPositionPrice(activePosition, "test-token");
+
+        assertTrue(activePosition.isStopLossHit());
+    }
 }
