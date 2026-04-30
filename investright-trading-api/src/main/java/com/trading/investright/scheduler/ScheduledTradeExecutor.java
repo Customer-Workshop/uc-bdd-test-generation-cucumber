@@ -223,7 +223,11 @@ public class ScheduledTradeExecutor {
             return;
         }
 
-        log.info("Placing {} orders...", orderRequests.size());
+        for (OrderRequest order : orderRequests) {
+            order.setAmo(true);
+        }
+
+        log.info("Placing {} AMO orders...", orderRequests.size());
         List<OrderResponse> responses = orderService.placeBulkOrders(orderRequests, userId);
 
         int success = 0;

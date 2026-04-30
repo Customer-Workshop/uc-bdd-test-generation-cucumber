@@ -93,7 +93,6 @@ public class OrderService {
                 .transactionType(signal.getTransactionType())
                 .quantity(quantity)
                 .validity(tradingProperties.getDefaultValidity())
-                .amo(false)
                 .disclosedQuantity(0);
 
         if (signal.getInstrumentType() == TradeSignal.InstrumentType.EQUITY) {

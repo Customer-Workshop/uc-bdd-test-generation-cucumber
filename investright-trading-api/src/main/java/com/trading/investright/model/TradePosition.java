@@ -32,6 +32,7 @@ public class TradePosition {
     private boolean target2Hit;
     private boolean target3Hit;
     private boolean stopLossHit;
+    private boolean protectiveSlPlaced;
     private String userId;
     private Instant createdAt;
     private Instant lastCheckedAt;
