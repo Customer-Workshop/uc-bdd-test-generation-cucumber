@@ -215,11 +215,10 @@ public class PriceMonitorService {
         }
 
         if (isTargetHit(position.getTarget2(), position, ltp) && !position.isTarget2Hit()) {
-            double bufferPercent = tradingProperties.getTrailingSlBufferPercent();
             double basePrice = position.getTarget1() != null ? position.getTarget1() : position.getEntryPrice();
-            double newSl = Math.round(basePrice * (1 + bufferPercent / 100.0) * 100.0) / 100.0;
-            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Cancelling old SL and placing new SL at T1+{}% = {} (profit locked).",
-                    position.getInstrumentName(), ltp, position.getTarget2(), bufferPercent, newSl);
+            double newSl = calculateTrailingSlPrice(basePrice, position.getTransactionType());
+            log.info("TARGET 2 HIT for {} at LTP={} (T2={}). Cancelling old SL and placing new SL at T1+buffer = {} (profit locked).",
+                    position.getInstrumentName(), ltp, position.getTarget2(), newSl);
             position.setTarget2Hit(true);
             position.setTarget1Hit(true);
             cancelActiveSlOrder(position);
@@ -227,10 +226,9 @@ public class PriceMonitorService {
             placeNewSlOrder(position, newSl, accessToken);
             position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         } else if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
-            double bufferPercent = tradingProperties.getTrailingSlBufferPercent();
-            double newSl = Math.round(position.getEntryPrice() * (1 + bufferPercent / 100.0) * 100.0) / 100.0;
-            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Cancelling old SL and placing new SL at entry+{}% = {} (profit locked).",
-                    position.getInstrumentName(), ltp, position.getTarget1(), bufferPercent, newSl);
+            double newSl = calculateTrailingSlPrice(position.getEntryPrice(), position.getTransactionType());
+            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Cancelling old SL and placing new SL at entry+buffer = {} (profit locked).",
+                    position.getInstrumentName(), ltp, position.getTarget1(), newSl);
             position.setTarget1Hit(true);
             cancelActiveSlOrder(position);
             position.setStopLoss(newSl);
@@ -239,6 +237,14 @@ public class PriceMonitorService {
         }
 
         positionTracker.updatePosition(position);
+    }
+
+    private double calculateTrailingSlPrice(double basePrice, String transactionType) {
+        double bufferPercent = tradingProperties.getTrailingSlBufferPercent();
+        if ("SELL".equalsIgnoreCase(transactionType)) {
+            return Math.round(basePrice * (1 - bufferPercent / 100.0) * 100.0) / 100.0;
+        }
+        return Math.round(basePrice * (1 + bufferPercent / 100.0) * 100.0) / 100.0;
     }
 
     private void cancelActiveSlOrder(TradePosition position) {
