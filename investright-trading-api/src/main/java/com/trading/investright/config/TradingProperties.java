@@ -14,4 +14,5 @@ public class TradingProperties {
     private String defaultProduct = "INTRADAY";
     private String defaultValidity = "DAY";
     private double slippagePercent = 0.5;
+    private double trailingSlBufferPercent = 2.0;
 }

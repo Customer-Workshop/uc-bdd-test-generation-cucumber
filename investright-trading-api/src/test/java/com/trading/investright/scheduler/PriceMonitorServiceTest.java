@@ -3,6 +3,7 @@ package com.trading.investright.scheduler;
 import com.trading.investright.client.InvestRightAuthClient;
 import com.trading.investright.client.InvestRightMarketClient;
 import com.trading.investright.config.SchedulerProperties;
+import com.trading.investright.config.TradingProperties;
 import com.trading.investright.model.TradePosition;
 import com.trading.investright.model.request.OrderRequest;
 import com.trading.investright.model.response.OrderResponse;
@@ -39,6 +40,9 @@ class PriceMonitorServiceTest {
 
     @Mock
     private SchedulerProperties schedulerProperties;
+
+    @Mock
+    private TradingProperties tradingProperties;
 
     @InjectMocks
     private PriceMonitorService priceMonitorService;
@@ -92,10 +96,11 @@ class PriceMonitorServiceTest {
     }
 
     @Test
-    void shouldCancelOldSlAndPlaceNewSlOnTarget1Hit() {
+    void shouldCancelOldSlAndPlaceNewSlAtEntryPlusTwoPercentOnTarget1Hit() {
         String accessToken = "test-token";
         activePosition.setActiveSlOrderId("OLD-SL-001");
 
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
         OrderResponse response = OrderResponse.builder()
                 .status("success")
                 .data(OrderResponse.OrderData.builder().orderId("NEW-SL-001").build())
@@ -107,11 +112,12 @@ class PriceMonitorServiceTest {
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
 
         assertTrue(activePosition.isTarget1Hit());
-        assertEquals(153.0, activePosition.getStopLoss());
+        // entry 153 + 2% = 156.06
+        assertEquals(156.06, activePosition.getStopLoss());
         verify(orderService).cancelOrder("OLD-SL-001", "testuser");
         verify(orderService).placeOrder(argThat(order ->
                 "SL".equals(order.getOrderType()) &&
-                        order.getTriggerPrice() == 153.0
+                        order.getTriggerPrice() == 156.06
         ), eq("testuser"));
         assertEquals("NEW-SL-001", activePosition.getActiveSlOrderId());
     }
@@ -168,6 +174,7 @@ class PriceMonitorServiceTest {
         String accessToken = "test-token";
         activePosition.setActiveSlOrderId("OLD-SL");
 
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
         OrderResponse slResponse = OrderResponse.builder()
                 .status("success")
                 .data(OrderResponse.OrderData.builder().orderId("NEW-SL-BRK").build())
@@ -176,9 +183,9 @@ class PriceMonitorServiceTest {
         when(orderService.cancelOrder("OLD-SL", "testuser")).thenReturn(
                 OrderResponse.builder().status("success").build());
 
-        // T1 hit → cancel old SL, place new SL at entry (153)
+        // T1 hit → cancel old SL, place new SL at entry+2% (156.06)
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
-        assertEquals(153.0, activePosition.getStopLoss());
+        assertEquals(156.06, activePosition.getStopLoss());
         assertEquals("NEW-SL-BRK", activePosition.getActiveSlOrderId());
 
         // Price drops back to entry → SL order executes on broker → just mark closed
@@ -244,6 +251,7 @@ class PriceMonitorServiceTest {
         String accessToken = "test-token";
         activePosition.setActiveSlOrderId("INITIAL-SL");
 
+        when(tradingProperties.getTrailingSlBufferPercent()).thenReturn(2.0);
         OrderResponse slResponse = OrderResponse.builder()
                 .status("success")
                 .data(OrderResponse.OrderData.builder().orderId("SL-T1").build())
@@ -261,11 +269,11 @@ class PriceMonitorServiceTest {
                         .data(OrderResponse.OrderData.builder().orderId("SL-T2").build()).build())
                 .thenReturn(sellResponse);
 
-        // T1 hit → cancel old SL, place new SL at entry (153)
+        // T1 hit → cancel old SL, place new SL at entry+2% (156.06)
         priceMonitorService.checkAndHandleTargets(activePosition, 162.0, accessToken);
         assertTrue(activePosition.isTarget1Hit());
         assertFalse(activePosition.isTarget2Hit());
-        assertEquals(153.0, activePosition.getStopLoss());
+        assertEquals(156.06, activePosition.getStopLoss());
         assertEquals(653, activePosition.getRemainingQuantity());
 
         // T2 hit → cancel T1 SL, place new SL at T1 (160)

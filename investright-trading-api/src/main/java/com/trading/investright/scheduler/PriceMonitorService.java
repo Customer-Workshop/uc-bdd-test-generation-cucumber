@@ -3,6 +3,7 @@ package com.trading.investright.scheduler;
 import com.trading.investright.client.InvestRightAuthClient;
 import com.trading.investright.client.InvestRightMarketClient;
 import com.trading.investright.config.SchedulerProperties;
+import com.trading.investright.config.TradingProperties;
 import com.trading.investright.model.TradePosition;
 import com.trading.investright.model.request.OrderRequest;
 import com.trading.investright.model.response.OrderResponse;
@@ -30,6 +31,7 @@ public class PriceMonitorService {
     private final InvestRightAuthClient authClient;
     private final OrderService orderService;
     private final SchedulerProperties schedulerProperties;
+    private final TradingProperties tradingProperties;
 
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 15);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(15, 30);
@@ -223,12 +225,14 @@ public class PriceMonitorService {
             placeNewSlOrder(position, newSl, accessToken);
             position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         } else if (isTargetHit(position.getTarget1(), position, ltp) && !position.isTarget1Hit()) {
-            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Cancelling old SL and placing new SL at entry price {} (breakeven).",
-                    position.getInstrumentName(), ltp, position.getTarget1(), position.getEntryPrice());
+            double bufferPercent = tradingProperties.getTrailingSlBufferPercent();
+            double newSl = Math.round(position.getEntryPrice() * (1 + bufferPercent / 100.0) * 100.0) / 100.0;
+            log.info("TARGET 1 HIT for {} at LTP={} (T1={}). Cancelling old SL and placing new SL at entry+{}% = {} (profit locked).",
+                    position.getInstrumentName(), ltp, position.getTarget1(), bufferPercent, newSl);
             position.setTarget1Hit(true);
             cancelActiveSlOrder(position);
-            position.setStopLoss(position.getEntryPrice());
-            placeNewSlOrder(position, position.getEntryPrice(), accessToken);
+            position.setStopLoss(newSl);
+            placeNewSlOrder(position, newSl, accessToken);
             position.setStatus(TradePosition.PositionStatus.PARTIALLY_EXITED);
         }
 
