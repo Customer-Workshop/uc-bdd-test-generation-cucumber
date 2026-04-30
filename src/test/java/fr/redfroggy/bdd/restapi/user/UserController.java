@@ -13,8 +13,7 @@ import wiremock.org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,13 +29,74 @@ public final class UserController {
     public static List<UserDTO> users = new ArrayList<>();
 
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<?> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "sort", required = false) String sort) {
+
+        List<UserDTO> result = users;
+
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            result = result.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            Comparator<UserDTO> comparator;
+            String field = sort;
+            boolean descending = false;
+
+            if (sort.startsWith("-")) {
+                field = sort.substring(1);
+                descending = true;
+            }
+
+            switch (field) {
+                case "firstName":
+                    comparator = Comparator.comparing(UserDTO::getFirstName, Comparator.nullsLast(String::compareToIgnoreCase));
+                    break;
+                case "lastName":
+                    comparator = Comparator.comparing(UserDTO::getLastName, Comparator.nullsLast(String::compareToIgnoreCase));
+                    break;
+                case "age":
+                    comparator = Comparator.comparingInt(UserDTO::getAge);
+                    break;
+                default:
+                    comparator = Comparator.comparing(UserDTO::getId, Comparator.nullsLast(String::compareTo));
+                    break;
+            }
+
+            if (descending) {
+                comparator = comparator.reversed();
+            }
+            result = result.stream().sorted(comparator).collect(Collectors.toList());
+        }
+
+        if (page != null && size != null) {
+            int fromIndex = page * size;
+            int toIndex = Math.min(fromIndex + size, result.size());
+
+            int totalElements = result.size();
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+
+            if (fromIndex >= result.size()) {
+                result = Collections.emptyList();
+            } else {
+                result = result.subList(fromIndex, toIndex);
+            }
+
+            Map<String, Object> pagedResponse = new LinkedHashMap<>();
+            pagedResponse.put("content", result);
+            pagedResponse.put("page", page);
+            pagedResponse.put("size", size);
+            pagedResponse.put("totalElements", totalElements);
+            pagedResponse.put("totalPages", totalPages);
+            return ResponseEntity.ok(pagedResponse);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/users/{id}")
@@ -64,7 +124,27 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<?> addUser(@RequestBody UserDTO user) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        if (StringUtils.isBlank(user.getId())) {
+            errors.put("id", "id is required");
+        }
+        if (StringUtils.isBlank(user.getFirstName())) {
+            errors.put("firstName", "firstName is required");
+        }
+        if (StringUtils.isBlank(user.getLastName())) {
+            errors.put("lastName", "lastName is required");
+        }
+
+        if (!errors.isEmpty()) {
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("status", 400);
+            errorResponse.put("error", "Bad Request");
+            errorResponse.put("errors", errors);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
@@ -74,10 +154,12 @@ public final class UserController {
             return ResponseEntity.status(201)
                     .body(user);
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        Map<String, Object> conflictResponse = new LinkedHashMap<>();
+        conflictResponse.put("status", 409);
+        conflictResponse.put("error", "Conflict");
+        conflictResponse.put("message", "User with id " + user.getId() + " already exists");
+        return ResponseEntity.status(409).body(conflictResponse);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
