@@ -9,6 +9,7 @@ import com.trading.investright.model.response.OrderResponse;
 import com.trading.investright.ocr.ImageParserService;
 import com.trading.investright.ocr.TradeSignalParser;
 import com.trading.investright.service.CloudImageFetcher;
+import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class ScheduledTradeExecutor {
 
     private final SchedulerProperties schedulerProperties;
     private final CloudImageFetcher cloudImageFetcher;
+    private final LocalImageFetcher localImageFetcher;
     private final ImageParserService imageParserService;
     private final TradeSignalParser tradeSignalParser;
     private final OrderService orderService;
@@ -45,17 +47,7 @@ public class ScheduledTradeExecutor {
                 performAutoLogin();
             }
 
-            List<String> imageUrls = getImageUrls();
-            if (imageUrls.isEmpty()) {
-                log.warn("No image URLs configured. Skipping scheduled execution.");
-                return;
-            }
-
-            List<TradeSignal> allSignals = new ArrayList<>();
-            for (String url : imageUrls) {
-                List<TradeSignal> signals = fetchAndParseImage(url);
-                allSignals.addAll(signals);
-            }
+            List<TradeSignal> allSignals = loadAndParseImages();
 
             if (allSignals.isEmpty()) {
                 log.info("No trade signals parsed from images. No orders to place.");
@@ -70,6 +62,65 @@ public class ScheduledTradeExecutor {
         }
 
         log.info("=== Scheduled trade execution completed ===");
+    }
+
+    List<TradeSignal> loadAndParseImages() {
+        String source = schedulerProperties.getImageSource();
+        if ("local".equalsIgnoreCase(source)) {
+            return loadFromLocalFolder();
+        } else {
+            return loadFromCloudUrls();
+        }
+    }
+
+    private List<TradeSignal> loadFromLocalFolder() {
+        String folderPath = schedulerProperties.getLocalFolderPath();
+        if (folderPath == null || folderPath.isBlank()) {
+            log.warn("No local folder path configured (scheduler.local-folder-path). Skipping.");
+            return List.of();
+        }
+
+        log.info("Reading trade signal images from local folder: {}", folderPath);
+        List<BufferedImage> images;
+        if (schedulerProperties.isUseDateSubfolder()) {
+            images = localImageFetcher.fetchTodaysImages(folderPath);
+        } else {
+            images = localImageFetcher.fetchImagesFromFolder(folderPath);
+        }
+
+        if (images.isEmpty()) {
+            log.warn("No images found in folder: {}", folderPath);
+            return List.of();
+        }
+
+        List<TradeSignal> allSignals = new ArrayList<>();
+        for (BufferedImage image : images) {
+            try {
+                String ocrText = imageParserService.extractText(image);
+                log.info("OCR extracted text:\n{}", ocrText);
+                List<TradeSignal> signals = tradeSignalParser.parseOcrText(ocrText);
+                log.info("Parsed {} signals from image", signals.size());
+                allSignals.addAll(signals);
+            } catch (Exception ex) {
+                log.error("Failed to process image: {}", ex.getMessage());
+            }
+        }
+        return allSignals;
+    }
+
+    private List<TradeSignal> loadFromCloudUrls() {
+        List<String> imageUrls = getImageUrls();
+        if (imageUrls.isEmpty()) {
+            log.warn("No image URLs configured. Skipping scheduled execution.");
+            return List.of();
+        }
+
+        List<TradeSignal> allSignals = new ArrayList<>();
+        for (String url : imageUrls) {
+            List<TradeSignal> signals = fetchAndParseCloudImage(url);
+            allSignals.addAll(signals);
+        }
+        return allSignals;
     }
 
     private void performAutoLogin() {
@@ -117,7 +168,7 @@ public class ScheduledTradeExecutor {
         return urls;
     }
 
-    List<TradeSignal> fetchAndParseImage(String imageUrl) {
+    List<TradeSignal> fetchAndParseCloudImage(String imageUrl) {
         try {
             BufferedImage image = cloudImageFetcher.fetchImage(imageUrl);
             String ocrText = imageParserService.extractText(image);

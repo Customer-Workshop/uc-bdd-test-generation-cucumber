@@ -199,42 +199,92 @@ For best OCR accuracy:
 ## Scheduled Trade Agent
 
 The application includes a built-in scheduled agent that automatically:
-1. Logs into InvestRight at a configured time daily
-2. Downloads trade signal images from cloud storage (S3, Google Drive, etc.)
+1. Logs into InvestRight at a configured time daily (8:55 AM IST by default)
+2. Reads trade signal images from your local `C:\trades` folder (or cloud URLs)
 3. Parses them via OCR
 4. Places buy/sell orders automatically
 
-### Setup
+### Quick Start (Windows — Local Folder)
 
-Set the following environment variables:
+**Prerequisites:**
+1. Install [Java 17+](https://adoptium.net/)
+2. Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) for Windows
+3. Set the Tesseract data path (usually `C:\Program Files\Tesseract-OCR\tessdata`)
 
-```bash
-export SCHEDULER_ENABLED=true
-export TRADE_IMAGE_URL=https://your-s3-bucket.s3.amazonaws.com/trades/daily-signals.png
-export IR_USERNAME=your_investright_username
-export IR_PASSWORD=your_investright_password
-export IR_2FA_ANSWER=your_2fa_totp_code
-export IR_USER_ID=your_client_id
+**Step 1: Set environment variables** (run in PowerShell or add to System Environment Variables):
+
+```powershell
+$env:SCHEDULER_ENABLED = "true"
+$env:TRADE_FOLDER_PATH = "C:\trades"
+$env:IR_API_KEY = "your_api_key"
+$env:IR_API_SECRET = "your_api_secret"
+$env:IR_USERNAME = "your_investright_username"
+$env:IR_PASSWORD = "your_investright_password"
+$env:IR_2FA_ANSWER = "your_2fa_code"
+$env:IR_USER_ID = "your_client_id"
+$env:TESSDATA_PREFIX = "C:\Program Files\Tesseract-OCR\tessdata"
 ```
+
+**Step 2: Build and run the application:**
+
+```powershell
+cd investright-trading-api
+mvn clean package -DskipTests
+java -jar target/investright-trading-api-1.0.0.jar
+```
+
+**Step 3: Place your trade signal images** in `C:\trades` before 8:55 AM IST. The agent will automatically:
+- Read all PNG/JPG/TIFF/BMP images from the folder
+- OCR parse each image for trade signals
+- Place buy/sell orders on InvestRight
+
+### Auto-Start on Windows Boot
+
+To have the app start automatically when Windows boots, create a Windows Task Scheduler task:
+1. Open Task Scheduler → Create Basic Task
+2. Trigger: "When the computer starts"
+3. Action: Start a program → `javaw.exe`
+4. Arguments: `-jar C:\path\to\investright-trading-api-1.0.0.jar`
+5. Set "Run whether user is logged on or not"
 
 ### Configuration
 
-The scheduler runs daily at **8:55 AM IST** by default. Customize in `application.yml`:
+Customize the schedule and image source in `application.yml`:
 
 ```yaml
 scheduler:
   enabled: true
-  cron: "0 55 8 * * *"       # 8:55 AM daily
+  cron: "0 55 8 * * *"        # 8:55 AM daily
   timezone: Asia/Kolkata
-  image-source-url: https://s3.example.com/trades.png
-  image-source-urls:          # multiple images supported
-    - https://s3.example.com/signals1.png
-    - https://s3.example.com/signals2.png
+  image-source: local          # "local" for folder, "cloud" for URLs
+  local-folder-path: C:\trades
+  use-date-subfolder: false    # if true, reads from C:\trades\2024-04-25\ (today's date)
   auto-login: true
   retry-attempts: 3
 ```
 
-### Cloud Storage Options
+#### Date Subfolder Mode
+
+If you organize images by date, enable `use-date-subfolder: true`. The agent will look for a subfolder named with today's date (format: `yyyy-MM-dd`):
+```
+C:\trades\
+├── 2024-04-25\      ← today's images (auto-selected)
+│   ├── signal1.png
+│   └── signal2.png
+├── 2024-04-24\      ← yesterday (ignored)
+```
+
+### Cloud Source (Alternative)
+
+If you prefer cloud storage instead of a local folder, set `image-source: cloud`:
+
+```yaml
+scheduler:
+  image-source: cloud
+  image-source-url: https://s3.example.com/trades.png
+  image-source-urls:
+    - https://drive.google.com/uc?export=download&id=FILE_ID
+```
 
 | Provider | URL Format |
 |---|---|
@@ -259,6 +309,9 @@ scheduler:
 | `scheduler.enabled` | Enable scheduled trade agent | `false` |
 | `scheduler.cron` | Cron expression for schedule | `0 55 8 * * *` |
 | `scheduler.timezone` | Timezone for cron | `Asia/Kolkata` |
+| `scheduler.image-source` | Image source type (env: `TRADE_IMAGE_SOURCE`) | `local` |
+| `scheduler.local-folder-path` | Local folder path (env: `TRADE_FOLDER_PATH`) | `C:\trades` |
+| `scheduler.use-date-subfolder` | Use today's date as subfolder | `false` |
 | `scheduler.image-source-url` | Cloud image URL (env: `TRADE_IMAGE_URL`) | — |
 | `scheduler.username` | Auto-login username (env: `IR_USERNAME`) | — |
 | `scheduler.password` | Auto-login password (env: `IR_PASSWORD`) | — |
@@ -270,7 +323,7 @@ scheduler:
 com.trading.investright
 ├── config/          # WebClient, Tesseract, Security, Scheduler, Properties configs
 ├── controller/      # AuthController, OrderController, TradeSignalController
-├── service/         # OrderService, SymbolMappingService, CloudImageFetcher
+├── service/         # OrderService, SymbolMappingService, CloudImageFetcher, LocalImageFetcher
 ├── client/          # InvestRightAuthClient, InvestRightOrderClient
 ├── model/           # DTOs (request/response), TradeSignal, AuthSession
 ├── ocr/             # ImageParserService, TradeSignalParser

@@ -16,6 +16,10 @@ public class SchedulerProperties {
     private String cron = "0 55 8 * * *";
     private String timezone = "Asia/Kolkata";
 
+    private String imageSource = "local";
+    private String localFolderPath;
+    private boolean useDateSubfolder = false;
+
     private String imageSourceUrl;
     private List<String> imageSourceUrls = new ArrayList<>();
 

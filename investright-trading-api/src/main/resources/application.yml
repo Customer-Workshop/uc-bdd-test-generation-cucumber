@@ -34,6 +34,9 @@ scheduler:
   enabled: ${SCHEDULER_ENABLED:false}
   cron: "0 55 8 * * *"
   timezone: Asia/Kolkata
+  image-source: ${TRADE_IMAGE_SOURCE:local}
+  local-folder-path: ${TRADE_FOLDER_PATH:C:\\trades}
+  use-date-subfolder: false
   image-source-url: ${TRADE_IMAGE_URL:}
   image-source-urls: []
   user-id: ${IR_USER_ID:}
