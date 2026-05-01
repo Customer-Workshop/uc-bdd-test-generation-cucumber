@@ -38,6 +38,10 @@ public class TradePosition {
     private Double openPrice;
     private String activeSlOrderId;
     private int filledQuantity;
+    private String source;
+    private double capitalPerTrade;
+    private Double exitPrice;
+    private Double realisedPnl;
     private String userId;
     private Instant createdAt;
     private Instant lastCheckedAt;

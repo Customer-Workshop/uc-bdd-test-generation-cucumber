@@ -69,6 +69,8 @@ public class PositionTracker {
                 .totalQuantity(quantity)
                 .remainingQuantity(quantity)
                 .status(TradePosition.PositionStatus.ACTIVE)
+                .source(signal.getSource() != null ? signal.getSource() : "image")
+                .capitalPerTrade(signal.getCapitalPerTrade() != null ? signal.getCapitalPerTrade() : 0.0)
                 .userId(userId)
                 .createdAt(Instant.now())
                 .build();

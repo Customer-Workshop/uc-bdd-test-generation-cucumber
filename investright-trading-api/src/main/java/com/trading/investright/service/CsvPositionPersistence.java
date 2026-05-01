@@ -31,7 +31,7 @@ public class CsvPositionPersistence {
     private static final String CSV_HEADER = "positionId,orderId,instrumentName,tradingSymbol,exchange,instrumentSegment," +
             "transactionType,entryPrice,stopLoss,target1,target2,target3,totalQuantity,remainingQuantity,filledQuantity," +
             "status,target1Hit,target2Hit,target3Hit,stopLossHit,protectiveSlPlaced,amoExecuted,regularOrderPlaced," +
-            "openPrice,activeSlOrderId,userId,createdAt,lastCheckedAt";
+            "openPrice,activeSlOrderId,userId,createdAt,lastCheckedAt,source,capitalPerTrade,exitPrice,realisedPnl";
 
     public void savePositions(List<TradePosition> positions) {
         Path folder = getDateFolder();
@@ -119,7 +119,11 @@ public class CsvPositionPersistence {
                 escapeCsv(p.getActiveSlOrderId()),
                 escapeCsv(p.getUserId()),
                 p.getCreatedAt() != null ? p.getCreatedAt().toString() : "",
-                p.getLastCheckedAt() != null ? p.getLastCheckedAt().toString() : ""
+                p.getLastCheckedAt() != null ? p.getLastCheckedAt().toString() : "",
+                escapeCsv(p.getSource()),
+                String.valueOf(p.getCapitalPerTrade()),
+                doubleToStr(p.getExitPrice()),
+                doubleToStr(p.getRealisedPnl())
         );
     }
 
@@ -154,6 +158,10 @@ public class CsvPositionPersistence {
                 .userId(parts[25])
                 .createdAt(parseInstant(parts[26]))
                 .lastCheckedAt(parseInstant(parts[27]))
+                .source(parts.length > 28 ? emptyToNull(parts[28]) : null)
+                .capitalPerTrade(parts.length > 29 ? parseDouble(parts[29]) : 0.0)
+                .exitPrice(parts.length > 30 ? parseNullableDouble(parts[30]) : null)
+                .realisedPnl(parts.length > 31 ? parseNullableDouble(parts[31]) : null)
                 .build();
     }
 
