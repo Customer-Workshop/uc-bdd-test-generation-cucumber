@@ -14,6 +14,7 @@ import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
 import com.trading.investright.service.PositionTracker;
 import com.trading.investright.service.S3TradeSignalFetcher;
+import com.trading.investright.service.TelegramTradeSignalFetcher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,6 +42,7 @@ public class ScheduledTradeExecutor {
     private final PositionTracker positionTracker;
     private final InvestRightAuthClient authClient;
     private S3TradeSignalFetcher s3TradeSignalFetcher;
+    private TelegramTradeSignalFetcher telegramTradeSignalFetcher;
 
     public ScheduledTradeExecutor(SchedulerProperties schedulerProperties,
                                   CloudImageFetcher cloudImageFetcher,
@@ -65,6 +67,11 @@ public class ScheduledTradeExecutor {
     @Autowired(required = false)
     public void setS3TradeSignalFetcher(S3TradeSignalFetcher s3TradeSignalFetcher) {
         this.s3TradeSignalFetcher = s3TradeSignalFetcher;
+    }
+
+    @Autowired(required = false)
+    public void setTelegramTradeSignalFetcher(TelegramTradeSignalFetcher telegramTradeSignalFetcher) {
+        this.telegramTradeSignalFetcher = telegramTradeSignalFetcher;
     }
 
     @Scheduled(cron = "${scheduler.cron:0 55 8 * * *}", zone = "${scheduler.timezone:Asia/Kolkata}")
@@ -96,13 +103,27 @@ public class ScheduledTradeExecutor {
 
     List<TradeSignal> loadAndParseImages() {
         String source = schedulerProperties.getImageSource();
+        List<TradeSignal> allSignals = new ArrayList<>();
+
         if ("s3".equalsIgnoreCase(source)) {
-            return loadFromS3();
+            allSignals.addAll(loadFromS3());
         } else if ("local".equalsIgnoreCase(source)) {
-            return loadFromLocalFolder();
-        } else {
-            return loadFromCloudUrls();
+            allSignals.addAll(loadFromLocalFolder());
+        } else if (!"telegram".equalsIgnoreCase(source)) {
+            allSignals.addAll(loadFromCloudUrls());
         }
+
+        if (telegramTradeSignalFetcher != null) {
+            try {
+                List<TradeSignal> telegramSignals = telegramTradeSignalFetcher.fetchAndParseSignals();
+                log.info("Loaded {} signals from Telegram", telegramSignals.size());
+                allSignals.addAll(telegramSignals);
+            } catch (Exception ex) {
+                log.error("Failed to load Telegram signals: {}", ex.getMessage());
+            }
+        }
+
+        return allSignals;
     }
 
     private List<TradeSignal> loadFromS3() {

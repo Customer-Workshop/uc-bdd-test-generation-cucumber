@@ -9,3 +9,6 @@ trading:
   default-product: INTRADAY
   default-validity: DAY
   slippage-percent: 0.5
+
+telegram:
+  enabled: false

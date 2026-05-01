@@ -328,6 +328,55 @@ scheduler:
 | **Azure Blob** | SAS URL: `https://account.blob.core.windows.net/container/blob?sv=...` |
 | **Direct URL** | Any publicly accessible image URL |
 
+### Telegram Channel Source
+
+Read trade signals directly from a Telegram channel. This runs **alongside** your existing image/CSV/S3 source — signals from both sources are combined.
+
+**Step 1: Create a Telegram Bot**
+1. Open Telegram, search for [@BotFather](https://t.me/BotFather)
+2. Send `/newbot` and follow the prompts
+3. Copy the **bot token** (e.g., `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+
+**Step 2: Add the bot to your channel**
+1. Open your Telegram channel settings
+2. Go to **Administrators** → **Add Administrator**
+3. Search for your bot name and add it
+4. The bot only needs **read** permission
+
+**Step 3: Get the channel ID**
+1. Forward a message from the channel to [@userinfobot](https://t.me/userinfobot)
+2. The bot will reply with the channel ID (e.g., `-1001234567890`)
+
+**Step 4: Configure environment variables**
+```bash
+export TELEGRAM_ENABLED=true
+export TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+export TELEGRAM_CHANNEL_ID=-1001234567890
+export TELEGRAM_CAPITAL_PER_TRADE=40000    # ₹40,000 per Telegram trade
+export TELEGRAM_LOOKBACK_MINUTES=30         # Read messages from last 30 minutes
+```
+
+Or in `application.yml`:
+```yaml
+telegram:
+  enabled: true
+  bot-token: ${TELEGRAM_BOT_TOKEN}
+  channel-id: ${TELEGRAM_CHANNEL_ID}
+  capital-per-trade: 40000
+  lookback-minutes: 30
+```
+
+**Supported message format:**
+```
+HERO ZERO
+BUY SENSEX 76600PE ABV 200 TGT
+240-280-350
+SL 165
+INTRADAY
+```
+
+**Multi-source mode:** When Telegram is enabled, it reads from **both** your primary source (local/S3/cloud) AND Telegram. Image/CSV trades use ₹1,00,000 capital (default), Telegram trades use ₹40,000.
+
 ## AWS Deployment
 
 ### Option 1: Docker (Recommended)
@@ -431,6 +480,11 @@ The app loads credentials at startup from Secrets Manager and falls back to env 
 | `scheduler.username` | Auto-login username (env: `IR_USERNAME`) | — |
 | `scheduler.password` | Auto-login password (env: `IR_PASSWORD`) | — |
 | `scheduler.two-fa-answer` | 2FA code (env: `IR_2FA_ANSWER`) | — |
+| `telegram.enabled` | Enable Telegram source (env: `TELEGRAM_ENABLED`) | `false` |
+| `telegram.bot-token` | Telegram Bot API token (env: `TELEGRAM_BOT_TOKEN`) | — |
+| `telegram.channel-id` | Telegram channel ID (env: `TELEGRAM_CHANNEL_ID`) | — |
+| `telegram.capital-per-trade` | Capital per Telegram trade (env: `TELEGRAM_CAPITAL_PER_TRADE`) | `40000` |
+| `telegram.lookback-minutes` | Read messages from last N minutes (env: `TELEGRAM_LOOKBACK_MINUTES`) | `30` |
 | `aws.region` | AWS region (env: `AWS_REGION`) | `ap-south-1` |
 | `aws.s3.bucket-name` | S3 bucket name (env: `S3_BUCKET_NAME`) | — |
 | `aws.s3.prefix` | S3 key prefix (env: `S3_PREFIX`) | `trade-signals/` |

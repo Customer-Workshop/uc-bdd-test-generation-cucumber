@@ -23,9 +23,12 @@ public class TradeSignal {
     private Double target1;
     private Double target2;
     private Double target3;
+    private Double target4;
     private String exchange;
     private String tradingSymbol;
     private String rawText;
+    private String source;
+    private Double capitalPerTrade;
 
     public enum InstrumentType {
         EQUITY,

@@ -80,10 +80,12 @@ public class OrderService {
         if (quantityOverride != null) {
             quantity = quantityOverride;
         } else if (signal.getEntryPrice() != null && signal.getEntryPrice() > 0) {
-            quantity = (int) (tradingProperties.getCapitalPerTrade() / signal.getEntryPrice());
+            double capital = signal.getCapitalPerTrade() != null ? signal.getCapitalPerTrade() : tradingProperties.getCapitalPerTrade();
+            quantity = (int) (capital / signal.getEntryPrice());
             if (quantity < 1) quantity = 1;
-            log.info("Capital allocation: ₹{} / ₹{} = {} shares for {}",
-                    tradingProperties.getCapitalPerTrade(), signal.getEntryPrice(), quantity, signal.getInstrumentName());
+            log.info("Capital allocation: ₹{} / ₹{} = {} lots for {} [source={}]",
+                    capital, signal.getEntryPrice(), quantity, signal.getInstrumentName(),
+                    signal.getSource() != null ? signal.getSource() : "default");
         } else {
             quantity = tradingProperties.getDefaultLotSize();
         }
