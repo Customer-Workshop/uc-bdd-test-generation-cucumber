@@ -150,6 +150,7 @@ Feature: Petstore API - CRUD Operations
   # Cleanup
   # -------------------------------------------------------------------------
 
+  @petstore-cleanup
   Scenario: Cleanup - Delete remaining pets
     When I DELETE /pets/1
     Then http response code should be 200
