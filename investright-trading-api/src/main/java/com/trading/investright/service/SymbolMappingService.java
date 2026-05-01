@@ -31,6 +31,7 @@ public class SymbolMappingService {
     }
 
     public String mapToSecurityId(String shortName) {
+        if (shortName == null) return null;
         String normalized = shortName.toUpperCase().trim();
         return SYMBOL_MAP.getOrDefault(normalized, normalized);
     }
@@ -61,6 +62,7 @@ public class SymbolMappingService {
     }
 
     public boolean isIndexSymbol(String symbol) {
+        if (symbol == null) return false;
         String upper = symbol.toUpperCase().trim();
         return upper.equals("NIFTY") || upper.equals("BANKNIFTY") ||
                upper.equals("FINNIFTY") || upper.equals("SENSEX") ||

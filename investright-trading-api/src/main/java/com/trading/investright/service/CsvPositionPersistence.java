@@ -129,6 +129,10 @@ public class CsvPositionPersistence {
 
     TradePosition fromCsvLine(String line) {
         String[] parts = parseCsvLine(line);
+        if (parts.length < 28) {
+            throw new IllegalArgumentException(
+                    "CSV line has " + parts.length + " fields, expected at least 28");
+        }
         return TradePosition.builder()
                 .positionId(parts[0])
                 .orderId(parts[1])

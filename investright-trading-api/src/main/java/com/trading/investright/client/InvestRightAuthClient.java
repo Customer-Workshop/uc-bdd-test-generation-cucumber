@@ -157,17 +157,32 @@ public class InvestRightAuthClient {
 
     public AuthSession performFullLogin(String username, String password, String twoFaAnswer) {
         TokenIdResponse tokenIdResponse = fetchTokenId();
+        if (tokenIdResponse == null || tokenIdResponse.getTokenId() == null) {
+            throw new AuthenticationException("Failed to obtain token ID from InvestRight");
+        }
         String tokenId = tokenIdResponse.getTokenId();
 
         LoginResponse loginResponse = loginWithCredentials(username, password, tokenId);
+        if (loginResponse == null) {
+            throw new AuthenticationException("Login returned null response");
+        }
 
         TwoFaResponse twoFaResponse = validateTwoFa(twoFaAnswer, tokenId);
+        if (twoFaResponse == null || twoFaResponse.getRequestToken() == null) {
+            throw new AuthenticationException("2FA validation returned null response");
+        }
         String requestToken = twoFaResponse.getRequestToken();
 
         AuthorizeResponse authorizeResponse = authorize(tokenId, requestToken, true);
+        if (authorizeResponse == null || authorizeResponse.getRequestToken() == null) {
+            throw new AuthenticationException("Authorization returned null response");
+        }
         String authorizedRequestToken = authorizeResponse.getRequestToken();
 
         AccessTokenResponse accessTokenResponse = fetchAccessToken(authorizedRequestToken);
+        if (accessTokenResponse == null || accessTokenResponse.getAccessToken() == null) {
+            throw new AuthenticationException("Failed to obtain access token");
+        }
 
         AuthSession session = AuthSession.builder()
                 .tokenId(tokenId)
