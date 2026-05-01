@@ -27,6 +27,7 @@ class TelegramWebhookServiceTest {
     private TelegramProperties telegramProperties;
     private SchedulerProperties schedulerProperties;
     private TelegramMessageParser messageParser;
+    private TradeSignalValidator signalValidator;
     private TelegramWebhookService webhookService;
 
     @BeforeEach
@@ -39,9 +40,10 @@ class TelegramWebhookServiceTest {
         schedulerProperties.setUsername("testuser");
 
         messageParser = new TelegramMessageParser();
+        signalValidator = new TradeSignalValidator();
         webhookService = new TelegramWebhookService(
                 telegramProperties, messageParser, orderService,
-                positionTracker, authClient, schedulerProperties);
+                positionTracker, authClient, schedulerProperties, signalValidator);
     }
 
     @Test

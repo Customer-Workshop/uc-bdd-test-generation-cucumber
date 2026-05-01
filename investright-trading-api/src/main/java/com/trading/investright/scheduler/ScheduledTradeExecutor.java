@@ -15,6 +15,7 @@ import com.trading.investright.service.OrderService;
 import com.trading.investright.service.PositionTracker;
 import com.trading.investright.service.S3TradeSignalFetcher;
 import com.trading.investright.service.TelegramTradeSignalFetcher;
+import com.trading.investright.service.TradeSignalValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,6 +42,7 @@ public class ScheduledTradeExecutor {
     private final OrderService orderService;
     private final PositionTracker positionTracker;
     private final InvestRightAuthClient authClient;
+    private final TradeSignalValidator signalValidator;
     private S3TradeSignalFetcher s3TradeSignalFetcher;
     private TelegramTradeSignalFetcher telegramTradeSignalFetcher;
 
@@ -52,7 +54,8 @@ public class ScheduledTradeExecutor {
                                   CsvTradeSignalParser csvTradeSignalParser,
                                   OrderService orderService,
                                   PositionTracker positionTracker,
-                                  InvestRightAuthClient authClient) {
+                                  InvestRightAuthClient authClient,
+                                  TradeSignalValidator signalValidator) {
         this.schedulerProperties = schedulerProperties;
         this.cloudImageFetcher = cloudImageFetcher;
         this.localImageFetcher = localImageFetcher;
@@ -62,6 +65,7 @@ public class ScheduledTradeExecutor {
         this.orderService = orderService;
         this.positionTracker = positionTracker;
         this.authClient = authClient;
+        this.signalValidator = signalValidator;
     }
 
     @Autowired(required = false)
@@ -91,8 +95,14 @@ public class ScheduledTradeExecutor {
                 return;
             }
 
-            log.info("Parsed {} trade signals total. Placing orders...", allSignals.size());
-            placeOrders(allSignals);
+            List<TradeSignal> validSignals = signalValidator.filterValid(allSignals, "scheduled");
+            if (validSignals.isEmpty()) {
+                log.info("All {} signals failed validation. No orders to place.", allSignals.size());
+                return;
+            }
+
+            log.info("Validated {}/{} trade signals. Placing orders...", validSignals.size(), allSignals.size());
+            placeOrders(validSignals);
 
         } catch (Exception ex) {
             log.error("Scheduled trade execution failed: {}", ex.getMessage(), ex);

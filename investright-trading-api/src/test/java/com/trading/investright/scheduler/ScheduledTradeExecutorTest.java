@@ -13,11 +13,13 @@ import com.trading.investright.service.CloudImageFetcher;
 import com.trading.investright.service.LocalImageFetcher;
 import com.trading.investright.service.OrderService;
 import com.trading.investright.service.PositionTracker;
+import com.trading.investright.service.TradeSignalValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.awt.image.BufferedImage;
@@ -59,6 +61,9 @@ class ScheduledTradeExecutorTest {
     @Mock
     private InvestRightAuthClient authClient;
 
+    @Spy
+    private TradeSignalValidator signalValidator = new TradeSignalValidator();
+
     @InjectMocks
     private ScheduledTradeExecutor executor;
 
@@ -99,6 +104,8 @@ class ScheduledTradeExecutorTest {
                 .instrumentType(TradeSignal.InstrumentType.EQUITY)
                 .transactionType("BUY")
                 .entryPrice(2500.0)
+                .stopLoss(2450.0)
+                .target1(2600.0)
                 .build();
         when(tradeSignalParser.parseOcrText(anyString())).thenReturn(List.of(signal));
 
@@ -143,7 +150,8 @@ class ScheduledTradeExecutorTest {
         TradeSignal signal = TradeSignal.builder()
                 .instrumentName("RELIANCE").underlying("RELIANCE")
                 .instrumentType(TradeSignal.InstrumentType.EQUITY)
-                .transactionType("BUY").entryPrice(2500.0).build();
+                .transactionType("BUY").entryPrice(2500.0)
+                .stopLoss(2450.0).target1(2600.0).build();
         when(tradeSignalParser.parseOcrText(anyString())).thenReturn(List.of(signal));
 
         OrderRequest mockOrder = OrderRequest.builder()
@@ -224,7 +232,8 @@ class ScheduledTradeExecutorTest {
         TradeSignal signal = TradeSignal.builder()
                 .instrumentName("RELIANCE").underlying("RELIANCE")
                 .instrumentType(TradeSignal.InstrumentType.EQUITY)
-                .transactionType("BUY").entryPrice(2500.0).build();
+                .transactionType("BUY").entryPrice(2500.0)
+                .stopLoss(2450.0).target1(2600.0).build();
         when(tradeSignalParser.parseOcrText(anyString())).thenReturn(List.of(signal));
 
         OrderRequest mockOrder = OrderRequest.builder()

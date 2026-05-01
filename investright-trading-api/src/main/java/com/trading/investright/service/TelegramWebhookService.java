@@ -31,6 +31,7 @@ public class TelegramWebhookService {
     private final PositionTracker positionTracker;
     private final InvestRightAuthClient authClient;
     private final SchedulerProperties schedulerProperties;
+    private final TradeSignalValidator signalValidator;
 
     private final Set<Long> processedMessageIds = ConcurrentHashMap.newKeySet();
 
@@ -75,7 +76,7 @@ public class TelegramWebhookService {
 
         List<TradeSignal> signals = messageParser.parseMessage(text);
         if (signals.isEmpty()) {
-            log.warn("Message matched trade pattern but failed validation: {}",
+            log.warn("Message matched trade pattern but failed parsing: {}",
                     text.substring(0, Math.min(80, text.length())));
             return "validation_failed";
         }
@@ -85,8 +86,15 @@ public class TelegramWebhookService {
             signal.setSource("telegram");
         }
 
-        log.info("Received {} valid trade signal(s) from Telegram webhook", signals.size());
-        placeOrdersForSignals(signals);
+        List<TradeSignal> validSignals = signalValidator.filterValid(signals, "telegram-webhook");
+        if (validSignals.isEmpty()) {
+            log.warn("All {} parsed signals failed validation: {}",
+                    signals.size(), text.substring(0, Math.min(80, text.length())));
+            return "validation_failed";
+        }
+
+        log.info("Received {} valid trade signal(s) from Telegram webhook", validSignals.size());
+        placeOrdersForSignals(validSignals);
 
         return "processed_" + signals.size();
     }
