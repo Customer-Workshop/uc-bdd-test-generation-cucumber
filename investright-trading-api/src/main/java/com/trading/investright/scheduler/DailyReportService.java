@@ -125,21 +125,36 @@ public class DailyReportService {
         }
     }
 
-    private double calculatePnlPerUnit(TradePosition p) {
+    double calculatePnlPerUnit(TradePosition p) {
+        if (p.getStatus() == TradePosition.PositionStatus.ACTIVE
+                || p.getStatus() == TradePosition.PositionStatus.PARTIALLY_EXITED) {
+            return 0.0;
+        }
+
+        boolean isBuy = "BUY".equalsIgnoreCase(p.getTransactionType());
+
+        if (p.getExitPrice() != null && p.getExitPrice() > 0) {
+            return isBuy ? p.getExitPrice() - p.getEntryPrice()
+                         : p.getEntryPrice() - p.getExitPrice();
+        }
+
         if (p.isStopLossHit()) {
-            if ("BUY".equalsIgnoreCase(p.getTransactionType())) {
-                return p.getStopLoss() - p.getEntryPrice();
-            } else {
-                return p.getEntryPrice() - p.getStopLoss();
-            }
+            return isBuy ? p.getStopLoss() - p.getEntryPrice()
+                         : p.getEntryPrice() - p.getStopLoss();
         }
-        if (p.isTarget3Hit()) {
-            if (p.getTarget3() != null) {
-                return "BUY".equalsIgnoreCase(p.getTransactionType())
-                        ? p.getTarget3() - p.getEntryPrice()
-                        : p.getEntryPrice() - p.getTarget3();
-            }
+        if (p.isTarget3Hit() && p.getTarget3() != null) {
+            return isBuy ? p.getTarget3() - p.getEntryPrice()
+                         : p.getEntryPrice() - p.getTarget3();
         }
+        if (p.isTarget2Hit() && p.getTarget2() != null) {
+            return isBuy ? p.getTarget2() - p.getEntryPrice()
+                         : p.getEntryPrice() - p.getTarget2();
+        }
+        if (p.isTarget1Hit() && p.getTarget1() != null) {
+            return isBuy ? p.getTarget1() - p.getEntryPrice()
+                         : p.getEntryPrice() - p.getTarget1();
+        }
+
         return 0.0;
     }
 

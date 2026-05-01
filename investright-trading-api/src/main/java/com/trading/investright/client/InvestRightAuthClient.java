@@ -118,7 +118,10 @@ public class InvestRightAuthClient {
                         .bodyToMono(AccessTokenResponse.class)
                         .block();
             } catch (WebClientResponseException ex) {
-                throw new AuthenticationException("Failed to fetch access token: " + ex.getResponseBodyAsString());
+                throw new InvestRightApiException(
+                        "Failed to fetch access token: " + ex.getResponseBodyAsString(),
+                        ex.getStatusCode().value(),
+                        ex.getResponseBodyAsString());
             }
         }, "Fetch access token");
     }

@@ -301,6 +301,7 @@ public class PriceMonitorService {
                 position.getInstrumentName(), ltp, position.getStopLoss(), position.getActiveSlOrderId());
 
         position.setStopLossHit(true);
+        position.setExitPrice(position.getStopLoss());
         positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_STOPLOSS);
     }
 
@@ -311,6 +312,7 @@ public class PriceMonitorService {
             position.setTarget3Hit(true);
             position.setTarget2Hit(true);
             position.setTarget1Hit(true);
+            position.setExitPrice(ltp);
             cancelActiveSlOrder(position);
             placeSellOrder(position, position.getRemainingQuantity(), ltp, "T3_FULL_EXIT", accessToken);
             positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
@@ -430,6 +432,7 @@ public class PriceMonitorService {
                 String.format("%.2f", profit), position.getRemainingQuantity());
 
         cancelActiveSlOrder(position);
+        position.setExitPrice(ltp);
         placeSellOrder(position, position.getRemainingQuantity(), ltp, "EOD_PROFIT_EXIT", accessToken);
         positionTracker.closePosition(position.getPositionId(), TradePosition.PositionStatus.EXITED_TARGET);
     }
