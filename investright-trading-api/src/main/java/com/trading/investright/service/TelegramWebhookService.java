@@ -14,10 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -33,7 +34,15 @@ public class TelegramWebhookService {
     private final SchedulerProperties schedulerProperties;
     private final TradeSignalValidator signalValidator;
 
-    private final Set<Long> processedMessageIds = ConcurrentHashMap.newKeySet();
+    private static final int MAX_DEDUP_ENTRIES = 10_000;
+
+    private final Set<Long> processedMessageIds = Collections.newSetFromMap(
+            new LinkedHashMap<>(256, 0.75f, false) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Long, Boolean> eldest) {
+                    return size() > MAX_DEDUP_ENTRIES;
+                }
+            });
 
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 0);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(15, 30);
@@ -96,7 +105,7 @@ public class TelegramWebhookService {
         log.info("Received {} valid trade signal(s) from Telegram webhook", validSignals.size());
         placeOrdersForSignals(validSignals);
 
-        return "processed_" + signals.size();
+        return "processed_" + validSignals.size();
     }
 
     private void placeOrdersForSignals(List<TradeSignal> signals) {
