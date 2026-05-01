@@ -14,4 +14,6 @@ public class TelegramProperties {
     private String channelId;
     private double capitalPerTrade = 40000.0;
     private int lookbackMinutes = 30;
+    private String webhookUrl;
+    private String webhookSecret;
 }

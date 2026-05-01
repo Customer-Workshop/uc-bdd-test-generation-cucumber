@@ -103,7 +103,46 @@ public class TelegramMessageParser {
 
         parseTargetsAndSl(combined, lines, transactionType, builder);
 
-        return builder.build();
+        TradeSignal signal = builder.build();
+
+        if (!isValidSignal(signal)) {
+            log.warn("Skipping incomplete/invalid signal: {} (entry={}, sl={}, target1={})",
+                    signal.getInstrumentName(), signal.getEntryPrice(),
+                    signal.getStopLoss(), signal.getTarget1());
+            return null;
+        }
+
+        return signal;
+    }
+
+    private boolean isValidSignal(TradeSignal signal) {
+        if (signal.getEntryPrice() <= 0) {
+            log.warn("Invalid entry price: {}", signal.getEntryPrice());
+            return false;
+        }
+        if (signal.getStopLoss() == null || signal.getStopLoss() <= 0) {
+            log.warn("Missing or invalid stop loss for {}", signal.getInstrumentName());
+            return false;
+        }
+        if (signal.getTarget1() == null || signal.getTarget1() <= 0) {
+            log.warn("Missing target for {}", signal.getInstrumentName());
+            return false;
+        }
+        if (signal.getStrikePrice() <= 0) {
+            log.warn("Invalid strike price: {}", signal.getStrikePrice());
+            return false;
+        }
+        if ("BUY".equals(signal.getTransactionType()) && signal.getStopLoss() >= signal.getEntryPrice()) {
+            log.warn("BUY signal SL ({}) >= entry ({}) for {} — likely parsing error",
+                    signal.getStopLoss(), signal.getEntryPrice(), signal.getInstrumentName());
+            return false;
+        }
+        if ("SELL".equals(signal.getTransactionType()) && signal.getStopLoss() <= signal.getEntryPrice()) {
+            log.warn("SELL signal SL ({}) <= entry ({}) for {} — likely parsing error",
+                    signal.getStopLoss(), signal.getEntryPrice(), signal.getInstrumentName());
+            return false;
+        }
+        return true;
     }
 
     private void parseTargetsAndSl(String combined, String[] lines, String transactionType,

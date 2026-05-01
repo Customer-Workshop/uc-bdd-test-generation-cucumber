@@ -51,6 +51,8 @@ telegram:
   channel-id: ${TELEGRAM_CHANNEL_ID:}
   capital-per-trade: ${TELEGRAM_CAPITAL_PER_TRADE:40000}
   lookback-minutes: ${TELEGRAM_LOOKBACK_MINUTES:30}
+  webhook-url: ${TELEGRAM_WEBHOOK_URL:}
+  webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
 
 aws:
   region: ${AWS_REGION:ap-south-1}

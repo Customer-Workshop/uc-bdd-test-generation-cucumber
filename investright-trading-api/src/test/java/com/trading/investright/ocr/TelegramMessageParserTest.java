@@ -283,4 +283,50 @@ class TelegramMessageParserTest {
         assertEquals(75.0, signal.getTarget2());
         assertEquals(90.0, signal.getTarget3());
     }
+
+    @Test
+    void shouldRejectSignalWithoutStopLoss() {
+        String message = "BUY NIFTY 24500CE ABV 150 TGT 180-200";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertTrue(signals.isEmpty());
+    }
+
+    @Test
+    void shouldRejectSignalWithoutTargets() {
+        String message = "BUY NIFTY 24500CE ABV 150\nSL 120";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertTrue(signals.isEmpty());
+    }
+
+    @Test
+    void shouldRejectBuySignalWithSlAboveEntry() {
+        String message = "BUY NIFTY 24500CE ABV 150 TGT 180-200 SL 160";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertTrue(signals.isEmpty());
+    }
+
+    @Test
+    void shouldRejectSellSignalWithSlBelowEntry() {
+        String message = "SELL NIFTY 24000PE BLW 300 TGT 250-200 SL 280";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertTrue(signals.isEmpty());
+    }
+
+    @Test
+    void shouldAcceptValidBuySignal() {
+        String message = "BUY NIFTY 24500CE ABV 150 TGT 180-200 SL 120";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertEquals(1, signals.size());
+        assertEquals(150.0, signals.get(0).getEntryPrice());
+        assertEquals(120.0, signals.get(0).getStopLoss());
+    }
+
+    @Test
+    void shouldAcceptValidSellSignal() {
+        String message = "SELL BANKNIFTY 52000PE BLW 300 TGT 250-200 SL 350";
+        List<TradeSignal> signals = parser.parseMessage(message);
+        assertEquals(1, signals.size());
+        assertEquals(300.0, signals.get(0).getEntryPrice());
+        assertEquals(350.0, signals.get(0).getStopLoss());
+    }
 }
