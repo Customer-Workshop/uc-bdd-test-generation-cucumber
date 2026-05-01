@@ -4,10 +4,6 @@ investright:
   api-secret: test-api-secret
   user-agent: "TestAgent/1.0"
 
-tesseract:
-  data-path: /tmp/tessdata
-  language: eng
-
 trading:
   default-lot-size: 1
   default-product: INTRADAY

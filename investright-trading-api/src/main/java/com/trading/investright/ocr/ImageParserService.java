@@ -3,83 +3,77 @@ package com.trading.investright.ocr;
 import com.trading.investright.exception.OcrProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.textract.TextractClient;
+import software.amazon.awssdk.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.BlockType;
+import software.amazon.awssdk.services.textract.model.DetectDocumentTextRequest;
+import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
+import software.amazon.awssdk.services.textract.model.Document;
+import software.amazon.awssdk.services.textract.model.TextractException;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageParserService {
 
-    private final ObjectProvider<Tesseract> tesseractProvider;
+    private final TextractClient textractClient;
 
     public String extractText(MultipartFile file) {
-        try (InputStream inputStream = file.getInputStream()) {
-            BufferedImage image = ImageIO.read(inputStream);
-            if (image == null) {
-                throw new OcrProcessingException("Unable to read image file. Supported formats: PNG, JPG, TIFF, BMP");
-            }
-            BufferedImage processed = preprocessImage(image);
-            Tesseract tesseract = tesseractProvider.getObject();
-            String text = tesseract.doOCR(processed);
-            log.debug("OCR extracted text:\n{}", text);
-            return text;
+        try {
+            byte[] imageBytes = file.getBytes();
+            return detectText(imageBytes);
         } catch (IOException ex) {
             throw new OcrProcessingException("Failed to read image file: " + ex.getMessage(), ex);
-        } catch (TesseractException ex) {
-            throw new OcrProcessingException("OCR processing failed: " + ex.getMessage(), ex);
         }
     }
 
     public String extractText(BufferedImage image) {
         try {
-            BufferedImage processed = preprocessImage(image);
-            Tesseract tesseract = tesseractProvider.getObject();
-            return tesseract.doOCR(processed);
-        } catch (TesseractException ex) {
-            throw new OcrProcessingException("OCR processing failed: " + ex.getMessage(), ex);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", baos);
+            byte[] imageBytes = baos.toByteArray();
+            return detectText(imageBytes);
+        } catch (IOException ex) {
+            throw new OcrProcessingException("Failed to convert image to bytes: " + ex.getMessage(), ex);
         }
     }
 
-    private BufferedImage preprocessImage(BufferedImage original) {
-        BufferedImage grayscale = new BufferedImage(
-                original.getWidth(), original.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D g2d = grayscale.createGraphics();
-        g2d.drawImage(original, 0, 0, null);
-        g2d.dispose();
-
-        BufferedImage scaled = grayscale;
-        if (original.getWidth() < 1000) {
-            int newWidth = original.getWidth() * 2;
-            int newHeight = original.getHeight() * 2;
-            scaled = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
-            Graphics2D g = scaled.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g.drawImage(grayscale, 0, 0, newWidth, newHeight, null);
-            g.dispose();
-        }
-
-        return applyThreshold(scaled, 128);
+    public String extractText(byte[] imageBytes) {
+        return detectText(imageBytes);
     }
 
-    private BufferedImage applyThreshold(BufferedImage image, int threshold) {
-        BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int rgb = image.getRGB(x, y);
-                int gray = rgb & 0xFF;
-                result.setRGB(x, y, gray > threshold ? 0xFFFFFF : 0x000000);
+    private String detectText(byte[] imageBytes) {
+        try {
+            Document document = Document.builder()
+                    .bytes(SdkBytes.fromByteArray(imageBytes))
+                    .build();
+
+            DetectDocumentTextRequest request = DetectDocumentTextRequest.builder()
+                    .document(document)
+                    .build();
+
+            DetectDocumentTextResponse response = textractClient.detectDocumentText(request);
+
+            StringBuilder text = new StringBuilder();
+            for (Block block : response.blocks()) {
+                if (block.blockType() == BlockType.LINE) {
+                    text.append(block.text()).append("\n");
+                }
             }
+
+            String result = text.toString().trim();
+            log.debug("Textract extracted text:\n{}", result);
+            return result;
+        } catch (TextractException ex) {
+            throw new OcrProcessingException("AWS Textract OCR processing failed: " + ex.getMessage(), ex);
         }
-        return result;
     }
 }

@@ -13,10 +13,6 @@ investright:
   api-secret: ${IR_API_SECRET:}
   user-agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 
-tesseract:
-  data-path: ${TESSDATA_PREFIX:/usr/share/tesseract-ocr/4.00/tessdata}
-  language: eng
-
 trading:
   default-lot-size: 1
   capital-per-trade: ${CAPITAL_PER_TRADE:100000}

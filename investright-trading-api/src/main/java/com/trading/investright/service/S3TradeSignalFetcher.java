@@ -19,8 +19,6 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -163,12 +161,12 @@ public class S3TradeSignalFetcher {
         try (ResponseInputStream<GetObjectResponse> stream = s3Client.getObject(
                 GetObjectRequest.builder().bucket(bucket).key(key).build())) {
 
-            BufferedImage image = ImageIO.read(stream);
-            if (image == null) {
-                throw new OcrProcessingException("Unable to decode image from S3: " + key);
+            byte[] imageBytes = stream.readAllBytes();
+            if (imageBytes.length == 0) {
+                throw new OcrProcessingException("Empty image from S3: " + key);
             }
 
-            String ocrText = imageParserService.extractText(image);
+            String ocrText = imageParserService.extractText(imageBytes);
             log.info("OCR text from S3 image {}:\n{}", key, ocrText);
             List<TradeSignal> signals = tradeSignalParser.parseOcrText(ocrText);
             log.info("Parsed {} signals from S3 image: {}", signals.size(), key);

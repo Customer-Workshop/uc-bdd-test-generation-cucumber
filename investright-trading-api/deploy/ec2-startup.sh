@@ -47,30 +47,14 @@ else
 fi
 java -version
 
-# ---- Install Tesseract OCR ----
-echo "[2/6] Installing Tesseract OCR..."
-if command -v tesseract &>/dev/null; then
-    echo "  Tesseract already installed."
-else
-    case "${OS_ID}" in
-        amzn)
-            yum install -y tesseract
-            ;;
-        ubuntu|debian)
-            apt-get install -y tesseract-ocr tesseract-ocr-eng
-            ;;
-    esac
-fi
-tesseract --version
-
 # ---- Create app user & directories ----
-echo "[3/6] Setting up application directories..."
+echo "[2/6] Setting up application directories..."
 id "${APP_USER}" &>/dev/null || useradd -r -s /sbin/nologin "${APP_USER}"
 mkdir -p "${APP_DIR}" "${TRADES_DIR}" "${LOG_DIR}"
 chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}" "${LOG_DIR}"
 
 # ---- Create environment file template ----
-echo "[4/6] Creating environment configuration..."
+echo "[3/5] Creating environment configuration..."
 if [ ! -f "${ENV_FILE}" ]; then
     cat > "${ENV_FILE}" << 'ENVEOF'
 # InvestRight Trading API — Environment Variables
@@ -122,7 +106,7 @@ else
 fi
 
 # ---- Create systemd service ----
-echo "[5/6] Creating systemd service..."
+echo "[4/5] Creating systemd service..."
 cat > /etc/systemd/system/${APP_NAME}.service << SVCEOF
 [Unit]
 Description=InvestRight Trading API
@@ -154,7 +138,7 @@ systemctl daemon-reload
 systemctl enable "${APP_NAME}"
 
 # ---- Create cost-saving cron (start at 8:50 AM, stop at 3:35 PM IST) ----
-echo "[6/6] Setting up log rotation..."
+echo "[5/5] Setting up log rotation..."
 cat > /etc/logrotate.d/${APP_NAME} << LOGEOF
 ${LOG_DIR}/*.log {
     daily

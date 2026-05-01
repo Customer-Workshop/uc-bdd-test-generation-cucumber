@@ -19,7 +19,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <tess4j.version>5.11.0</tess4j.version>
         <springdoc.version>2.6.0</springdoc.version>
         <aws-sdk.version>2.25.60</aws-sdk.version>
     </properties>
@@ -43,11 +42,11 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- Tess4J for OCR -->
+        <!-- AWS Textract SDK -->
         <dependency>
-            <groupId>net.sourceforge.tess4j</groupId>
-            <artifactId>tess4j</artifactId>
-            <version>${tess4j.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>textract</artifactId>
+            <version>${aws-sdk.version}</version>
         </dependency>
 
         <!-- Lombok -->

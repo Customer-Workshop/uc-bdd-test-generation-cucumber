@@ -6,7 +6,7 @@ A Spring Boot application that integrates with the [InvestRight Open API](https:
 
 - **Authentication**: Full InvestRight login flow (credentials, 2FA, access token)
 - **Order Management**: Place, modify, cancel orders and check status
-- **Image OCR Parsing**: Upload trade signal images → automatic order placement
+- **Image OCR Parsing**: Upload trade signal images → AWS Textract OCR → automatic order placement
 - **Symbol Mapping**: Maps short names to InvestRight-compatible trading symbols
 - **Swagger UI**: Interactive API documentation at `/swagger-ui.html`
 
@@ -14,24 +14,8 @@ A Spring Boot application that integrates with the [InvestRight Open API](https:
 
 - **Java 17+**
 - **Maven 3.8+**
-- **Tesseract OCR 4.x+** installed on the system
+- **AWS account** with Textract access (for OCR image parsing)
 - **InvestRight API credentials** (API key, API secret)
-
-### Install Tesseract OCR
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install tesseract-ocr tesseract-ocr-eng
-```
-
-**macOS (Homebrew):**
-```bash
-brew install tesseract
-```
-
-**Windows:**
-Download from [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki) and add to PATH.
 
 ## Setup
 
@@ -208,8 +192,7 @@ The application includes a built-in scheduled agent that automatically:
 
 **Prerequisites:**
 1. Install [Java 17+](https://adoptium.net/)
-2. Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) for Windows
-3. Set the Tesseract data path (usually `C:\Program Files\Tesseract-OCR\tessdata`)
+2. AWS credentials configured (for Textract OCR) — use `aws configure` or set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`
 
 **Step 1: Set environment variables** (run in PowerShell or add to System Environment Variables):
 
@@ -222,7 +205,6 @@ $env:IR_USERNAME = "your_investright_username"
 $env:IR_PASSWORD = "your_investright_password"
 $env:IR_2FA_ANSWER = "your_2fa_code"
 $env:IR_USER_ID = "your_client_id"
-$env:TESSDATA_PREFIX = "C:\Program Files\Tesseract-OCR\tessdata"
 ```
 
 **Step 2: Build and run the application:**
@@ -304,14 +286,21 @@ my-trade-signals/
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": ["s3:GetObject", "s3:ListBucket"],
-    "Resource": [
-      "arn:aws:s3:::my-trade-signals",
-      "arn:aws:s3:::my-trade-signals/*"
-    ]
-  }]
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::my-trade-signals",
+        "arn:aws:s3:::my-trade-signals/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["textract:DetectDocumentText"],
+      "Resource": "*"
+    }
+  ]
 }
 ```
 
@@ -428,8 +417,6 @@ The app loads credentials at startup from Secrets Manager and falls back to env 
 | `investright.base-url` | InvestRight API base URL | `https://developer.hdfcsec.com/oapi/v1` |
 | `investright.api-key` | API key (env: `IR_API_KEY`) | — |
 | `investright.api-secret` | API secret (env: `IR_API_SECRET`) | — |
-| `tesseract.data-path` | Tesseract tessdata path | `/usr/share/tesseract-ocr/4.00/tessdata` |
-| `tesseract.language` | OCR language | `eng` |
 | `trading.default-lot-size` | Default order quantity | `1` |
 | `trading.default-product` | Default order product type | `INTRADAY` |
 | `trading.default-validity` | Default order validity | `DAY` |
@@ -454,7 +441,7 @@ The app loads credentials at startup from Secrets Manager and falls back to env 
 
 ```
 com.trading.investright
-├── config/          # WebClient, Tesseract, Security, Scheduler, AWS/S3, Properties configs
+├── config/          # WebClient, Textract, Security, Scheduler, AWS/S3, Properties configs
 ├── controller/      # AuthController, OrderController, TradeSignalController
 ├── service/         # OrderService, SymbolMappingService, CloudImageFetcher, LocalImageFetcher, S3TradeSignalFetcher
 ├── client/          # InvestRightAuthClient, InvestRightOrderClient, ApiRetryHandler
@@ -464,7 +451,7 @@ com.trading.investright
 └── exception/       # GlobalExceptionHandler, custom exceptions
 
 deploy/
-├── ec2-startup.sh       # EC2 setup script (installs Java, Tesseract, creates systemd service)
+├── ec2-startup.sh       # EC2 setup script (installs Java, creates systemd service)
 ├── docker-compose.yml   # Docker Compose for one-command deployment
 Dockerfile               # Multi-stage Docker build
 ```
