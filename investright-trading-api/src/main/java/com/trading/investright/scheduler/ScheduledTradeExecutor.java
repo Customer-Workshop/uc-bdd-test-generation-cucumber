@@ -299,7 +299,8 @@ public class ScheduledTradeExecutor {
                 if (i < validSignals.size() && orderId != null) {
                     TradeSignal signal = validSignals.get(i);
                     int qty = orderRequests.get(i).getQuantity();
-                    positionTracker.registerPosition(signal, orderId, qty, userId);
+                    String securityId = orderRequests.get(i).getSecurityId();
+                    positionTracker.registerPosition(signal, orderId, qty, userId, securityId);
                 }
             } else {
                 failed++;

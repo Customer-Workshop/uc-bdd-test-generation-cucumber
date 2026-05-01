@@ -47,11 +47,17 @@ public class PositionTracker {
     }
 
     public TradePosition registerPosition(TradeSignal signal, String orderId, int quantity, String userId) {
+        return registerPosition(signal, orderId, quantity, userId, null);
+    }
+
+    public TradePosition registerPosition(TradeSignal signal, String orderId, int quantity, String userId, String securityId) {
+        String tradingSymbol = securityId != null ? securityId :
+                (signal.getTradingSymbol() != null ? signal.getTradingSymbol() : signal.getInstrumentName());
         TradePosition position = TradePosition.builder()
                 .positionId(UUID.randomUUID().toString())
                 .orderId(orderId)
                 .instrumentName(signal.getInstrumentName())
-                .tradingSymbol(signal.getTradingSymbol() != null ? signal.getTradingSymbol() : signal.getInstrumentName())
+                .tradingSymbol(tradingSymbol)
                 .exchange(signal.getExchange() != null ? signal.getExchange() : "NSE")
                 .instrumentSegment(determineInstrumentSegment(signal))
                 .transactionType(signal.getTransactionType())

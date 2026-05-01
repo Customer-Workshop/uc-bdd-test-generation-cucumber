@@ -111,7 +111,7 @@ public class TelegramWebhookService {
                     if ("success".equalsIgnoreCase(response.getStatus())) {
                         log.info("Telegram order placed: {} -> orderId={}", signal.getInstrumentName(), orderId);
                         if (orderId != null) {
-                            positionTracker.registerPosition(signal, orderId, order.getQuantity(), userId);
+                            positionTracker.registerPosition(signal, orderId, order.getQuantity(), userId, order.getSecurityId());
                         }
                     } else {
                         log.error("Telegram order failed for {}: {}", signal.getInstrumentName(), orderId);
