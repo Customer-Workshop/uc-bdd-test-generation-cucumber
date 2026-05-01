@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 @Slf4j
 public final class ApiRetryHandler {
 
-    private static final int DEFAULT_MAX_RETRIES = 3;
+    private static final int DEFAULT_MAX_RETRIES = 10;
     private static final long DEFAULT_INITIAL_DELAY_MS = 500;
     private static final double DEFAULT_BACKOFF_MULTIPLIER = 2.0;
     private static final long MAX_DELAY_MS = 30_000;
