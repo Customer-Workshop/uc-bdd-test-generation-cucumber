@@ -252,7 +252,7 @@ public class ScheduledTradeExecutor {
     }
 
     private void placeOrders(List<TradeSignal> signals) {
-        String userId = schedulerProperties.getUserId() != null ?
+        String userId = schedulerProperties.getUserId() != null && !schedulerProperties.getUserId().isBlank() ?
                 schedulerProperties.getUserId() : schedulerProperties.getUsername();
 
         List<OrderRequest> orderRequests = new ArrayList<>();
