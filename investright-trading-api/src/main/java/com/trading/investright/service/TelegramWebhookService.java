@@ -37,12 +37,12 @@ public class TelegramWebhookService {
     private static final int MAX_DEDUP_ENTRIES = 10_000;
 
     private final Set<Long> processedMessageIds = Collections.newSetFromMap(
-            new LinkedHashMap<>(256, 0.75f, false) {
+            Collections.synchronizedMap(new LinkedHashMap<>(256, 0.75f, false) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<Long, Boolean> eldest) {
                     return size() > MAX_DEDUP_ENTRIES;
                 }
-            });
+            }));
 
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 0);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(15, 30);
