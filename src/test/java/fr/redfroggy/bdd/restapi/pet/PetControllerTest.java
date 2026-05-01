@@ -145,6 +145,21 @@ public class PetControllerTest {
     }
 
     // -----------------------------------------------------------------------
+    // TC-005b: Reject creation without an ID
+    // -----------------------------------------------------------------------
+    @Test
+    public void testCreatePetWithoutId_ReturnsBadRequest() throws Exception {
+        PetDTO pet = new PetDTO();
+        pet.setName("NoId");
+        pet.setSpecies("Dog");
+
+        mockMvc.perform(post("/api/pets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pet)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // -----------------------------------------------------------------------
     // TC-006: Reject duplicate pet ID (conflict)
     // -----------------------------------------------------------------------
     @Test
@@ -269,7 +284,10 @@ public class PetControllerTest {
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andExpect(header().exists("X-Total-Count"))
+                .andExpect(header().exists("X-Page"))
+                .andExpect(header().exists("X-Page-Size"));
     }
 
     // -----------------------------------------------------------------------

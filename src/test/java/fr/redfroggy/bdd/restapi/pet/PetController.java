@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import wiremock.org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,6 +41,9 @@ public final class PetController {
         if (fromIndex >= filtered.size()) {
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .header("X-Total-Count", String.valueOf(filtered.size()))
+                    .header("X-Page", String.valueOf(page))
+                    .header("X-Page-Size", String.valueOf(size))
                     .body(new ArrayList<>());
         }
         int toIndex = Math.min(fromIndex + size, filtered.size());
@@ -73,6 +75,10 @@ public final class PetController {
 
     @PostMapping(value = "/pets")
     public ResponseEntity<PetDTO> addPet(@RequestBody PetDTO pet) {
+        if (pet.getId() == null || pet.getId().trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         if (pet.getName() == null || pet.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -82,7 +88,7 @@ public final class PetController {
         }
 
         PetDTO existing = pets.stream()
-                .filter(p -> p.getId().equals(pet.getId()))
+                .filter(p -> pet.getId().equals(p.getId()))
                 .findFirst()
                 .orElse(null);
 

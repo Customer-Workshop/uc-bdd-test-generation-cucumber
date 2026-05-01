@@ -79,12 +79,15 @@ Feature: Petstore API - Boundary Scenarios
     Then http response code should be 200
     And http response body is typed as array using path $ with length 2
 
-  Scenario: Request a page beyond available data returns empty list
+  Scenario: Request a page beyond available data returns empty list with pagination headers
     And I set http query parameter page to 100
     And I set http query parameter size to 10
     When I GET /pets
     Then http response code should be 200
     And http response body is typed as array using path $ with length 0
+    And http response header X-Total-Count should exist
+    And http response header X-Page should exist
+    And http response header X-Page-Size should exist
 
   Scenario: Request with page size of 1 returns single result
     And I set http query parameter page to 0

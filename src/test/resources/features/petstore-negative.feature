@@ -34,6 +34,11 @@ Feature: Petstore API - Negative Scenarios
     And I POST /pets
     Then http response code should be 400
 
+  Scenario: Reject pet creation without an ID
+    When I set http body to {"name":"NoId","species":"Dog","age":2}
+    And I POST /pets
+    Then http response code should be 400
+
   # -------------------------------------------------------------------------
   # Not-found cases
   # -------------------------------------------------------------------------
