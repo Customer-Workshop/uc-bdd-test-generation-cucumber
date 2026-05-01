@@ -128,7 +128,7 @@ public final class PetController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .body(pet);
+                .body(current);
     }
 
     @PatchMapping(value = "/pets/{id}")
