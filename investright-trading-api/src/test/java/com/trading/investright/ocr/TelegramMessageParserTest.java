@@ -192,4 +192,95 @@ class TelegramMessageParserTest {
         assertEquals(1, signals.size());
         assertEquals("INDIANB 820PE", signals.get(0).getInstrumentName());
     }
+
+    @Test
+    void shouldParseSingleLineWithEntryRangeAndSlRange() {
+        String message = "BUY SENSEX 7700CE ABV 50-40 TGT 75-125-200-250 SL 35-30";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        TradeSignal signal = signals.get(0);
+        assertEquals("SENSEX", signal.getUnderlying());
+        assertEquals(7700.0, signal.getStrikePrice());
+        assertEquals("CE", signal.getOptionType());
+        assertEquals(InstrumentType.CALL_OPTION, signal.getInstrumentType());
+        assertEquals("BUY", signal.getTransactionType());
+        assertEquals(50.0, signal.getEntryPrice());
+        assertEquals(30.0, signal.getStopLoss());
+        assertEquals(75.0, signal.getTarget1());
+        assertEquals(125.0, signal.getTarget2());
+        assertEquals(200.0, signal.getTarget3());
+        assertEquals(250.0, signal.getTarget4());
+        assertEquals("BFO", signal.getExchange());
+    }
+
+    @Test
+    void shouldParseEntryRangeForBuy() {
+        String message = "BUY NIFTY 24500CE ABV 150-130 TGT 180-200\nSL 110";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        assertEquals(150.0, signals.get(0).getEntryPrice());
+    }
+
+    @Test
+    void shouldParseEntryRangeForSell() {
+        String message = "SELL NIFTY 24000PE BLW 100-120 TGT 80-60\nSL 140";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        assertEquals(100.0, signals.get(0).getEntryPrice());
+    }
+
+    @Test
+    void shouldParseSlRangeForBuy() {
+        String message = "BUY INDIANB 820PE ABV 29 TGT 32-35\nSL 25-22";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        assertEquals(22.0, signals.get(0).getStopLoss());
+    }
+
+    @Test
+    void shouldParseSlRangeForSell() {
+        String message = "SELL BANKNIFTY 52000PE BLW 300 TGT 250-200\nSL 330-350";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        assertEquals(350.0, signals.get(0).getStopLoss());
+    }
+
+    @Test
+    void shouldParseInlineTargets() {
+        String message = "BUY SENSEX 76600PE ABV 200 TGT 240-280-350 SL 165";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        TradeSignal signal = signals.get(0);
+        assertEquals(240.0, signal.getTarget1());
+        assertEquals(280.0, signal.getTarget2());
+        assertEquals(350.0, signal.getTarget3());
+        assertEquals(165.0, signal.getStopLoss());
+    }
+
+    @Test
+    void shouldHandleSingleEntryPriceWithInlineTargets() {
+        String message = "BUY RELIANCE 2800CE ABV 55 TGT 65-75-90 SL 45";
+
+        List<TradeSignal> signals = parser.parseMessage(message);
+
+        assertEquals(1, signals.size());
+        TradeSignal signal = signals.get(0);
+        assertEquals(55.0, signal.getEntryPrice());
+        assertEquals(45.0, signal.getStopLoss());
+        assertEquals(65.0, signal.getTarget1());
+        assertEquals(75.0, signal.getTarget2());
+        assertEquals(90.0, signal.getTarget3());
+    }
 }

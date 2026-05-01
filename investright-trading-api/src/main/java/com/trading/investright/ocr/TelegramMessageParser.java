@@ -15,18 +15,19 @@ import java.util.regex.Pattern;
 @Component
 public class TelegramMessageParser {
 
-    private static final Pattern BUY_SELL_LINE = Pattern.compile(
-            "(?i)(BUY|SELL)\\s+([A-Z]+)\\s+(\\d+(?:\\.\\d+)?)(CE|PE)\\s+(?:ABV|ABOVE|BLW|BELOW)\\s+(\\d+(?:\\.\\d+)?)(?:\\s+TGT)?");
+    private static final Pattern BUY_SELL_PATTERN = Pattern.compile(
+            "(?i)(BUY|SELL)\\s+([A-Z]+)\\s+(\\d+(?:\\.\\d+)?)(CE|PE)\\s+(?:ABV|ABOVE|BLW|BELOW)\\s+(\\d+(?:\\.\\d+)?)(?:\\s*[-–]\\s*(\\d+(?:\\.\\d+)?))?");
 
-    private static final Pattern TARGET_LINE = Pattern.compile(
+    private static final Pattern INLINE_TGT_PATTERN = Pattern.compile(
+            "(?i)TGT\\s+([\\d.]+(?:\\s*[-–]\\s*[\\d.]+)*)");
+
+    private static final Pattern STANDALONE_TARGET_LINE = Pattern.compile(
             "^([\\d.]+(?:\\s*[-–]\\s*[\\d.]+)+)$");
 
-    private static final Pattern SL_LINE = Pattern.compile(
-            "(?i)SL\\s+(\\d+(?:\\.\\d+)?)");
+    private static final Pattern SL_PATTERN = Pattern.compile(
+            "(?i)SL\\s+(\\d+(?:\\.\\d+)?)(?:\\s*[-–]\\s*(\\d+(?:\\.\\d+)?))?");
 
     private static final Set<String> BSE_INDICES = Set.of("SENSEX", "BANKEX");
-    private static final Set<String> SKIP_LINES = Set.of(
-            "HERO ZERO", "INTRADAY", "DELIVERY", "POSITIONAL");
 
     public List<TradeSignal> parseMessage(String messageText) {
         if (messageText == null || messageText.isBlank()) {
@@ -61,7 +62,7 @@ public class TelegramMessageParser {
         String[] lines = block.split("\\n");
         String combined = String.join(" ", lines).trim();
 
-        Matcher buySellMatcher = BUY_SELL_LINE.matcher(combined);
+        Matcher buySellMatcher = BUY_SELL_PATTERN.matcher(combined);
         if (!buySellMatcher.find()) {
             return null;
         }
@@ -70,7 +71,17 @@ public class TelegramMessageParser {
         String underlying = buySellMatcher.group(2).toUpperCase();
         double strikePrice = Double.parseDouble(buySellMatcher.group(3));
         String optionType = buySellMatcher.group(4).toUpperCase();
-        double entryPrice = Double.parseDouble(buySellMatcher.group(5));
+        double entryPrice1 = Double.parseDouble(buySellMatcher.group(5));
+        Double entryPrice2 = buySellMatcher.group(6) != null ?
+                Double.parseDouble(buySellMatcher.group(6)) : null;
+
+        double entryPrice;
+        if (entryPrice2 != null) {
+            entryPrice = "BUY".equals(transactionType) ?
+                    Math.max(entryPrice1, entryPrice2) : Math.min(entryPrice1, entryPrice2);
+        } else {
+            entryPrice = entryPrice1;
+        }
 
         String instrumentName = underlying + " " + (int) strikePrice + optionType;
         InstrumentType instrumentType = "CE".equals(optionType) ?
@@ -90,37 +101,55 @@ public class TelegramMessageParser {
                 .rawText(block)
                 .source("telegram");
 
-        parseTargetsAndSl(lines, builder);
+        parseTargetsAndSl(combined, lines, transactionType, builder);
 
         return builder.build();
     }
 
-    private void parseTargetsAndSl(String[] lines, TradeSignal.TradeSignalBuilder builder) {
-        for (String line : lines) {
-            line = line.trim();
+    private void parseTargetsAndSl(String combined, String[] lines, String transactionType,
+                                    TradeSignal.TradeSignalBuilder builder) {
+        Matcher slMatcher = SL_PATTERN.matcher(combined);
+        if (slMatcher.find()) {
+            double sl1 = Double.parseDouble(slMatcher.group(1));
+            Double sl2 = slMatcher.group(2) != null ? Double.parseDouble(slMatcher.group(2)) : null;
 
-            Matcher slMatcher = SL_LINE.matcher(line);
-            if (slMatcher.find()) {
-                builder.stopLoss(Double.parseDouble(slMatcher.group(1)));
-                continue;
-            }
-
-            Matcher targetMatcher = TARGET_LINE.matcher(line);
-            if (targetMatcher.matches()) {
-                String[] parts = line.split("\\s*[-–]\\s*");
-                List<Double> targets = new ArrayList<>();
-                for (String part : parts) {
-                    try {
-                        targets.add(Double.parseDouble(part.trim()));
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-                if (targets.size() >= 1) builder.target1(targets.get(0));
-                if (targets.size() >= 2) builder.target2(targets.get(1));
-                if (targets.size() >= 3) builder.target3(targets.get(2));
-                if (targets.size() >= 4) builder.target4(targets.get(3));
+            if (sl2 != null) {
+                builder.stopLoss("BUY".equals(transactionType) ?
+                        Math.min(sl1, sl2) : Math.max(sl1, sl2));
+            } else {
+                builder.stopLoss(sl1);
             }
         }
+
+        Matcher inlineTgtMatcher = INLINE_TGT_PATTERN.matcher(combined);
+        if (inlineTgtMatcher.find()) {
+            parseTargetValues(inlineTgtMatcher.group(1), builder);
+            return;
+        }
+
+        for (String line : lines) {
+            line = line.trim();
+            Matcher targetMatcher = STANDALONE_TARGET_LINE.matcher(line);
+            if (targetMatcher.matches()) {
+                parseTargetValues(line, builder);
+                return;
+            }
+        }
+    }
+
+    private void parseTargetValues(String targetStr, TradeSignal.TradeSignalBuilder builder) {
+        String[] parts = targetStr.split("\\s*[-–]\\s*");
+        List<Double> targets = new ArrayList<>();
+        for (String part : parts) {
+            try {
+                targets.add(Double.parseDouble(part.trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (targets.size() >= 1) builder.target1(targets.get(0));
+        if (targets.size() >= 2) builder.target2(targets.get(1));
+        if (targets.size() >= 3) builder.target3(targets.get(2));
+        if (targets.size() >= 4) builder.target4(targets.get(3));
     }
 
     private String determineExchange(String underlying) {
@@ -132,6 +161,6 @@ public class TelegramMessageParser {
 
     public boolean isTradeSignalMessage(String text) {
         if (text == null || text.isBlank()) return false;
-        return BUY_SELL_LINE.matcher(text).find();
+        return BUY_SELL_PATTERN.matcher(text).find();
     }
 }
