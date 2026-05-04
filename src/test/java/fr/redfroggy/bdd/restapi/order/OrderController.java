@@ -77,6 +77,12 @@ public class OrderController {
 
         if (order.getStatus() == null || StringUtils.isBlank(order.getStatus())) {
             order.setStatus("PENDING");
+        } else if (!VALID_STATUSES.contains(order.getStatus().toUpperCase())) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(400, "Bad Request",
+                            "Invalid status. Valid values: " + String.join(", ", VALID_STATUSES)));
+        } else {
+            order.setStatus(order.getStatus().toUpperCase());
         }
 
         double total = order.getItems().stream()
