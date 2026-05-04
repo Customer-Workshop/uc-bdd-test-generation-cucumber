@@ -50,10 +50,10 @@ public final class UserController {
             Comparator<UserDTO> comparator;
             switch (sort) {
                 case "firstName":
-                    comparator = Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+                    comparator = Comparator.comparing(UserDTO::getFirstName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
                     break;
                 case "lastName":
-                    comparator = Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+                    comparator = Comparator.comparing(UserDTO::getLastName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
                     break;
                 case "age":
                     comparator = Comparator.comparingInt(UserDTO::getAge);
@@ -75,12 +75,12 @@ public final class UserController {
                 return ResponseEntity.badRequest()
                         .body(new ErrorResponse(400, "Bad Request", "invalid pagination: page >= 0 and size > 0 required"));
             }
-            int fromIndex = page * size;
+            long fromIndex = (long) page * size;
             if (fromIndex >= result.size()) {
                 return ResponseEntity.ok(new ArrayList<>());
             }
-            int toIndex = Math.min(fromIndex + size, result.size());
-            result = result.subList(fromIndex, toIndex);
+            int toIndex = (int) Math.min(fromIndex + size, result.size());
+            result = result.subList((int) fromIndex, toIndex);
         }
 
         return ResponseEntity.ok(result);
