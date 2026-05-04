@@ -14,8 +14,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api")
@@ -30,13 +32,58 @@ public final class UserController {
     public static List<UserDTO> users = new ArrayList<>();
 
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<?> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "sort", required = false) String sort,
+            @RequestParam(value = "direction", required = false, defaultValue = "asc") String direction,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+
+        Stream<UserDTO> stream = users.stream();
+
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
-                    || u.getLastName().toLowerCase().contains(name.toLowerCase()))
-                    .collect(Collectors.toList());
+            stream = stream.filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+                    || u.getLastName().toLowerCase().contains(name.toLowerCase()));
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            Comparator<UserDTO> comparator;
+            switch (sort) {
+                case "firstName":
+                    comparator = Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "lastName":
+                    comparator = Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "age":
+                    comparator = Comparator.comparingInt(UserDTO::getAge);
+                    break;
+                default:
+                    comparator = Comparator.comparing(UserDTO::getId);
+                    break;
+            }
+            if ("desc".equalsIgnoreCase(direction)) {
+                comparator = comparator.reversed();
+            }
+            stream = stream.sorted(comparator);
+        }
+
+        List<UserDTO> result = stream.collect(Collectors.toList());
+
+        if (page != null && size != null) {
+            if (page < 0 || size <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(new ErrorResponse(400, "Bad Request", "invalid pagination: page >= 0 and size > 0 required"));
+            }
+            int fromIndex = page * size;
+            if (fromIndex >= result.size()) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+            int toIndex = Math.min(fromIndex + size, result.size());
+            result = result.subList(fromIndex, toIndex);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/users/{id}")
@@ -64,20 +111,36 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<?> addUser(@RequestBody  UserDTO user) {
+
+        if (user.getId() == null || StringUtils.isBlank(user.getId())) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(400, "Bad Request", "id is required"));
+        }
+        if (user.getFirstName() == null || StringUtils.isBlank(user.getFirstName())) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(400, "Bad Request", "firstName is required"));
+        }
+        if (user.getLastName() == null || StringUtils.isBlank(user.getLastName())) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(400, "Bad Request", "lastName is required"));
+        }
+        if (user.getAge() < 0 || user.getAge() > 150) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(400, "Bad Request", "age range invalid: expected 0 to 150"));
+        }
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
                 .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        if (currentUser != null) {
+            return ResponseEntity.status(409)
+                    .body(new ErrorResponse(409, "Conflict", "User with id " + user.getId() + " already exists"));
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
