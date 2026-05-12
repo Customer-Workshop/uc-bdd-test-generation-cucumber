@@ -13,13 +13,16 @@ import wiremock.org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api")
 public final class UserController {
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final int MAX_NAME_LENGTH = 100;
 
     private final UserDetailService userDetailService;
 
@@ -30,13 +33,55 @@ public final class UserController {
     public static List<UserDTO> users = new ArrayList<>();
 
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<?> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "sort", required = false) String sort) {
+
+        List<UserDTO> result = users;
+
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            result = result.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            String[] parts = sort.split(",");
+            String field = parts[0];
+            boolean ascending = parts.length < 2 || "asc".equalsIgnoreCase(parts[1]);
+
+            Comparator<UserDTO> comparator;
+            switch (field) {
+                case "firstName":
+                    comparator = Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "lastName":
+                    comparator = Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "age":
+                    comparator = Comparator.comparingInt(UserDTO::getAge);
+                    break;
+                default:
+                    comparator = Comparator.comparing(UserDTO::getId);
+            }
+            if (!ascending) {
+                comparator = comparator.reversed();
+            }
+            result = result.stream().sorted(comparator).collect(Collectors.toList());
+        }
+
+        if (page != null && size != null) {
+            int fromIndex = page * size;
+            if (fromIndex >= result.size()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
+            int toIndex = Math.min(fromIndex + size, result.size());
+            result = result.subList(fromIndex, toIndex);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/users/{id}")
@@ -64,20 +109,50 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<?> addUser(@RequestBody  UserDTO user) {
 
+        // Validate required fields
+        if (StringUtils.isBlank(user.getId())) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "id is required"));
+        }
+        if (StringUtils.isBlank(user.getFirstName())) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "firstName is required"));
+        }
+        if (StringUtils.isBlank(user.getLastName())) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "lastName is required"));
+        }
+
+        // Validate name length
+        if (user.getFirstName().length() > MAX_NAME_LENGTH) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "firstName exceeds maximum length of " + MAX_NAME_LENGTH));
+        }
+        if (user.getLastName().length() > MAX_NAME_LENGTH) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "lastName exceeds maximum length of " + MAX_NAME_LENGTH));
+        }
+
+        // Validate email format if provided
+        if (StringUtils.isNotBlank(user.getEmail()) && !EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "invalid email format"));
+        }
+
+        // Check for duplicate ID
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
                 .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        if (currentUser != null) {
+            return ResponseEntity.status(409)
+                    .body(Collections.singletonMap("error", "user with id " + user.getId() + " already exists"));
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
