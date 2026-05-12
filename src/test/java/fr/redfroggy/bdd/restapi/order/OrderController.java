@@ -46,7 +46,7 @@ public class OrderController {
             Comparator<OrderDTO> comparator;
             switch (sortField) {
                 case "product":
-                    comparator = Comparator.comparing(OrderDTO::getProduct, String.CASE_INSENSITIVE_ORDER);
+                    comparator = Comparator.comparing(OrderDTO::getProduct, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
                     break;
                 case "price":
                     comparator = Comparator.comparingDouble(OrderDTO::getPrice);

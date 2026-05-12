@@ -55,10 +55,10 @@ public final class UserController {
             Comparator<UserDTO> comparator;
             switch (sortField) {
                 case "firstName":
-                    comparator = Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+                    comparator = Comparator.comparing(UserDTO::getFirstName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
                     break;
                 case "lastName":
-                    comparator = Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+                    comparator = Comparator.comparing(UserDTO::getLastName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
                     break;
                 case "age":
                     comparator = Comparator.comparingInt(UserDTO::getAge);
