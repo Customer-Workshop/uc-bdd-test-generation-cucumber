@@ -4,17 +4,20 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import org.junit.Assert;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import wiremock.org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,13 +33,58 @@ public final class UserController {
     public static List<UserDTO> users = new ArrayList<>();
 
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<List<UserDTO>> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "sort", required = false) String sort) {
+
+        List<UserDTO> result = new ArrayList<>(users);
+
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            result = result.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            String[] sortParts = sort.split(",");
+            String sortField = sortParts[0];
+            boolean ascending = sortParts.length < 2 || "asc".equalsIgnoreCase(sortParts[1]);
+
+            Comparator<UserDTO> comparator;
+            switch (sortField) {
+                case "firstName":
+                    comparator = Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "lastName":
+                    comparator = Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+                    break;
+                case "age":
+                    comparator = Comparator.comparingInt(UserDTO::getAge);
+                    break;
+                case "id":
+                    comparator = Comparator.comparing(UserDTO::getId);
+                    break;
+                default:
+                    comparator = Comparator.comparing(UserDTO::getId);
+            }
+            if (!ascending) {
+                comparator = comparator.reversed();
+            }
+            result.sort(comparator);
+        }
+
+        if (page != null && size != null) {
+            int fromIndex = page * size;
+            int toIndex = Math.min(fromIndex + size, result.size());
+            if (fromIndex >= result.size()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
+            result = result.subList(fromIndex, toIndex);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/users/{id}")
@@ -64,20 +112,20 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<?> addUser(@Valid @RequestBody UserDTO user) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
                 .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        if (currentUser != null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User with id " + user.getId() + " already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -180,5 +228,20 @@ public final class UserController {
                     .build();
         }
         return ResponseEntity.status(401).build();
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, Object> body = new HashMap<>();
+        List<Map<String, String>> errors = new ArrayList<>();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            Map<String, String> errorMap = new HashMap<>();
+            errorMap.put("field", fieldError.getField());
+            errorMap.put("message", fieldError.getDefaultMessage());
+            errors.add(errorMap);
+        }
+        body.put("errors", errors);
+        return ResponseEntity.badRequest().body(body);
     }
 }
