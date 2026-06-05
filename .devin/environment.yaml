@@ -1,0 +1,39 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# Commands run from the repo root.
+
+# One-time setup (e.g., install system tools, global CLIs).
+initialize: |
+  sudo apt-get update -qq && sudo apt-get install -y -qq maven
+  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+  echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc
+
+# Install project dependencies (runs during builds).
+maintenance: |
+  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+  npm install
+  mvn dependency:resolve -Dgpg.skip=true
+
+# Reference info for agent
+knowledge:
+  - name: build
+    contents: |
+      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      mvn clean package -Dgpg.skip=true -DskipTests
+  - name: test
+    contents: |
+      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      mvn clean test -Dgpg.skip=true
+  - name: run
+    contents: |
+      The app is a Spring Boot test-context application (Application class in src/test/java).
+      It runs via `mvn test` using @SpringBootTest(webEnvironment = DEFINED_PORT) on port 8080.
+      There is no standalone main class in src/main; the sample app exists only for Cucumber BDD testing.
+  - name: lint
+    contents: |
+      No dedicated lint command. Maven compilation handles syntax checks.
+      Commit messages are linted via husky + commitlint (conventional commits).
+  - name: project-overview
+    contents: |
+      Spring Boot + Cucumber BDD REST API test library.
+      Stack: Java 17, Spring Boot 2.5.3, Cucumber 6.10.4, WireMock, JaCoCo (100% coverage required).
+      Husky + commitlint enforce conventional commit messages (npm install sets up hooks).
