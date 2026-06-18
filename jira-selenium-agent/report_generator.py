@@ -207,128 +207,413 @@ class ReportGenerator:
         return path
 
     def _generate_html(self, report: TestExecutionReport) -> Path:
-        """Generate HTML report."""
+        """Generate HTML report with Chart.js graphical charts and Jira IDs."""
+        # Collect per-scenario chart data
+        scenario_names_json = json.dumps([
+            s.name[:40] + "..." if len(s.name) > 40 else s.name
+            for f in report.features for s in f.scenarios
+        ])
+        scenario_durations_json = json.dumps([
+            round(s.duration_ms / 1000, 2)
+            for f in report.features for s in f.scenarios
+        ])
+        scenario_statuses = [s.status for f in report.features for s in f.scenarios]
+        scenario_colors_json = json.dumps([
+            "#27ae60" if st == "passed" else "#e74c3c" if st == "failed" else "#f39c12"
+            for st in scenario_statuses
+        ])
+        scenario_jira_ids_json = json.dumps([
+            f.story_key for f in report.features for _ in f.scenarios
+        ])
+
+        # Step type distribution
+        step_types: dict[str, int] = {}
+        for f in report.features:
+            for s in f.scenarios:
+                for st in s.steps:
+                    step_types[st.step_type] = step_types.get(st.step_type, 0) + 1
+        step_type_labels = json.dumps(list(step_types.keys()))
+        step_type_counts = json.dumps(list(step_types.values()))
+
+        # Feature-level summary
+        feature_names_json = json.dumps([
+            f.story_key + ": " + (f.name[:30] + "..." if len(f.name) > 30 else f.name)
+            for f in report.features
+        ])
+        feature_scenario_counts = json.dumps([len(f.scenarios) for f in report.features])
+        feature_passed = json.dumps([
+            sum(1 for s in f.scenarios if s.status == "passed") for f in report.features
+        ])
+        feature_failed = json.dumps([
+            sum(1 for s in f.scenarios if s.status == "failed") for f in report.features
+        ])
+
+        # Build test case table rows with Jira IDs
+        tc_table_rows = ""
+        tc_idx = 0
+        for feature in report.features:
+            for scenario in feature.scenarios:
+                tc_idx += 1
+                status_class = scenario.status
+                status_label = scenario.status.upper()
+                step_count = len(scenario.steps)
+                passed_steps = sum(1 for st in scenario.steps if st.status == "passed")
+                failed_steps = sum(1 for st in scenario.steps if st.status == "failed")
+                tags_str = ", ".join(scenario.tags) if scenario.tags else "-"
+                tc_table_rows += (
+                    f'<tr class="row-{status_class}">'
+                    f'<td>{tc_idx}</td>'
+                    f'<td class="jira-id">{feature.story_key}</td>'
+                    f'<td>{scenario.name}</td>'
+                    f'<td><span class="badge badge-{status_class}">{status_label}</span></td>'
+                    f'<td>{step_count}</td>'
+                    f'<td class="text-pass">{passed_steps}</td>'
+                    f'<td class="text-fail">{failed_steps}</td>'
+                    f'<td>{scenario.duration_ms:.0f}ms</td>'
+                    f'<td class="tags-cell">{tags_str}</td>'
+                    f'</tr>\n'
+                )
+
+        # Build detailed scenario sections
+        detail_sections = ""
+        for feature in report.features:
+            for scenario in feature.scenarios:
+                steps_html = ""
+                for step in scenario.steps:
+                    s_icon = "&#10004;" if step.status == "passed" else "&#10008;" if step.status == "failed" else "&#9888;"
+                    steps_html += (
+                        f'<div class="step step-{step.status}">'
+                        f'<span class="step-status">{s_icon}</span>'
+                        f'<strong>{step.step_type}</strong> {step.step_text}'
+                        f'<small>({step.duration_ms:.0f}ms)</small>'
+                        f'</div>\n'
+                    )
+                    if step.error_message:
+                        steps_html += f'<div class="error-msg">{step.error_message}</div>\n'
+
+                tags_html = "".join(f'<span class="tag">{t}</span>' for t in scenario.tags)
+                detail_sections += (
+                    f'<div class="scenario-detail">'
+                    f'<div class="scenario-detail-header">'
+                    f'<span class="badge badge-{scenario.status}">{"&#10004;" if scenario.status == "passed" else "&#10008;"}</span>'
+                    f'<span class="jira-badge">{feature.story_key}</span>'
+                    f'<strong>{scenario.name}</strong>'
+                    f'{tags_html}'
+                    f'<small>({scenario.duration_ms:.0f}ms)</small>'
+                    f'</div>'
+                    f'<div class="steps-container">{steps_html}</div>'
+                    f'</div>\n'
+                )
+
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Execution Report - {report.run_id}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }}
-        .container {{ max-width: 1200px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }}
-        .header h1 {{ font-size: 24px; margin-bottom: 10px; }}
-        .header .meta {{ opacity: 0.9; font-size: 14px; }}
-        .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }}
-        .summary-card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }}
-        .summary-card .number {{ font-size: 36px; font-weight: bold; }}
-        .summary-card .label {{ font-size: 12px; text-transform: uppercase; color: #666; margin-top: 5px; }}
-        .passed .number {{ color: #27ae60; }}
-        .failed .number {{ color: #e74c3c; }}
-        .skipped .number {{ color: #f39c12; }}
-        .rate .number {{ color: #3498db; }}
-        .feature {{ background: white; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }}
-        .feature-header {{ padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }}
-        .feature-header h2 {{ font-size: 18px; }}
-        .badge {{ padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }}
+        .container {{ max-width: 1400px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 24px; }}
+        .header h1 {{ font-size: 28px; margin-bottom: 8px; }}
+        .header .subtitle {{ font-size: 16px; opacity: 0.9; margin-bottom: 12px; }}
+        .header .meta {{ opacity: 0.85; font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px; }}
+        .header .meta span {{ background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 4px; }}
+        .kpi-row {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }}
+        .kpi-card {{ background: white; padding: 20px 16px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }}
+        .kpi-card .kpi-number {{ font-size: 38px; font-weight: 700; }}
+        .kpi-card .kpi-label {{ font-size: 11px; text-transform: uppercase; color: #888; margin-top: 4px; letter-spacing: 0.5px; }}
+        .kpi-pass .kpi-number {{ color: #27ae60; }}
+        .kpi-fail .kpi-number {{ color: #e74c3c; }}
+        .kpi-skip .kpi-number {{ color: #f39c12; }}
+        .kpi-rate .kpi-number {{ color: #3498db; }}
+        .kpi-steps .kpi-number {{ color: #8e44ad; }}
+        .charts-section {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }}
+        .chart-card {{ background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; }}
+        .chart-card h3 {{ font-size: 16px; margin-bottom: 12px; color: #444; }}
+        .charts-row-3 {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }}
+        .section-title {{ font-size: 20px; font-weight: 700; margin: 28px 0 16px; color: #444; border-bottom: 2px solid #667eea; padding-bottom: 8px; }}
+        table {{ width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
+        th {{ background: #667eea; color: white; padding: 12px 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }}
+        td {{ padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }}
+        tr:hover {{ background: #f8f9ff; }}
+        .jira-id {{ font-weight: 700; color: #1a73e8; white-space: nowrap; }}
+        .jira-badge {{ display: inline-block; background: #1a73e8; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-right: 6px; }}
+        .text-pass {{ color: #27ae60; font-weight: 600; }}
+        .text-fail {{ color: #e74c3c; font-weight: 600; }}
+        .badge {{ padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; }}
         .badge-passed {{ background: #d4edda; color: #155724; }}
         .badge-failed {{ background: #f8d7da; color: #721c24; }}
         .badge-skipped {{ background: #fff3cd; color: #856404; }}
-        .scenario {{ padding: 12px 20px; border-bottom: 1px solid #f0f0f0; }}
-        .scenario:last-child {{ border-bottom: none; }}
-        .scenario-name {{ font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }}
-        .step {{ padding: 4px 0 4px 30px; font-size: 14px; color: #555; }}
+        .tags-cell {{ font-size: 11px; color: #888; }}
+        .row-passed {{ border-left: 3px solid #27ae60; }}
+        .row-failed {{ border-left: 3px solid #e74c3c; }}
+        .row-skipped {{ border-left: 3px solid #f39c12; }}
+        .scenario-detail {{ background: white; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }}
+        .scenario-detail-header {{ padding: 14px 18px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
+        .steps-container {{ padding: 8px 18px 12px; }}
+        .step {{ padding: 4px 0 4px 24px; font-size: 13px; color: #555; }}
         .step .step-status {{ display: inline-block; width: 18px; text-align: center; }}
         .step-passed .step-status {{ color: #27ae60; }}
         .step-failed .step-status {{ color: #e74c3c; }}
         .step-skipped .step-status {{ color: #f39c12; }}
-        .error-msg {{ color: #e74c3c; font-size: 12px; padding-left: 48px; font-style: italic; }}
-        .footer {{ text-align: center; padding: 20px; color: #999; font-size: 12px; }}
-        .tag {{ display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px; }}
+        .step small {{ color: #aaa; margin-left: 4px; }}
+        .error-msg {{ color: #e74c3c; font-size: 12px; padding-left: 42px; font-style: italic; }}
+        .tag {{ display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 3px; font-size: 10px; margin-right: 3px; }}
+        .footer {{ text-align: center; padding: 24px; color: #aaa; font-size: 12px; }}
+        @media (max-width: 900px) {{
+            .kpi-row {{ grid-template-columns: repeat(3, 1fr); }}
+            .charts-section, .charts-row-3 {{ grid-template-columns: 1fr; }}
+        }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Test Execution Report</h1>
-            <div class="meta">
-                <div>Run ID: {report.run_id}</div>
-                <div>Timestamp: {report.timestamp}</div>
-                <div>Environment: {report.environment}</div>
-                <div>App URL: {report.app_url}</div>
-                <div>Duration: {report.total_duration_ms:.0f}ms</div>
-            </div>
-        </div>
+<div class="container">
 
-        <div class="summary">
-            <div class="summary-card">
-                <div class="number">{report.total_scenarios}</div>
-                <div class="label">Total Scenarios</div>
-            </div>
-            <div class="summary-card passed">
-                <div class="number">{report.passed_scenarios}</div>
-                <div class="label">Passed</div>
-            </div>
-            <div class="summary-card failed">
-                <div class="number">{report.failed_scenarios}</div>
-                <div class="label">Failed</div>
-            </div>
-            <div class="summary-card skipped">
-                <div class="number">{report.skipped_scenarios}</div>
-                <div class="label">Skipped</div>
-            </div>
-            <div class="summary-card rate">
-                <div class="number">{report.pass_rate:.1f}%</div>
-                <div class="label">Pass Rate</div>
-            </div>
-        </div>
-"""
-
-        for feature in report.features:
-            badge_class = f"badge-{feature.status}"
-            html += f"""
-        <div class="feature">
-            <div class="feature-header">
-                <h2>{feature.name} <small style="color:#999">({feature.story_key})</small></h2>
-                <span class="badge {badge_class}">{feature.status}</span>
-            </div>
-"""
-            for scenario in feature.scenarios:
-                tags_html = "".join(
-                    f'<span class="tag">{tag}</span>' for tag in scenario.tags
-                )
-                status_icon = {"passed": "&#10004;", "failed": "&#10008;", "skipped": "&#9888;"}.get(scenario.status, "?")
-                html += f"""
-            <div class="scenario">
-                <div class="scenario-name">
-                    <span class="badge badge-{scenario.status}">{status_icon}</span>
-                    {scenario.name}
-                    {tags_html}
-                    <small style="color:#999">({scenario.duration_ms:.0f}ms)</small>
-                </div>
-"""
-                for step in scenario.steps:
-                    step_icon = {"passed": "&#10004;", "failed": "&#10008;", "skipped": "&#9888;"}.get(step.status, "?")
-                    html += f"""
-                <div class="step step-{step.status}">
-                    <span class="step-status">{step_icon}</span>
-                    <strong>{step.step_type}</strong> {step.step_text}
-                    <small style="color:#999">({step.duration_ms:.0f}ms)</small>
-                </div>
-"""
-                    if step.error_message:
-                        html += f'                <div class="error-msg">{step.error_message}</div>\n'
-
-                html += "            </div>\n"
-            html += "        </div>\n"
-
-        html += f"""
-        <div class="footer">
-            Generated by Jira-Selenium-Gherkin Agent | {report.timestamp}
+    <!-- Header -->
+    <div class="header">
+        <h1>Test Execution Report</h1>
+        <div class="subtitle">BDD Test Automation - Jira-Selenium-Gherkin Agent</div>
+        <div class="meta">
+            <span>Run ID: {report.run_id}</span>
+            <span>Timestamp: {report.timestamp}</span>
+            <span>Environment: {report.environment}</span>
+            <span>App URL: {report.app_url}</span>
+            <span>Duration: {report.total_duration_ms:.0f}ms</span>
         </div>
     </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-number">{report.total_scenarios}</div>
+            <div class="kpi-label">Total Scenarios</div>
+        </div>
+        <div class="kpi-card kpi-pass">
+            <div class="kpi-number">{report.passed_scenarios}</div>
+            <div class="kpi-label">Passed</div>
+        </div>
+        <div class="kpi-card kpi-fail">
+            <div class="kpi-number">{report.failed_scenarios}</div>
+            <div class="kpi-label">Failed</div>
+        </div>
+        <div class="kpi-card kpi-skip">
+            <div class="kpi-number">{report.skipped_scenarios}</div>
+            <div class="kpi-label">Skipped</div>
+        </div>
+        <div class="kpi-card kpi-rate">
+            <div class="kpi-number">{report.pass_rate:.1f}%</div>
+            <div class="kpi-label">Pass Rate</div>
+        </div>
+        <div class="kpi-card kpi-steps">
+            <div class="kpi-number">{report.total_steps}</div>
+            <div class="kpi-label">Total Steps</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Pie + Bar -->
+    <div class="charts-section">
+        <div class="chart-card">
+            <h3>Test Results Distribution</h3>
+            <canvas id="pieChart" height="280"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Scenario Execution Duration (seconds)</h3>
+            <canvas id="barChart" height="280"></canvas>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Doughnut + Horizontal Bar + Step Types -->
+    <div class="charts-row-3">
+        <div class="chart-card">
+            <h3>Pass Rate Gauge</h3>
+            <canvas id="gaugeChart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Feature Coverage</h3>
+            <canvas id="featureChart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Step Type Distribution</h3>
+            <canvas id="stepTypeChart" height="240"></canvas>
+        </div>
+    </div>
+
+    <!-- Test Case Table with Jira IDs -->
+    <h2 class="section-title">Test Cases with Jira IDs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Jira ID</th>
+                <th>Test Case / Scenario</th>
+                <th>Status</th>
+                <th>Steps</th>
+                <th>Passed</th>
+                <th>Failed</th>
+                <th>Duration</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            {tc_table_rows}
+        </tbody>
+    </table>
+
+    <!-- Detailed Scenario Results -->
+    <h2 class="section-title">Detailed Execution Results</h2>
+    {detail_sections}
+
+    <div class="footer">
+        Generated by Jira-Selenium-Gherkin Agent | {report.timestamp}
+    </div>
+</div>
+
+<script>
+// Scenario results pie chart
+new Chart(document.getElementById('pieChart'), {{
+    type: 'pie',
+    data: {{
+        labels: ['Passed', 'Failed', 'Skipped'],
+        datasets: [{{
+            data: [{report.passed_scenarios}, {report.failed_scenarios}, {report.skipped_scenarios}],
+            backgroundColor: ['#27ae60', '#e74c3c', '#f39c12'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }}]
+    }},
+    options: {{
+        responsive: true,
+        plugins: {{
+            legend: {{ position: 'bottom', labels: {{ padding: 16, font: {{ size: 13 }} }} }},
+            tooltip: {{
+                callbacks: {{
+                    label: function(ctx) {{
+                        var total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                        var pct = ((ctx.parsed / total) * 100).toFixed(1);
+                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                    }}
+                }}
+            }}
+        }}
+    }}
+}});
+
+// Scenario duration bar chart with Jira IDs
+var scenarioNames = {scenario_names_json};
+var scenarioDurations = {scenario_durations_json};
+var scenarioColors = {scenario_colors_json};
+var scenarioJiraIds = {scenario_jira_ids_json};
+new Chart(document.getElementById('barChart'), {{
+    type: 'bar',
+    data: {{
+        labels: scenarioNames.map((n, i) => scenarioJiraIds[i] + ' | ' + n),
+        datasets: [{{
+            label: 'Duration (s)',
+            data: scenarioDurations,
+            backgroundColor: scenarioColors,
+            borderRadius: 4
+        }}]
+    }},
+    options: {{
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {{
+            legend: {{ display: false }},
+            tooltip: {{
+                callbacks: {{
+                    title: function(ctx) {{ return scenarioJiraIds[ctx[0].dataIndex] + ' | ' + scenarioNames[ctx[0].dataIndex]; }},
+                    label: function(ctx) {{ return ctx.parsed.x.toFixed(2) + 's'; }}
+                }}
+            }}
+        }},
+        scales: {{
+            x: {{ title: {{ display: true, text: 'Seconds' }} }},
+            y: {{ ticks: {{ font: {{ size: 11 }} }} }}
+        }}
+    }}
+}});
+
+// Pass rate doughnut gauge
+new Chart(document.getElementById('gaugeChart'), {{
+    type: 'doughnut',
+    data: {{
+        labels: ['Pass Rate', 'Remaining'],
+        datasets: [{{
+            data: [{report.pass_rate:.1f}, {100 - report.pass_rate:.1f}],
+            backgroundColor: ['#27ae60', '#e8e8e8'],
+            borderWidth: 0,
+            cutout: '75%'
+        }}]
+    }},
+    options: {{
+        responsive: true,
+        circumference: 270,
+        rotation: -135,
+        plugins: {{
+            legend: {{ display: false }},
+            tooltip: {{ enabled: false }}
+        }}
+    }},
+    plugins: [{{
+        id: 'gaugeText',
+        afterDraw: function(chart) {{
+            var ctx = chart.ctx;
+            var cx = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+            var cy = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2 + 10;
+            ctx.save();
+            ctx.font = 'bold 36px sans-serif';
+            ctx.fillStyle = '#27ae60';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('{report.pass_rate:.1f}%', cx, cy);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#888';
+            ctx.fillText('PASS RATE', cx, cy + 24);
+            ctx.restore();
+        }}
+    }}]
+}});
+
+// Feature coverage stacked bar
+new Chart(document.getElementById('featureChart'), {{
+    type: 'bar',
+    data: {{
+        labels: {feature_names_json},
+        datasets: [
+            {{ label: 'Passed', data: {feature_passed}, backgroundColor: '#27ae60', borderRadius: 4 }},
+            {{ label: 'Failed', data: {feature_failed}, backgroundColor: '#e74c3c', borderRadius: 4 }}
+        ]
+    }},
+    options: {{
+        responsive: true,
+        plugins: {{ legend: {{ position: 'bottom' }} }},
+        scales: {{
+            x: {{ stacked: true }},
+            y: {{ stacked: true, title: {{ display: true, text: 'Scenarios' }}, beginAtZero: true, ticks: {{ stepSize: 1 }} }}
+        }}
+    }}
+}});
+
+// Step type distribution polar area chart
+new Chart(document.getElementById('stepTypeChart'), {{
+    type: 'polarArea',
+    data: {{
+        labels: {step_type_labels},
+        datasets: [{{
+            data: {step_type_counts},
+            backgroundColor: ['#667eea', '#764ba2', '#27ae60', '#f39c12', '#e74c3c', '#3498db']
+        }}]
+    }},
+    options: {{
+        responsive: true,
+        plugins: {{ legend: {{ position: 'bottom' }} }},
+        scales: {{ r: {{ beginAtZero: true, ticks: {{ stepSize: 10 }} }} }}
+    }}
+}});
+</script>
 </body>
 </html>"""
 

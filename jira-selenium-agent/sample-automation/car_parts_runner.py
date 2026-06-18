@@ -468,8 +468,29 @@ class CarPartsTestRunner:
             "[%s] %s (%d/%d steps)", status_label, scenario.name, passed, total
         )
 
+    # Mapping of scenario name keywords to Jira story keys
+    SCENARIO_JIRA_MAP = {
+        "Engine Component": ("CAR-1001", "Create Engine Component Car Part"),
+        "Braking System": ("CAR-1002", "Create Braking System Car Part"),
+        "Suspension": ("CAR-1003", "Create Suspension Car Part"),
+        "Electrical": ("CAR-1004", "Create Electrical Car Part"),
+        "Traverse": ("CAR-1005", "Traverse All Dropdown Fields"),
+        "Edit": ("CAR-1006", "Edit Existing Car Part"),
+        "Search": ("CAR-1007", "Search and Filter Car Parts"),
+        "dependent": ("CAR-1008", "Verify Dependent Picklists"),
+        "Delete": ("CAR-1009", "Delete Car Part Record"),
+        "Validate": ("CAR-1010", "Validate Required Fields"),
+    }
+
+    def _get_jira_id(self, scenario_name: str) -> tuple[str, str]:
+        """Return (jira_key, feature_name) for a scenario based on its name."""
+        for keyword, (jira_key, feat_name) in self.SCENARIO_JIRA_MAP.items():
+            if keyword.lower() in scenario_name.lower():
+                return jira_key, feat_name
+        return "CAR-1000", "Car Parts General"
+
     def _build_report(self, total_duration_ms: float) -> TestExecutionReport:
-        """Build the execution report."""
+        """Build the execution report with unique Jira IDs per test case."""
         run_id = f"car-parts-{int(time.time())}"
         report = TestExecutionReport(
             run_id=run_id,
@@ -479,19 +500,25 @@ class CarPartsTestRunner:
             total_duration_ms=total_duration_ms,
         )
 
-        feature = FeatureResult(
-            name="Car Parts Salesforce Lightning Web Component End-to-End Automation",
-            story_key="CAR-PARTS-001",
-            file_path=str(self.feature_path),
-            status="passed",
-        )
-
+        # Group scenarios into features by Jira ID
+        feature_map: dict[str, FeatureResult] = {}
         for scenario in self.scenarios:
-            feature.scenarios.append(scenario)
+            jira_key, feat_name = self._get_jira_id(scenario.name)
+            if jira_key not in feature_map:
+                feature_map[jira_key] = FeatureResult(
+                    name=feat_name,
+                    story_key=jira_key,
+                    file_path=str(self.feature_path),
+                    status="passed",
+                )
+            feature_map[jira_key].scenarios.append(scenario)
             if scenario.status == "failed":
-                feature.status = "failed"
+                feature_map[jira_key].status = "failed"
 
-        report.features.append(feature)
+        for feat in feature_map.values():
+            feat.duration_ms = sum(s.duration_ms for s in feat.scenarios)
+            report.features.append(feat)
+
         return report
 
     def _print_summary(self, report: TestExecutionReport):
