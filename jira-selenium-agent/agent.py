@@ -1,4 +1,4 @@
-"""Main agent orchestrator - connects Jira, Gherkin generation, Selenium, POM, and LLM."""
+"""Main agent orchestrator - connects Jira, Gherkin generation, Selenium, POM, LLM, Copado, and multi-UI frameworks."""
 
 import argparse
 import json
@@ -21,8 +21,10 @@ from report_generator import (
     StepResult,
     TestExecutionReport,
 )
+from copado_deployer import CopadoDeployer
 from selenium_runner import SeleniumRunner, SeleniumStepExecutor
 from test_data_agent import TestDataAgent, TestDataSet
+from ui_agent import UIAgent, UIFrameworkDetector
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,9 +56,11 @@ class JiraSeleniumAgent:
         self.selenium_runner = SeleniumRunner(config.selenium)
         self.test_data_agent = TestDataAgent(config)
         self.report_generator = ReportGenerator()
+        self.copado_deployer = CopadoDeployer(config)
         self.llm_updater = LLMFeatureUpdater()
         self.step_executor = None
         self.pom_executor = None
+        self.ui_agent = None
 
     def run(self, status_filter: str = None, story_keys: list[str] = None):
         """Run the complete pipeline.
@@ -115,6 +119,13 @@ class JiraSeleniumAgent:
         if self.selenium_runner.setup():
             self.step_executor = SeleniumStepExecutor(self.selenium_runner)
 
+            # Initialize UI Agent with auto-detection
+            self.ui_agent = UIAgent(
+                self.selenium_runner.driver, self.config.selenium.base_url
+            )
+            detected = self.ui_agent.detect_and_setup(self.config.selenium.base_url)
+            logger.info("UI framework detected: %s", detected.value)
+
             if use_pom:
                 factory = PageObjectFactory(
                     self.selenium_runner.driver, self.config.selenium.base_url
@@ -131,6 +142,13 @@ class JiraSeleniumAgent:
         execution_report = self._build_execution_report(stories, test_results)
         report_files = self.report_generator.generate_report(execution_report)
         logger.info("CI/CD reports generated: %s", report_files)
+
+        # Deploy to Copado
+        story_keys_list = [s.key for s in stories]
+        copado_result = self.copado_deployer.deploy_test_results(
+            execution_report, report_files, story_keys_list
+        )
+        logger.info("Copado deployment: %s - %s", copado_result.status, copado_result.message)
 
         report = self._generate_report(stories, feature_files, test_results)
         logger.info("\n%s", report)
@@ -158,6 +176,13 @@ class JiraSeleniumAgent:
         demo_report = self._build_demo_execution_report(stories)
         report_files = self.report_generator.generate_report(demo_report)
         logger.info("Demo CI/CD reports generated: %s", report_files)
+
+        # Deploy to Copado (local mode if not configured)
+        story_keys_list = [s.key for s in stories]
+        copado_result = self.copado_deployer.deploy_test_results(
+            demo_report, report_files, story_keys_list
+        )
+        logger.info("Copado deployment: %s - %s", copado_result.status, copado_result.message)
 
         report = self._generate_report(stories, feature_files)
         logger.info("\n%s", report)
