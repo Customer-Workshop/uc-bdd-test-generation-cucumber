@@ -1,15 +1,28 @@
-"""Main agent orchestrator - connects Jira, Gherkin generation, and Selenium."""
+"""Main agent orchestrator - connects Jira, Gherkin generation, Selenium, POM, and LLM."""
 
 import argparse
 import json
 import logging
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from config import AgentConfig, JiraConfig, OutputConfig, SeleniumConfig
 from gherkin_generator import GherkinGenerator
+from git_commit_watcher import GitCommitWatcher
 from jira_client import JiraClient, UserStory, AcceptanceCriteria
+from llm_feature_updater import LLMClient, LLMFeatureUpdater
+from page_object_model import PageObjectFactory, POMStepExecutor
+from report_generator import (
+    FeatureResult,
+    ReportGenerator,
+    ScenarioResult,
+    StepResult,
+    TestExecutionReport,
+)
 from selenium_runner import SeleniumRunner, SeleniumStepExecutor
+from test_data_agent import TestDataAgent, TestDataSet
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,14 +36,27 @@ logger = logging.getLogger(__name__)
 
 
 class JiraSeleniumAgent:
-    """Orchestrates the Jira-to-Gherkin-to-Selenium pipeline."""
+    """Orchestrates the Jira-to-Gherkin-to-Selenium pipeline.
+
+    Integrates:
+    - Jira client for fetching user stories
+    - Gherkin generator for creating feature files
+    - Selenium runner with POM for browser test execution
+    - Test data agent for managing test artifacts
+    - Report generator for CI/CD integration
+    - Git commit watcher with LLM for auto-updating features
+    """
 
     def __init__(self, config: AgentConfig):
         self.config = config
         self.jira_client = JiraClient(config.jira)
         self.gherkin_generator = GherkinGenerator(config.output)
         self.selenium_runner = SeleniumRunner(config.selenium)
+        self.test_data_agent = TestDataAgent(config)
+        self.report_generator = ReportGenerator()
+        self.llm_updater = LLMFeatureUpdater()
         self.step_executor = None
+        self.pom_executor = None
 
     def run(self, status_filter: str = None, story_keys: list[str] = None):
         """Run the complete pipeline.
@@ -61,16 +87,18 @@ class JiraSeleniumAgent:
         logger.info("=" * 60)
 
     def run_with_selenium(
-        self, status_filter: str = None, story_keys: list[str] = None
+        self, status_filter: str = None, story_keys: list[str] = None,
+        use_pom: bool = True,
     ):
-        """Run the complete pipeline including Selenium test execution.
+        """Run the complete pipeline including Selenium test execution with POM.
 
         Args:
             status_filter: Optional Jira status filter.
             story_keys: Optional list of specific story keys to process.
+            use_pom: Whether to use Page Object Model for execution.
         """
         logger.info("=" * 60)
-        logger.info("Jira-Selenium-Gherkin Agent Starting (with Selenium)")
+        logger.info("Jira-Selenium-Gherkin Agent Starting (with Selenium + POM)")
         logger.info("=" * 60)
 
         stories = self._fetch_stories(status_filter, story_keys)
@@ -80,13 +108,29 @@ class JiraSeleniumAgent:
 
         feature_files = self._generate_features(stories)
 
+        # Upload test data for each story
+        for story in stories:
+            self._upload_test_data(story, feature_files)
+
         if self.selenium_runner.setup():
             self.step_executor = SeleniumStepExecutor(self.selenium_runner)
+
+            if use_pom:
+                factory = PageObjectFactory(
+                    self.selenium_runner.driver, self.config.selenium.base_url
+                )
+                self.pom_executor = POMStepExecutor(factory)
+
             test_results = self._run_selenium_tests(stories)
             self.selenium_runner.teardown()
         else:
             logger.error("Selenium setup failed. Skipping browser tests.")
             test_results = {}
+
+        # Generate CI/CD reports
+        execution_report = self._build_execution_report(stories, test_results)
+        report_files = self.report_generator.generate_report(execution_report)
+        logger.info("CI/CD reports generated: %s", report_files)
 
         report = self._generate_report(stories, feature_files, test_results)
         logger.info("\n%s", report)
@@ -106,6 +150,15 @@ class JiraSeleniumAgent:
         feature_files = self._generate_features(stories)
         logger.info("Generated %d feature files in demo mode.", len(feature_files))
 
+        # Upload test data for demo stories
+        for story in stories:
+            self._upload_test_data(story, feature_files)
+
+        # Generate demo CI/CD report
+        demo_report = self._build_demo_execution_report(stories)
+        report_files = self.report_generator.generate_report(demo_report)
+        logger.info("Demo CI/CD reports generated: %s", report_files)
+
         report = self._generate_report(stories, feature_files)
         logger.info("\n%s", report)
 
@@ -114,6 +167,61 @@ class JiraSeleniumAgent:
             print(f"\nFile: {fp}")
             print(fp.read_text())
             print("-" * 40)
+
+    def run_watcher(self, repo_path: str = ".", interval: int = 30):
+        """Run the Git Commit Watcher mode.
+
+        Monitors the repo for commits referencing story keys and
+        auto-updates feature files using LLM.
+
+        Args:
+            repo_path: Path to the git repository.
+            interval: Polling interval in seconds.
+        """
+        logger.info("=" * 60)
+        logger.info("Jira-Selenium-Gherkin Agent - WATCHER MODE")
+        logger.info("=" * 60)
+
+        watcher = GitCommitWatcher(
+            config=self.config,
+            repo_path=repo_path,
+        )
+        watcher.watch(interval_seconds=interval)
+
+    def run_webhook(self, repo_path: str = ".", port: int = 9090):
+        """Run the Git Webhook Handler mode.
+
+        Listens for GitHub push events and auto-updates feature files.
+
+        Args:
+            repo_path: Path to the git repository.
+            port: Port to listen on for webhooks.
+        """
+        logger.info("=" * 60)
+        logger.info("Jira-Selenium-Gherkin Agent - WEBHOOK MODE")
+        logger.info("=" * 60)
+
+        watcher = GitCommitWatcher(
+            config=self.config,
+            repo_path=repo_path,
+        )
+        watcher.setup_webhook_handler(port=port)
+
+    def process_commit(self, commit_sha: str, repo_path: str = "."):
+        """Process a single commit to update feature files.
+
+        Args:
+            commit_sha: Git commit SHA to process.
+            repo_path: Path to the git repository.
+        """
+        logger.info("Processing commit: %s", commit_sha)
+        watcher = GitCommitWatcher(
+            config=self.config,
+            repo_path=repo_path,
+        )
+        updated = watcher.process_single_commit(commit_sha)
+        logger.info("Updated %d feature files.", len(updated))
+        return updated
 
     def _fetch_stories(
         self, status_filter: str = None, story_keys: list[str] = None
@@ -137,6 +245,123 @@ class JiraSeleniumAgent:
     def _generate_features(self, stories: list[UserStory]) -> list[Path]:
         """Generate Gherkin feature files from stories."""
         return self.gherkin_generator.generate_batch(stories)
+
+    def _upload_test_data(self, story: UserStory, feature_files: list[Path]):
+        """Upload test data for a user story."""
+        feature_path = ""
+        for fp in feature_files:
+            if story.key.lower().replace("-", "") in fp.stem.lower().replace("-", ""):
+                feature_path = str(fp)
+                break
+
+        dataset = TestDataSet(
+            story_key=story.key,
+            test_data={
+                "story_summary": story.summary,
+                "story_description": story.description,
+                "acceptance_criteria_count": len(story.acceptance_criteria),
+                "priority": story.priority,
+            },
+            feature_file_path=feature_path,
+            app_url=self.config.selenium.base_url,
+            environment="test",
+        )
+        self.test_data_agent.upload_test_data(dataset)
+
+    def _build_execution_report(
+        self, stories: list[UserStory], test_results: dict
+    ) -> TestExecutionReport:
+        """Build a TestExecutionReport from Selenium test results."""
+        run_id = f"run-{int(time.time())}"
+        report = TestExecutionReport(
+            run_id=run_id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            environment="test",
+            app_url=self.config.selenium.base_url,
+        )
+
+        for story in stories:
+            feature = FeatureResult(
+                name=story.summary,
+                story_key=story.key,
+                file_path="",
+                status="passed",
+            )
+
+            story_result = test_results.get(story.key, {})
+            for idx, ac in enumerate(story.acceptance_criteria, 1):
+                scenario = ScenarioResult(
+                    name=f"Scenario {idx}",
+                    status="passed",
+                    tags=[f"@{story.key.replace('-', '_')}"],
+                )
+
+                for step_data in story_result.get("steps", []):
+                    step = StepResult(
+                        step_type=step_data.get("type", "Given"),
+                        step_text=step_data.get("text", ""),
+                        status=step_data.get("status", "passed"),
+                    )
+                    scenario.steps.append(step)
+                    if step.status == "failed":
+                        scenario.status = "failed"
+
+                feature.scenarios.append(scenario)
+                if scenario.status == "failed":
+                    feature.status = "failed"
+
+            report.features.append(feature)
+
+        return report
+
+    def _build_demo_execution_report(
+        self, stories: list[UserStory]
+    ) -> TestExecutionReport:
+        """Build a demo execution report (all passing)."""
+        run_id = f"demo-{int(time.time())}"
+        report = TestExecutionReport(
+            run_id=run_id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            environment="demo",
+            app_url=self.config.selenium.base_url,
+        )
+
+        for story in stories:
+            feature = FeatureResult(
+                name=story.summary,
+                story_key=story.key,
+                file_path="",
+                status="passed",
+            )
+
+            for idx, ac in enumerate(story.acceptance_criteria, 1):
+                scenario = ScenarioResult(
+                    name=f"Scenario {idx}: {ac.when[:50] if ac.when else 'verify'}",
+                    status="passed",
+                    tags=[f"@{story.key.replace('-', '_')}"],
+                )
+                if ac.given:
+                    scenario.steps.append(
+                        StepResult("Given", ac.given, "passed", 50.0)
+                    )
+                if ac.when:
+                    scenario.steps.append(
+                        StepResult("When", ac.when, "passed", 100.0)
+                    )
+                if ac.then:
+                    scenario.steps.append(
+                        StepResult("Then", ac.then, "passed", 75.0)
+                    )
+                feature.scenarios.append(scenario)
+
+            report.features.append(feature)
+
+        report.total_duration_ms = sum(
+            s.duration_ms
+            for f in report.features
+            for s in f.scenarios
+        )
+        return report
 
     def _run_selenium_tests(self, stories: list[UserStory]) -> dict:
         """Run Selenium-based tests for the generated features."""
@@ -390,9 +615,13 @@ def main():
 
     parser.add_argument(
         "--mode",
-        choices=["jira", "demo", "selenium"],
+        choices=["jira", "demo", "selenium", "watcher", "webhook", "commit"],
         default="demo",
-        help="Run mode: 'jira' (connect to Jira), 'demo' (use sample stories), 'selenium' (with browser tests)",
+        help=(
+            "Run mode: 'jira' (connect to Jira), 'demo' (sample stories), "
+            "'selenium' (with browser+POM tests), 'watcher' (poll git for commits), "
+            "'webhook' (listen for GitHub push events), 'commit' (process single commit)"
+        ),
     )
     parser.add_argument(
         "--status",
@@ -418,6 +647,30 @@ def main():
         type=str,
         default=None,
         help="Path to JSON file containing stories (for demo mode with custom data)",
+    )
+    parser.add_argument(
+        "--repo-path",
+        type=str,
+        default=".",
+        help="Path to the git repository (for watcher/webhook/commit modes)",
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=30,
+        help="Polling interval in seconds (for watcher mode)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=9090,
+        help="Port for webhook listener (for webhook mode)",
+    )
+    parser.add_argument(
+        "--commit-sha",
+        type=str,
+        default=None,
+        help="Commit SHA to process (for commit mode)",
     )
 
     args = parser.parse_args()
@@ -451,6 +704,18 @@ def main():
             )
             sys.exit(1)
         agent.run_with_selenium(status_filter=args.status, story_keys=args.stories)
+
+    elif args.mode == "watcher":
+        agent.run_watcher(repo_path=args.repo_path, interval=args.interval)
+
+    elif args.mode == "webhook":
+        agent.run_webhook(repo_path=args.repo_path, port=args.port)
+
+    elif args.mode == "commit":
+        if not args.commit_sha:
+            logger.error("--commit-sha is required for commit mode.")
+            sys.exit(1)
+        agent.process_commit(args.commit_sha, repo_path=args.repo_path)
 
 
 if __name__ == "__main__":

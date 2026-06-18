@@ -44,8 +44,28 @@ class OutputConfig:
 
 
 @dataclass
+class LLMConfig:
+    """LLM configuration for feature file auto-updates."""
+    api_key: str = os.getenv("LLM_API_KEY", "")
+    api_url: str = os.getenv("LLM_API_URL", "https://api.openai.com/v1/chat/completions")
+    model: str = os.getenv("LLM_MODEL", "gpt-4")
+    temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.3"))
+
+
+@dataclass
+class WatcherConfig:
+    """Git commit watcher configuration."""
+    github_token: str = os.getenv("GITHUB_TOKEN", "")
+    github_repo: str = os.getenv("GITHUB_REPO", "")
+    poll_interval: int = int(os.getenv("WATCHER_POLL_INTERVAL", "30"))
+    webhook_port: int = int(os.getenv("WEBHOOK_PORT", "9090"))
+
+
+@dataclass
 class AgentConfig:
     """Top-level agent configuration."""
     jira: JiraConfig = field(default_factory=JiraConfig)
     selenium: SeleniumConfig = field(default_factory=SeleniumConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)
+    watcher: WatcherConfig = field(default_factory=WatcherConfig)
