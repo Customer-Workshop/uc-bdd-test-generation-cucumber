@@ -2,3 +2,10 @@ target/
 .idea/
 *.iml
 node_modules/
+
+# Jira-Selenium Agent
+jira-selenium-agent/.env
+jira-selenium-agent/agent.log
+jira-selenium-agent/screenshots/
+jira-selenium-agent/__pycache__/
+src/test/resources/features/generated/
