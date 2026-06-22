@@ -368,6 +368,91 @@ BASE_TEMPLATE = """
 
         /* Footer */
         .sf-footer { text-align: center; padding: 24px; color: #999; font-size: 12px; }
+
+        /* Test Data styles */
+        .td-section { margin-bottom: 24px; }
+        .td-section-title {
+            font-size: 15px; font-weight: 700; color: var(--sf-dark);
+            margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--sf-blue);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .td-section-title .td-icon { color: var(--sf-blue); font-size: 18px; }
+        .td-scenario-card {
+            background: white; border: 1px solid var(--sf-border); border-radius: 6px;
+            margin-bottom: 16px; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .td-scenario-header {
+            background: linear-gradient(135deg, #032d60, #0176d3);
+            color: white; padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .td-scenario-header h3 { font-size: 14px; font-weight: 700; }
+        .td-scenario-header .td-jira-id {
+            background: rgba(255,255,255,0.2); padding: 2px 10px;
+            border-radius: 12px; font-size: 12px; font-weight: 600;
+        }
+        .td-data-table { width: 100%; border-collapse: collapse; }
+        .td-data-table th {
+            text-align: left; padding: 8px 12px; font-size: 11px;
+            font-weight: 700; color: #666; background: #f7f9fb;
+            border-bottom: 1px solid var(--sf-border); text-transform: uppercase;
+        }
+        .td-data-table td {
+            padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #f0f0f0;
+        }
+        .td-data-table tr:hover td { background: #f0f7ff; }
+        .td-field-name { color: #666; font-weight: 600; white-space: nowrap; }
+        .td-field-value { color: var(--sf-dark); font-weight: 500; }
+        .td-dropdown-card {
+            background: white; border: 1px solid var(--sf-border); border-radius: 6px;
+            margin-bottom: 12px; overflow: hidden;
+        }
+        .td-dropdown-header {
+            padding: 10px 16px; background: #f7f9fb;
+            border-bottom: 1px solid var(--sf-border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .td-dropdown-header h4 { font-size: 13px; font-weight: 700; color: var(--sf-dark); }
+        .td-dropdown-header .td-count {
+            background: var(--sf-blue); color: white; padding: 2px 8px;
+            border-radius: 12px; font-size: 11px; font-weight: 700;
+        }
+        .td-values-grid {
+            display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px;
+        }
+        .td-value-chip {
+            background: #e8f4fd; color: #0176d3; padding: 4px 10px;
+            border-radius: 4px; font-size: 12px; font-weight: 500;
+            border: 1px solid #b9ddf5;
+        }
+        .td-dep-section { padding: 12px 16px; border-top: 1px solid var(--sf-border); }
+        .td-dep-parent {
+            font-size: 12px; font-weight: 700; color: #666;
+            margin-bottom: 6px;
+        }
+        .td-dep-children {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;
+        }
+        .td-dep-chip {
+            background: #fff3e0; color: #7e5900; padding: 3px 8px;
+            border-radius: 3px; font-size: 11px; font-weight: 500;
+            border: 1px solid #ffe0b2;
+        }
+        .td-stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .td-stat-card {
+            background: white; border: 1px solid var(--sf-border); border-radius: 6px;
+            padding: 16px; text-align: center;
+        }
+        .td-stat-value { font-size: 28px; font-weight: 800; color: var(--sf-blue); }
+        .td-stat-label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; margin-top: 4px; }
+        .td-required-badge {
+            background: #fce4e4; color: var(--sf-error); padding: 2px 6px;
+            border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -380,8 +465,9 @@ BASE_TEMPLATE = """
         <div class="sf-nav-items">
             <a href="/" class="sf-nav-item {{ 'active' if active_tab == 'home' else '' }}">Home</a>
             <a href="/car-parts" class="sf-nav-item {{ 'active' if active_tab == 'car-parts' else '' }}">Car Parts</a>
+            <a href="/test-data" class="sf-nav-item {{ 'active' if active_tab == 'test-data' else '' }}">Test Data</a>
+            <a href="/dropdown-fields" class="sf-nav-item {{ 'active' if active_tab == 'dropdown-fields' else '' }}">Dropdown Fields</a>
             <a href="/car-parts" class="sf-nav-item">Reports</a>
-            <a href="/car-parts" class="sf-nav-item">Dashboards</a>
         </div>
     </nav>
 
@@ -916,6 +1002,277 @@ def delete_part(part_id):
 
 
 # ---------------------------------------------------------------------------
+# Test Data page template
+# ---------------------------------------------------------------------------
+
+TEST_DATA_CONTENT = """
+<div class="sf-page">
+    <!-- Stats Overview -->
+    <div class="td-stats-grid">
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ test_records|length }}</div>
+            <div class="td-stat-label">Test Scenarios</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ dropdown_count }}</div>
+            <div class="td-stat-label">Dropdown Fields</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ total_values }}</div>
+            <div class="td-stat-label">Total Picklist Values</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ dep_categories }}</div>
+            <div class="td-stat-label">Dependent Categories</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ create_records|length }}</div>
+            <div class="td-stat-label">Create Records</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ data_source }}</div>
+            <div class="td-stat-label">Data Source</div>
+        </div>
+    </div>
+
+    <!-- Test Records for Selenium Execution -->
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Selenium Test Data &mdash; Records Used for E2E Execution</h2>
+            <a href="/car-parts" class="sf-btn sf-btn-brand">View in Salesforce UI</a>
+        </div>
+        <div class="sf-card-body" style="padding:0;">
+            {% for rec in test_records %}
+            <div class="td-scenario-card" style="margin: 16px;">
+                <div class="td-scenario-header">
+                    <h3>Scenario {{ loop.index }}: {{ rec.scenario }}</h3>
+                    <span class="td-jira-id">CAR-{{ 1000 + loop.index }}</span>
+                </div>
+                <table class="td-data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:200px;">Field Name</th>
+                            <th>Test Value (used by Selenium)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if rec.data is mapping %}
+                            {% for field_name, field_value in rec.data.items() %}
+                                {% if field_value is mapping %}
+                                    {% for sub_key, sub_val in field_value.items() %}
+                                    <tr>
+                                        <td class="td-field-name">{{ field_name }} &rarr; {{ sub_key }}</td>
+                                        <td class="td-field-value">{{ sub_val }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td class="td-field-name">{{ field_name }}</td>
+                                    <td class="td-field-value">{{ field_value }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- JSON Source -->
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Raw Test Data Source (car_parts_test_data.json)</h2>
+        </div>
+        <div class="sf-card-body">
+            <pre style="background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:6px; overflow-x:auto; font-size:12px; max-height:500px; overflow-y:auto;">{{ raw_json }}</pre>
+        </div>
+    </div>
+</div>
+"""
+
+# ---------------------------------------------------------------------------
+# Dropdown Fields page template
+# ---------------------------------------------------------------------------
+
+DROPDOWN_FIELDS_CONTENT = """
+<div class="sf-page">
+    <!-- Stats -->
+    <div class="td-stats-grid">
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ fields|length }}</div>
+            <div class="td-stat-label">Dropdown Fields</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ total_values }}</div>
+            <div class="td-stat-label">Total Values</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ required_count }}</div>
+            <div class="td-stat-label">Required Fields</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ dep_count }}</div>
+            <div class="td-stat-label">Dependent Fields</div>
+        </div>
+    </div>
+
+    <!-- Each dropdown field -->
+    {% for api_name, field in fields.items() %}
+    <div class="td-dropdown-card">
+        <div class="td-dropdown-header">
+            <h4>
+                {{ field['label'] }}
+                <span style="color:#999; font-weight:400; font-size:11px; margin-left:8px;">{{ api_name }}</span>
+                {% if field.get('is_required') %}<span class="td-required-badge">REQUIRED</span>{% endif %}
+                {% if field.get('dependent_on') %}<span style="background:#fff3e0; color:#7e5900; padding:2px 6px; border-radius:3px; font-size:10px; font-weight:700; margin-left:4px;">DEPENDENT</span>{% endif %}
+            </h4>
+            {% if field.get('values') %}
+            <span class="td-count">{{ field.get('values', [])|length }} values</span>
+            {% endif %}
+        </div>
+
+        {% if field.get('values') %}
+        <div class="td-values-grid">
+            {% for val in field.get('values', []) %}
+            <span class="td-value-chip">{{ val }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if field.get('dependency_map') %}
+        <div style="padding: 0 16px 12px;">
+            <div style="font-size:12px; font-weight:700; color:#666; margin-bottom:8px;">
+                Depends on: <span style="color:var(--sf-blue);">{{ field['dependent_on'] }}</span>
+            </div>
+            {% for parent_val, children in field.get('dependency_map', {}).items() %}
+            <div class="td-dep-section" style="padding:8px 0; border-top: none;">
+                <div class="td-dep-parent">{{ parent_val }} ({{ children|length }} sub-values):</div>
+                <div class="td-dep-children">
+                    {% for child in children %}
+                    <span class="td-dep-chip">{{ child }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Mapping Summary Table -->
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Dropdown Fields &rarr; Salesforce API Mapping</h2>
+        </div>
+        <div class="sf-card-body" style="padding:0;">
+            <table class="sf-table">
+                <thead>
+                    <tr>
+                        <th>API Name</th>
+                        <th>Label</th>
+                        <th>Required</th>
+                        <th>Dependent</th>
+                        <th>Values Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for api_name, field in fields.items() %}
+                    <tr>
+                        <td style="font-family:monospace; font-size:12px; color:#666;">{{ api_name }}</td>
+                        <td style="font-weight:600;">{{ field['label'] }}</td>
+                        <td>
+                            {% if field.get('is_required') %}
+                            <span class="sf-badge sf-badge-error">Yes</span>
+                            {% else %}
+                            <span style="color:#999;">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if field.get('dependent_on') %}
+                            <span class="sf-badge sf-badge-warning">{{ field['dependent_on'] }}</span>
+                            {% else %}
+                            <span style="color:#999;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if field.get('dependency_map') %}
+                            {{ field['dependency_map'].values()|map('length')|sum }} (across {{ field['dependency_map']|length }} categories)
+                            {% elif field.get('values') %}
+                            {{ field['values']|length }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+"""
+
+
+# ---------------------------------------------------------------------------
+# Test Data & Dropdown Fields routes
+# ---------------------------------------------------------------------------
+
+@app.route("/test-data")
+def test_data_page():
+    test_records = TEST_CONFIG.get("test_records", [])
+    total_values = sum(
+        len(f.get("values", []))
+        for f in DROPDOWN_FIELDS.values()
+    )
+    dep_map = DROPDOWN_FIELDS.get("Part_Sub_Category__c", {}).get("dependency_map", {})
+    dep_values = sum(len(v) for v in dep_map.values())
+    total_values += dep_values
+
+    create_records = [r for r in test_records if "search_term" not in r.get("data", {})]
+
+    raw_json = json.dumps(TEST_CONFIG.get("test_records", []), indent=2)
+
+    return render_page(
+        "Test Data",
+        TEST_DATA_CONTENT,
+        active_tab="test-data",
+        test_records=test_records,
+        dropdown_count=len(DROPDOWN_FIELDS),
+        total_values=total_values,
+        dep_categories=len(dep_map),
+        create_records=create_records,
+        data_source="JSON",
+        raw_json=raw_json,
+    )
+
+
+@app.route("/dropdown-fields")
+def dropdown_fields_page():
+    total_values = sum(
+        len(f.get("values", []))
+        for f in DROPDOWN_FIELDS.values()
+    )
+    dep_map = DROPDOWN_FIELDS.get("Part_Sub_Category__c", {}).get("dependency_map", {})
+    dep_values = sum(len(v) for v in dep_map.values())
+    total_values += dep_values
+
+    required_count = sum(1 for f in DROPDOWN_FIELDS.values() if f.get("is_required"))
+    dep_count = sum(1 for f in DROPDOWN_FIELDS.values() if f.get("dependent_on"))
+
+    return render_page(
+        "Dropdown Fields",
+        DROPDOWN_FIELDS_CONTENT,
+        active_tab="dropdown-fields",
+        fields=DROPDOWN_FIELDS,
+        total_values=total_values,
+        required_count=required_count,
+        dep_count=dep_count,
+    )
+
+
+# ---------------------------------------------------------------------------
 # API endpoints for Selenium / automation
 # ---------------------------------------------------------------------------
 
@@ -935,6 +1292,11 @@ def api_dropdowns():
     return jsonify(DROPDOWN_FIELDS)
 
 
+@app.route("/api/test-data", methods=["GET"])
+def api_test_data():
+    return jsonify(TEST_CONFIG.get("test_records", []))
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("  MOCK SALESFORCE LIGHTNING - CAR PARTS MANAGEMENT")
@@ -942,6 +1304,8 @@ if __name__ == "__main__":
     print(f"  URL:        http://localhost:5555")
     print(f"  Login:      admin@carparts.demo / demo1234")
     print(f"  Car Parts:  http://localhost:5555/car-parts")
+    print(f"  Test Data:  http://localhost:5555/test-data")
+    print(f"  Dropdowns:  http://localhost:5555/dropdown-fields")
     print(f"  Records:    {len(car_parts_db)} pre-seeded")
     print("=" * 60 + "\n")
     app.run(host="0.0.0.0", port=5555, debug=False)
