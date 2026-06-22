@@ -461,7 +461,8 @@ class FeatureGenerationAgent(BaseAgent):
         context.feature_files = self.generator.generate_batch(context.stories)
 
         if not context.feature_files:
-            self.decide(context, "No feature files generated — marking as failed")
+            decision = self.decide(context, "No feature files generated — aborting pipeline")
+            decision.decision = DecisionType.ABORT
             self._log_fail("No feature files generated")
             return context
 
@@ -494,10 +495,18 @@ class TestDataPreparationAgent(BaseAgent):
         self._log_start()
 
         for story in context.stories:
+            feature_path = ""
+            for fp in context.feature_files:
+                if story.key.lower().replace("-", "") in str(fp).lower().replace("-", ""):
+                    feature_path = str(fp)
+                    break
+            if not feature_path and context.feature_files:
+                feature_path = str(context.feature_files[0])
+
             dataset = TestDataSet(
                 story_key=story.key,
                 test_data={"story": story.summary, "criteria_count": len(story.acceptance_criteria)},
-                feature_file_path=str(context.feature_files[0]) if context.feature_files else "",
+                feature_file_path=feature_path,
                 app_url=self.config.selenium.base_url or "https://your-org.lightning.force.com",
                 environment=context.metadata.get("environment", "test"),
             )
