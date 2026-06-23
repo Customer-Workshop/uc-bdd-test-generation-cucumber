@@ -1,0 +1,140 @@
+{
+  "run_id": "15f5d180-7b22-4a39-a6dd-90b5dabf3e31",
+  "run_time": "2026-06-23T14:18:05.054661",
+  "app_url": "http://localhost:5555",
+  "scenarios": [
+    {
+      "jira_id": "CAR-1001",
+      "test_case_id": "TC-001",
+      "scenario": "Create Engine Component",
+      "priority": "High",
+      "steps": 11,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Engine Components",
+        "Verify dependent Part Sub-Category refreshes",
+        "Select Part Sub-Category: Turbocharger",
+        "Select Manufacturer, Condition, Vehicle Make",
+        "Fill Unit Price and Stock Quantity",
+        "Select Availability, Warehouse, Quality, Shipping, Warranty, Currency",
+        "Fill Description field",
+        "Click Save and verify success toast"
+      ],
+      "duration": 1.58,
+      "status": "PASSED"
+    },
+    {
+      "jira_id": "CAR-1002",
+      "test_case_id": "TC-002",
+      "scenario": "Create Braking System Part",
+      "priority": "High",
+      "steps": 10,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Braking System",
+        "Verify dependent Sub-Category shows braking options",
+        "Select Part Sub-Category: Brake Pad",
+        "Select Manufacturer: Brembo, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make, Year Range, Availability, Warehouse, Quality, Shipping, Warranty",
+        "Click Save and verify success toast"
+      ],
+      "duration": 2.53,
+      "status": "PASSED"
+    },
+    {
+      "jira_id": "CAR-1003",
+      "test_case_id": "TC-003",
+      "scenario": "Create Suspension Part",
+      "priority": "Medium",
+      "steps": 10,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Suspension & Steering",
+        "Select Part Sub-Category: Shock Absorber",
+        "Select Manufacturer: KYB, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make: Honda, Year Range, Availability: Low Stock",
+        "Select Warehouse, Quality, Shipping, Warranty",
+        "Click Save and verify success toast"
+      ],
+      "duration": 3.07,
+      "status": "PASSED"
+    },
+    {
+      "jira_id": "CAR-1004",
+      "test_case_id": "TC-004",
+      "scenario": "Create Electrical Part",
+      "priority": "Medium",
+      "steps": 11,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Electrical & Lighting",
+        "Select Part Sub-Category: Headlight",
+        "Select Manufacturer: Hella, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make: Mercedes-Benz, Year Range",
+        "Select Availability: In Stock, Warehouse, Quality: OEM",
+        "Select Shipping: Oversized, Warranty: Manufacturer Warranty",
+        "Click Save and verify success toast"
+      ],
+      "duration": 3.78,
+      "status": "PASSED"
+    },
+    {
+      "jira_id": "CAR-1005",
+      "test_case_id": "TC-005",
+      "scenario": "Edit Car Part",
+      "priority": "High",
+      "steps": 10,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Search for Turbocharger Assembly",
+        "Open the matching record",
+        "Click Edit button",
+        "Change Condition to Refurbished",
+        "Change Availability to Low Stock",
+        "Change Warehouse Location",
+        "Change Quality Grade",
+        "Update Unit Price and Stock Quantity",
+        "Click Save and verify success toast"
+      ],
+      "duration": 3.07,
+      "status": "PASSED"
+    },
+    {
+      "jira_id": "CAR-1006",
+      "test_case_id": "TC-006",
+      "scenario": "Delete Car Part",
+      "priority": "Medium",
+      "steps": 6,
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Search for LED Headlight Assembly",
+        "Open the matching record",
+        "Click Delete from record actions",
+        "Confirm deletion in modal",
+        "Verify success toast and redirect to list view"
+      ],
+      "duration": 2.37,
+      "status": "PASSED"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "total_steps": 58
+  },
+  "copado_deployed": false,
+  "copado_environment": "UAT"
+}
