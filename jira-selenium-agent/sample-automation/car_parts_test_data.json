@@ -92,7 +92,25 @@
 
   "test_records": [
     {
+      "jira_story_id": "CAR-1001",
+      "jira_story_title": "As a parts manager, I want to create engine component records with full specifications",
+      "test_case_id": "TC-001",
+      "test_case_name": "Create Engine Component with All Dropdown Fields",
       "scenario": "Create Engine Component",
+      "priority": "High",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Engine Components",
+        "Verify dependent Part Sub-Category refreshes",
+        "Select Part Sub-Category: Turbocharger",
+        "Select Manufacturer, Condition, Vehicle Make",
+        "Fill Unit Price and Stock Quantity",
+        "Select Availability, Warehouse, Quality, Shipping, Warranty, Currency",
+        "Fill Description field",
+        "Click Save and verify success toast"
+      ],
       "data": {
         "Part Name": "Turbocharger Assembly - GT3582R",
         "Part Number": "ENG-TURBO-3582R-001",
@@ -114,7 +132,24 @@
       }
     },
     {
+      "jira_story_id": "CAR-1002",
+      "jira_story_title": "As a parts manager, I want to create braking system parts with dependent picklist validation",
+      "test_case_id": "TC-002",
+      "test_case_name": "Create Braking System Part with Dependent Picklists",
       "scenario": "Create Braking System Part",
+      "priority": "High",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Braking System",
+        "Verify dependent Sub-Category shows braking options",
+        "Select Part Sub-Category: Brake Pad",
+        "Select Manufacturer: Brembo, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make, Year Range, Availability, Warehouse, Quality, Shipping, Warranty",
+        "Click Save and verify success toast"
+      ],
       "data": {
         "Part Name": "Performance Brake Kit - Front Axle",
         "Part Number": "BRK-PERF-FA-004",
@@ -134,7 +169,24 @@
       }
     },
     {
+      "jira_story_id": "CAR-1003",
+      "jira_story_title": "As a parts manager, I want to create suspension and steering parts for Honda vehicles",
+      "test_case_id": "TC-003",
+      "test_case_name": "Create Suspension Part with Full Inventory Details",
       "scenario": "Create Suspension Part",
+      "priority": "Medium",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Suspension & Steering",
+        "Select Part Sub-Category: Shock Absorber",
+        "Select Manufacturer: KYB, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make: Honda, Year Range, Availability: Low Stock",
+        "Select Warehouse, Quality, Shipping, Warranty",
+        "Click Save and verify success toast"
+      ],
       "data": {
         "Part Name": "Coilover Suspension Kit - Adjustable",
         "Part Number": "SUS-COIL-ADJ-007",
@@ -154,7 +206,25 @@
       }
     },
     {
+      "jira_story_id": "CAR-1004",
+      "jira_story_title": "As a parts manager, I want to create electrical and lighting parts for Mercedes vehicles",
+      "test_case_id": "TC-004",
+      "test_case_name": "Create Electrical Part with OEM Quality Grade",
       "scenario": "Create Electrical Part",
+      "priority": "Medium",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Click New button",
+        "Fill Part Name and Part Number",
+        "Select Part Category: Electrical & Lighting",
+        "Select Part Sub-Category: Headlight",
+        "Select Manufacturer: Hella, Condition: New",
+        "Fill Unit Price and Stock Quantity",
+        "Select Vehicle Make: Mercedes-Benz, Year Range",
+        "Select Availability: In Stock, Warehouse, Quality: OEM",
+        "Select Shipping: Oversized, Warranty: Manufacturer Warranty",
+        "Click Save and verify success toast"
+      ],
       "data": {
         "Part Name": "LED Headlight Assembly - Projector",
         "Part Number": "ELC-LED-PROJ-012",
@@ -174,7 +244,24 @@
       }
     },
     {
+      "jira_story_id": "CAR-1005",
+      "jira_story_title": "As a parts manager, I want to edit existing car parts to update pricing and inventory status",
+      "test_case_id": "TC-005",
+      "test_case_name": "Edit Existing Car Part - Update Multiple Fields",
       "scenario": "Edit Car Part",
+      "priority": "High",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Search for Turbocharger Assembly",
+        "Open the matching record",
+        "Click Edit button",
+        "Change Condition to Refurbished",
+        "Change Availability to Low Stock",
+        "Change Warehouse Location",
+        "Change Quality Grade",
+        "Update Unit Price and Stock Quantity",
+        "Click Save and verify success toast"
+      ],
       "data": {
         "search_term": "Turbocharger Assembly",
         "updates": {
@@ -188,7 +275,20 @@
       }
     },
     {
+      "jira_story_id": "CAR-1006",
+      "jira_story_title": "As a parts manager, I want to delete discontinued car parts from the system",
+      "test_case_id": "TC-006",
+      "test_case_name": "Delete Car Part Record with Confirmation",
       "scenario": "Delete Car Part",
+      "priority": "Medium",
+      "execution_steps": [
+        "Navigate to Car Parts list view",
+        "Search for LED Headlight Assembly",
+        "Open the matching record",
+        "Click Delete from record actions",
+        "Confirm deletion in modal",
+        "Verify success toast and redirect to list view"
+      ],
       "data": {
         "search_term": "LED Headlight Assembly"
       }

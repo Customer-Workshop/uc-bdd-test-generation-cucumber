@@ -480,6 +480,7 @@ PORTAL_TEMPLATE = """
         <div class="portal-nav-items">
             <a href="/" class="portal-nav-item {{ 'active' if active_tab == 'dashboard' else '' }}">Dashboard</a>
             <a href="/workflow" class="portal-nav-item {{ 'active' if active_tab == 'workflow' else '' }}">Workflow</a>
+            <a href="/traceability" class="portal-nav-item {{ 'active' if active_tab == 'traceability' else '' }}">Traceability</a>
             <a href="/ai-model" class="portal-nav-item {{ 'active' if active_tab == 'ai-model' else '' }}">AI Model</a>
             <a href="/upload" class="portal-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload</a>
             <a href="/app-config" class="portal-nav-item {{ 'active' if active_tab == 'app-config' else '' }}">App URL</a>
@@ -607,6 +608,7 @@ DASHBOARD_CONTENT = """
         </div>
         <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap;">
             <a href="/workflow" class="btn btn-primary">View Workflow</a>
+            <a href="/traceability" class="btn btn-primary" style="background:#2e844a;">Traceability Matrix</a>
             <a href="/ai-model" class="btn btn-primary" style="background:#7b1fa2;">AI Model Config</a>
             <a href="/upload" class="btn">Upload Test Data</a>
             <a href="/app-config" class="btn">Configure App URL</a>
@@ -1656,6 +1658,174 @@ def workflow_page():
 
 
 # ---------------------------------------------------------------------------
+# Traceability Matrix
+# ---------------------------------------------------------------------------
+
+TRACEABILITY_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Jira Story &rarr; Test Case Traceability</h1>
+        <p>End-to-end mapping from Jira user stories to test cases, test data, and execution steps used by Selenium.</p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ records | length }}</div>
+            <div class="stat-label">Jira Stories Mapped</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ records | length }}</div>
+            <div class="stat-label">Test Cases</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_steps }}</div>
+            <div class="stat-label">Total Execution Steps</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_data_fields }}</div>
+            <div class="stat-label">Data Fields Used</div>
+        </div>
+    </div>
+
+    <!-- Traceability Matrix Table -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Traceability Matrix</h2>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>Jira Story</th>
+                        <th>Test Case</th>
+                        <th>Priority</th>
+                        <th>Steps</th>
+                        <th>Data Fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td>
+                            <div style="font-weight:700; color:var(--primary);">{{ rec.jira_story_id }}</div>
+                            <div style="font-size:11px; color:var(--text-light); max-width:250px;">{{ rec.jira_story_title }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:600;">{{ rec.test_case_id }}</div>
+                            <div style="font-size:11px; color:var(--text-light);">{{ rec.test_case_name }}</div>
+                        </td>
+                        <td>
+                            {% if rec.priority == 'High' %}
+                            <span class="status-badge" style="background:#fce4ec; color:#c62828;">High</span>
+                            {% elif rec.priority == 'Medium' %}
+                            <span class="status-badge" style="background:#fff3e0; color:#e65100;">Medium</span>
+                            {% else %}
+                            <span class="status-badge" style="background:#e8f5e9; color:#2e7d32;">Low</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;">{{ rec.execution_steps | length }}</td>
+                        <td style="text-align:center;">{{ rec.data | length }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detailed Story-to-Test Mapping -->
+    {% for rec in records %}
+    <div class="card" id="{{ rec.jira_story_id }}">
+        <div class="card-header">
+            <h2 style="display:flex; align-items:center; gap:10px;">
+                <span style="background:var(--primary); color:white; padding:2px 10px; border-radius:4px; font-size:13px;">{{ rec.jira_story_id }}</span>
+                {{ rec.test_case_id }} &mdash; {{ rec.scenario }}
+            </h2>
+            {% if rec.priority == 'High' %}
+            <span class="status-badge" style="background:#fce4ec; color:#c62828;">{{ rec.priority }}</span>
+            {% elif rec.priority == 'Medium' %}
+            <span class="status-badge" style="background:#fff3e0; color:#e65100;">{{ rec.priority }}</span>
+            {% else %}
+            <span class="status-badge" style="background:#e8f5e9; color:#2e7d32;">{{ rec.priority }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <!-- Story Description -->
+            <div style="background:#f0f7ff; border-left:3px solid var(--primary); padding:10px 14px; border-radius:0 6px 6px 0; margin-bottom:16px; font-size:13px;">
+                <strong>Jira Story:</strong> {{ rec.jira_story_title }}
+            </div>
+
+            <!-- Execution Steps -->
+            <div style="margin-bottom:16px;">
+                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Execution Steps ({{ rec.execution_steps | length }})</div>
+                <div class="wf-pipeline">
+                    {% for step in rec.execution_steps %}
+                    <div class="wf-step">
+                        <div class="wf-step-connector">
+                            <div class="wf-step-dot" style="background:var(--primary); width:26px; height:26px; font-size:11px;">{{ loop.index }}</div>
+                            {% if not loop.last %}
+                            <div class="wf-step-line" style="background:var(--primary); opacity:0.2; min-height:8px;"></div>
+                            {% endif %}
+                        </div>
+                        <div class="wf-step-content" style="padding:4px 0 6px 0;">
+                            <div style="font-size:13px;">{{ step }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Test Data -->
+            <div>
+                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Test Data ({{ rec.data | length }} fields)</div>
+                <table class="config-table" style="font-size:12px;">
+                    <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                    <tbody>
+                        {% for key, val in rec.data.items() %}
+                        {% if val is mapping %}
+                        {% for sub_key, sub_val in val.items() %}
+                        <tr><td>{{ key }}.{{ sub_key }}</td><td style="font-family:monospace;">{{ sub_val }}</td></tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr><td>{{ key }}</td><td style="font-family:monospace;">{{ val }}</td></tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+"""
+
+
+@portal.route("/traceability")
+def traceability_page():
+    records = []
+    total_steps = 0
+    total_data_fields = 0
+    if TEST_DATA_PATH.exists():
+        with open(TEST_DATA_PATH) as f:
+            td = json.load(f)
+        for rec in td.get("test_records", []):
+            records.append(rec)
+            total_steps += len(rec.get("execution_steps", []))
+            data = rec.get("data", {})
+            for v in data.values():
+                if isinstance(v, dict):
+                    total_data_fields += len(v)
+                else:
+                    total_data_fields += 1
+
+    return render_portal(
+        "Traceability", TRACEABILITY_CONTENT, active_tab="traceability",
+        records=records, total_steps=total_steps,
+        total_data_fields=total_data_fields,
+    )
+
+
+# ---------------------------------------------------------------------------
 # AI Model Configuration
 # ---------------------------------------------------------------------------
 
@@ -1906,6 +2076,7 @@ if __name__ == "__main__":
     print(f"  URL:        http://localhost:5556")
     print(f"  Dashboard:  http://localhost:5556/")
     print(f"  Workflow:   http://localhost:5556/workflow")
+    print(f"  Traceability: http://localhost:5556/traceability")
     print(f"  AI Model:   http://localhost:5556/ai-model")
     print(f"  Upload:     http://localhost:5556/upload")
     print(f"  App URL:    http://localhost:5556/app-config")
