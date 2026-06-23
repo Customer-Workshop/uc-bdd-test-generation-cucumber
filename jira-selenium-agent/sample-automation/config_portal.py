@@ -1544,12 +1544,20 @@ WORKFLOW_STEPS = [
         "ai_action": "AI auto-updates report when test cases change due to field/screen additions",
     },
     {
-        "num": 8, "title": "Copado Deployment", "agent": "DeploymentAgent",
+        "num": 8, "title": "Copado CI/CD Pipeline Deployment", "agent": "DeploymentAgent",
         "color": "#2e844a",
-        "desc": "Deploy test results to Copado CI/CD pipeline. Create Test_Run and Test_Result records in Copado org. Attach reports as ContentDocument. Trigger deployment on pass if configured.",
-        "inputs": ["Test results", "Copado config (URL, token, pipeline ID)"],
-        "outputs": ["Copado Test_Run record", "Deployment trigger"],
+        "desc": "Deploy test results through the Copado CI/CD pipeline. Creates Test_Run and Test_Result records, attaches HTML/XML/JSON reports as ContentDocument, then triggers the Copado deployment pipeline to promote the build from the source environment to the target (DEV → SIT → UAT → STAGING → PRODUCTION).",
+        "inputs": ["Test results", "Copado config (instance URL, API token, pipeline ID, environment)"],
+        "outputs": ["Copado Test_Run record", "Test_Result records per scenario", "Report attachments", "Pipeline deployment trigger"],
         "ai_action": None,
+        "copado_stages": [
+            {"stage": "Create Test Run", "desc": "Create copado__Test_Run__c record in Copado org with run metadata"},
+            {"stage": "Upload Results", "desc": "Create copado__Test_Result__c per scenario with pass/fail/duration"},
+            {"stage": "Attach Reports", "desc": "Upload HTML dashboard, JUnit XML, JSON as ContentDocument attachments"},
+            {"stage": "Validate Pipeline", "desc": "Check Copado pipeline status and target environment readiness"},
+            {"stage": "Trigger Deployment", "desc": "Trigger copado__Deployment__c to promote build to target environment"},
+            {"stage": "Verify Promotion", "desc": "Wait for deployment completion, verify promotion status in Copado"},
+        ],
     },
     {
         "num": 9, "title": "Feedback & Auto-Update", "agent": "FeedbackAgent",
@@ -1598,6 +1606,20 @@ WORKFLOW_CONTENT = """
                             <span class="wf-io-tag wf-io-ai">AI: {{ step.ai_action }}</span>
                             {% endif %}
                         </div>
+                        {% if step.copado_stages %}
+                        <div style="margin-top:10px; background:#f0faf0; border:1px solid #c8e6c9; border-radius:6px; padding:12px;">
+                            <div style="font-size:11px; font-weight:700; color:#2e844a; margin-bottom:8px; text-transform:uppercase;">Copado Pipeline Stages</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                {% for cs in step.copado_stages %}
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span style="background:#2e844a; color:white; font-size:9px; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;">{{ loop.index }}</span>
+                                    <span style="font-size:11px; font-weight:600; color:#1b5e20;">{{ cs.stage }}</span>
+                                    {% if not loop.last %}<span style="color:#a5d6a7; margin:0 2px;">&rarr;</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -1635,6 +1657,98 @@ WORKFLOW_CONTENT = """
         </div>
     </div>
 
+    <!-- Copado CI/CD Pipeline -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Copado CI/CD Pipeline Execution</h2>
+            <span style="font-size:12px; color:var(--text-light);">DeploymentAgent &rarr; Copado API</span>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:16px;">
+                After all tests pass, the DeploymentAgent deploys results through the Copado CI/CD pipeline. This is the standard Copado promotion flow integrated into the agentic pipeline:
+            </p>
+
+            <!-- Copado Pipeline Flow -->
+            <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap; margin-bottom:20px;">
+                {% for stage_name in ['Create Test Run', 'Upload Results', 'Attach Reports', 'Validate Pipeline', 'Trigger Deployment', 'Verify Promotion'] %}
+                <div style="display:flex; align-items:center;">
+                    <div style="background:#2e844a; color:white; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; white-space:nowrap;">
+                        {{ loop.index }}. {{ stage_name }}
+                    </div>
+                    {% if not loop.last %}
+                    <div style="color:#2e844a; font-size:18px; margin:0 4px;">&rarr;</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Copado Stage Details -->
+            <table class="config-table" style="font-size:12px;">
+                <thead>
+                    <tr><th>Stage</th><th>Copado Object</th><th>Action</th><th>Data</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">1. Create Test Run</td>
+                        <td style="font-family:monospace;">copado__Test_Run__c</td>
+                        <td>Create record with run metadata</td>
+                        <td>Pipeline ID, environment, start time, test count</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">2. Upload Results</td>
+                        <td style="font-family:monospace;">copado__Test_Result__c</td>
+                        <td>Create one record per scenario</td>
+                        <td>Jira ID, scenario name, pass/fail, duration, steps</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">3. Attach Reports</td>
+                        <td style="font-family:monospace;">ContentDocument</td>
+                        <td>Upload as attachments to Test Run</td>
+                        <td>HTML dashboard, JUnit XML, JSON summary, Copado JSON</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">4. Validate Pipeline</td>
+                        <td style="font-family:monospace;">copado__Pipeline__c</td>
+                        <td>Check pipeline and environment status</td>
+                        <td>Pipeline ID active, target environment ready</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">5. Trigger Deployment</td>
+                        <td style="font-family:monospace;">copado__Deployment__c</td>
+                        <td>Create deployment record, trigger promotion</td>
+                        <td>Source → Target environment, deploy on pass flag</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">6. Verify Promotion</td>
+                        <td style="font-family:monospace;">copado__Deployment__c</td>
+                        <td>Poll deployment status until complete</td>
+                        <td>Promotion status, error logs, completion time</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Environment Promotion Path -->
+            <div style="margin-top:16px;">
+                <div style="font-size:12px; font-weight:700; color:var(--dark); margin-bottom:8px;">Environment Promotion Path</div>
+                <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap;">
+                    {% for env in ['DEV', 'SIT', 'UAT', 'STAGING', 'PRODUCTION'] %}
+                    <div style="display:flex; align-items:center;">
+                        <div style="background:{% if env == 'PRODUCTION' %}#c62828{% elif env == 'UAT' %}#e65100{% else %}#1565c0{% endif %}; color:white; padding:6px 16px; border-radius:4px; font-size:11px; font-weight:700;">
+                            {{ env }}
+                        </div>
+                        {% if not loop.last %}
+                        <div style="font-size:16px; margin:0 6px; color:#999;">&rarr;</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <p style="font-size:11px; color:var(--text-light); margin-top:6px;">
+                    Configure target environment at <a href="/copado-config" style="color:var(--primary);">/copado-config</a>. Current target: <strong>{{ copado_env }}</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Decision Types -->
     <div class="card">
         <div class="card-header"><h2>Agent Decision Types</h2></div>
@@ -1657,9 +1771,10 @@ WORKFLOW_CONTENT = """
 
 @portal.route("/workflow")
 def workflow_page():
+    copado_env = config.get("copado", {}).get("environment", "UAT")
     return render_portal(
         "Workflow", WORKFLOW_CONTENT, active_tab="workflow",
-        steps=WORKFLOW_STEPS,
+        steps=WORKFLOW_STEPS, copado_env=copado_env,
     )
 
 
@@ -2199,11 +2314,24 @@ def _run_pipeline(run_id, app_url):
             step["decision"] = "PROCEED"
             run["results"]["reports"] = ["HTML", "JUnit XML", "JSON", "Copado"]
         elif agent_name == "DeploymentAgent":
-            if config.get("copado", {}).get("enabled"):
-                step["details"] = "Deployed test results to Copado CI/CD pipeline"
+            copado_cfg = config.get("copado", {})
+            if copado_cfg.get("enabled"):
+                env = copado_cfg.get("environment", "UAT")
+                copado_stages = [
+                    "Create Test Run (copado__Test_Run__c)",
+                    f"Upload {run['results'].get('scenarios_total', 0)} Test Results",
+                    "Attach Reports (HTML, JUnit XML, JSON)",
+                    "Validate Pipeline",
+                    f"Trigger Deployment → {env}",
+                    "Verify Promotion",
+                ]
+                step["details"] = f"Copado CI/CD: {' → '.join(copado_stages[:3])}... → Deploy to {env}"
                 step["decision"] = "PROCEED"
+                step["copado_stages"] = copado_stages
+                run["results"]["copado_env"] = env
+                run["results"]["copado_stages"] = len(copado_stages)
             else:
-                step["details"] = "Copado deployment disabled — skipped"
+                step["details"] = "Copado CI/CD pipeline not enabled — configure at /copado-config to deploy results (Create Test Run → Upload Results → Attach Reports → Validate → Deploy → Verify)"
                 step["decision"] = "SKIP"
         elif agent_name == "FeedbackAgent":
             if scan["changes"]:
@@ -2456,6 +2584,20 @@ EXECUTE_DETAIL_CONTENT = """
                             {% endif %}
                         </div>
                         <div style="font-size:12px; color:var(--text-light); margin-top:4px;">{{ step.details }}</div>
+                        {% if step.copado_stages %}
+                        <div style="margin-top:8px; background:#f0faf0; border:1px solid #c8e6c9; border-radius:6px; padding:10px;">
+                            <div style="font-size:10px; font-weight:700; color:#2e844a; margin-bottom:6px; text-transform:uppercase;">Copado Pipeline Stages</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                                {% for cs in step.copado_stages %}
+                                <div style="display:flex; align-items:center; gap:3px;">
+                                    <span style="background:#2e844a; color:white; font-size:8px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;">{{ loop.index }}</span>
+                                    <span style="font-size:10px; font-weight:600; color:#1b5e20;">{{ cs }}</span>
+                                    {% if not loop.last %}<span style="color:#a5d6a7; margin:0 1px;">&rarr;</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
