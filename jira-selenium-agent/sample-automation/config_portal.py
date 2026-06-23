@@ -8,11 +8,12 @@ Sections:
 - Application URL: target app URL configuration
 - Selenium Config: browser, CDP port, headless mode, timeouts
 - GitHub Details: repo URL, branch, workflow settings
-- Report Config: format, output paths, Copado deployment settings
+- Report Config: format, output paths
+- Jira Config: server URL, credentials, project key
+- Copado Config: instance URL, API token, pipeline ID
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -46,17 +47,31 @@ DEFAULT_CONFIG = {
         "workflow_file": "bdd-test-agent.yml",
         "auto_trigger": False,
     },
+    "jira": {
+        "server_url": "",
+        "username": "",
+        "api_token": "",
+        "project_key": "",
+        "story_status": "To Do",
+        "auto_fetch": False,
+    },
+    "copado": {
+        "enabled": False,
+        "instance_url": "",
+        "api_token": "",
+        "pipeline_id": "",
+        "deploy_on_pass": True,
+        "environment": "UAT",
+    },
     "reports": {
         "format": "html",
         "output_dir": "test-reports",
         "generate_junit_xml": True,
         "generate_json": True,
-        "copado_deploy": False,
-        "copado_instance_url": "",
-        "copado_api_token": "",
     },
     "test_data": {
         "file_name": None,
+        "file_path": None,
         "records_count": 0,
         "upload_time": None,
     },
@@ -372,6 +387,30 @@ PORTAL_TEMPLATE = """
         .separator hr { flex: 1; border: none; border-top: 1px solid var(--border); }
         .separator span { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; }
 
+        /* Status badges */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 12px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .status-configured { background: #e8f5e9; color: #2e7d32; }
+        .status-not-configured { background: #fff3e0; color: #e65100; }
+        .status-enabled { background: #e3f2fd; color: #1565c0; }
+        .status-disabled { background: #f5f5f5; color: #757575; }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+        }
+        .status-dot-green { background: #2e844a; }
+        .status-dot-orange { background: #e65100; }
+        .status-dot-gray { background: #bbb; }
+
+        /* File path display */
+        .file-path-box {
+            background: #f5f7fa; border: 1px solid var(--border); border-radius: 6px;
+            padding: 12px 16px; font-family: monospace; font-size: 13px;
+            color: var(--dark); word-break: break-all;
+        }
+
         /* Footer */
         .portal-footer {
             text-align: center;
@@ -392,7 +431,9 @@ PORTAL_TEMPLATE = """
             <a href="/upload" class="portal-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload Test Data</a>
             <a href="/app-config" class="portal-nav-item {{ 'active' if active_tab == 'app-config' else '' }}">App URL</a>
             <a href="/selenium-config" class="portal-nav-item {{ 'active' if active_tab == 'selenium' else '' }}">Selenium</a>
+            <a href="/jira-config" class="portal-nav-item {{ 'active' if active_tab == 'jira' else '' }}">Jira</a>
             <a href="/github-config" class="portal-nav-item {{ 'active' if active_tab == 'github' else '' }}">GitHub</a>
+            <a href="/copado-config" class="portal-nav-item {{ 'active' if active_tab == 'copado' else '' }}">Copado</a>
             <a href="/report-config" class="portal-nav-item {{ 'active' if active_tab == 'reports' else '' }}">Reports</a>
         </div>
     </nav>
@@ -457,6 +498,50 @@ DASHBOARD_CONTENT = """
         </div>
     </div>
 
+    <!-- Tool Integration Status -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Integration Status</h2>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Tool</th><th>Status</th><th>Details</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>Jira</td>
+                        <td>{% if cfg.jira.server_url %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Not Configured</span>{% endif %}</td>
+                        <td>{{ cfg.jira.server_url or 'Set server URL and credentials' }} {% if cfg.jira.project_key %}({{ cfg.jira.project_key }}){% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Selenium</td>
+                        <td><span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span></td>
+                        <td>{{ cfg.selenium.browser | title }} via {{ cfg.selenium.cdp_url }}</td>
+                    </tr>
+                    <tr>
+                        <td>GitHub</td>
+                        <td>{% if cfg.github.repo_url %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Not Configured</span>{% endif %}</td>
+                        <td>{{ cfg.github.repo_url or 'Set repository URL' }} ({{ cfg.github.branch }})</td>
+                    </tr>
+                    <tr>
+                        <td>Copado</td>
+                        <td>{% if cfg.copado.enabled and cfg.copado.instance_url %}<span class="status-badge status-enabled"><span class="status-dot status-dot-green"></span> Enabled</span>{% elif cfg.copado.enabled %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Incomplete</span>{% else %}<span class="status-badge status-disabled"><span class="status-dot status-dot-gray"></span> Disabled</span>{% endif %}</td>
+                        <td>{{ cfg.copado.instance_url or 'Not configured' }} {% if cfg.copado.environment %}({{ cfg.copado.environment }}){% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Reports</td>
+                        <td><span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span></td>
+                        <td>{{ cfg.reports.format | upper }} &rarr; {{ cfg.reports.output_dir }}/</td>
+                    </tr>
+                    <tr>
+                        <td>Test Data</td>
+                        <td>{% if cfg.test_data.records_count > 0 %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Loaded</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No Data</span>{% endif %}</td>
+                        <td>{{ cfg.test_data.records_count }} records {% if cfg.test_data.file_name %}from {{ cfg.test_data.file_name }}{% else %}(default){% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Quick Links -->
     <div class="card">
         <div class="card-header">
@@ -466,7 +551,9 @@ DASHBOARD_CONTENT = """
             <a href="/upload" class="btn btn-primary">Upload Test Data</a>
             <a href="/app-config" class="btn">Configure App URL</a>
             <a href="/selenium-config" class="btn">Selenium Settings</a>
+            <a href="/jira-config" class="btn">Jira Settings</a>
             <a href="/github-config" class="btn">GitHub Settings</a>
+            <a href="/copado-config" class="btn">Copado Settings</a>
             <a href="/report-config" class="btn">Report Settings</a>
             <a href="{{ cfg.app_url }}" class="btn" target="_blank">Open Application</a>
         </div>
@@ -475,7 +562,7 @@ DASHBOARD_CONTENT = """
     <!-- Current Configuration Summary -->
     <div class="card">
         <div class="card-header">
-            <h2>Current Configuration</h2>
+            <h2>Full Configuration</h2>
         </div>
         <div class="card-body" style="padding:0;">
             <table class="config-table">
@@ -483,16 +570,18 @@ DASHBOARD_CONTENT = """
                 <tbody>
                     <tr><td>Application URL</td><td>{{ cfg.app_url }}</td></tr>
                     <tr><td>UI Framework</td><td>{{ framework_name }}</td></tr>
+                    <tr><td>Test Data File</td><td>{{ test_data_path }}</td></tr>
+                    <tr><td>Test Records</td><td>{{ cfg.test_data.records_count }} scenarios</td></tr>
                     <tr><td>Browser</td><td>{{ cfg.selenium.browser | title }}</td></tr>
                     <tr><td>CDP URL</td><td>{{ cfg.selenium.cdp_url }}</td></tr>
                     <tr><td>Headless Mode</td><td>{{ 'Enabled' if cfg.selenium.headless else 'Disabled' }}</td></tr>
-                    <tr><td>Test Data Source</td><td>{{ cfg.test_data.file_name or 'car_parts_test_data.json (default)' }}</td></tr>
-                    <tr><td>Test Records</td><td>{{ cfg.test_data.records_count }} scenarios</td></tr>
+                    <tr><td>Jira Server</td><td>{{ cfg.jira.server_url or 'Not configured' }}</td></tr>
+                    <tr><td>Jira Project</td><td>{{ cfg.jira.project_key or 'Not set' }}</td></tr>
                     <tr><td>GitHub Repo</td><td>{{ cfg.github.repo_url or 'Not configured' }}</td></tr>
                     <tr><td>GitHub Branch</td><td>{{ cfg.github.branch }}</td></tr>
+                    <tr><td>Copado</td><td>{{ 'Enabled' if cfg.copado.enabled else 'Disabled' }}</td></tr>
                     <tr><td>Report Format</td><td>{{ cfg.reports.format | upper }}</td></tr>
                     <tr><td>Report Output</td><td>{{ cfg.reports.output_dir }}</td></tr>
-                    <tr><td>Copado Deploy</td><td>{{ 'Enabled' if cfg.reports.copado_deploy else 'Disabled' }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -503,12 +592,14 @@ DASHBOARD_CONTENT = """
 
 @portal.route("/")
 def dashboard():
+    td_path = str(config["test_data"].get("file_path") or TEST_DATA_PATH)
     return render_portal(
         "Dashboard",
         DASHBOARD_CONTENT,
         active_tab="dashboard",
         cfg=config,
         framework_name=get_framework_name(),
+        test_data_path=td_path,
     )
 
 
@@ -535,6 +626,26 @@ UPLOAD_CONTENT = """
         <div class="stat-card">
             <div class="stat-value">{{ cfg.test_data.upload_time or 'Built-in' }}</div>
             <div class="stat-label">Last Upload</div>
+        </div>
+    </div>
+
+    <!-- Current Data File Path -->
+    <div class="card">
+        <div class="card-header"><h2>Current Test Data File</h2></div>
+        <div class="card-body">
+            <div class="form-group" style="margin-bottom:8px;">
+                <label>File Path on Disk</label>
+                <div class="file-path-box">{{ test_data_path }}</div>
+                <div class="form-hint">This is the JSON file Selenium reads at runtime. Upload a new file to replace it.</div>
+            </div>
+            {% if file_exists %}
+            <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+                <span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> File Exists</span>
+                <span style="font-size:12px; color:var(--text-light);">{{ file_size }} &middot; {{ cfg.test_data.records_count }} test records</span>
+            </div>
+            {% else %}
+            <span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> File Not Found</span>
+            {% endif %}
         </div>
     </div>
 
@@ -695,6 +806,7 @@ def upload_page():
                 json.dump(full_config, f, indent=2)
 
             config["test_data"]["file_name"] = file_name
+            config["test_data"]["file_path"] = str(TEST_DATA_PATH)
             config["test_data"]["records_count"] = records_count
             config["test_data"]["upload_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             save_config(config)
@@ -719,9 +831,20 @@ def upload_page():
     else:
         sample_json = "[]"
 
+    td_path = str(config["test_data"].get("file_path") or TEST_DATA_PATH)
+    file_exists = Path(td_path).exists()
+    file_size = ""
+    if file_exists:
+        size_bytes = Path(td_path).stat().st_size
+        if size_bytes < 1024:
+            file_size = f"{size_bytes} B"
+        else:
+            file_size = f"{size_bytes / 1024:.1f} KB"
+
     return render_portal(
         "Upload Test Data", UPLOAD_CONTENT, active_tab="upload",
         cfg=config, sample_json=sample_json, uploads=upload_history,
+        test_data_path=td_path, file_exists=file_exists, file_size=file_size,
         toast_msg=toast_msg, toast_type=toast_type,
     )
 
@@ -983,6 +1106,229 @@ def github_config_page():
 
 
 # ---------------------------------------------------------------------------
+# Jira Configuration
+# ---------------------------------------------------------------------------
+
+JIRA_CONFIG_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Jira Configuration</h1>
+        <p>Connect to Jira to fetch user stories and auto-generate BDD feature files.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Connection Settings</h2>
+            {% if cfg.jira.server_url %}
+            <span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>
+            {% else %}
+            <span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Not Configured</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/jira-config">
+                <div class="form-group">
+                    <label>Jira Server URL <span class="required">*</span></label>
+                    <input type="url" name="server_url" value="{{ cfg.jira.server_url }}"
+                           placeholder="https://your-org.atlassian.net">
+                    <div class="form-hint">Jira Cloud or Server instance URL</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Username / Email <span class="required">*</span></label>
+                        <input type="text" name="username" value="{{ cfg.jira.username }}"
+                               placeholder="user@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label>API Token <span class="required">*</span></label>
+                        <input type="password" name="api_token" value="{{ cfg.jira.api_token }}"
+                               placeholder="Enter Jira API token">
+                        <div class="form-hint"><a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" style="color:var(--primary);">Generate API token</a></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project Key <span class="required">*</span></label>
+                        <input type="text" name="project_key" value="{{ cfg.jira.project_key }}"
+                               placeholder="PROJ" style="text-transform:uppercase;">
+                        <div class="form-hint">Jira project key (e.g. CAR, PROJ, TEST)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Story Status Filter</label>
+                        <select name="story_status">
+                            <option value="To Do" {{ 'selected' if cfg.jira.story_status == 'To Do' else '' }}>To Do</option>
+                            <option value="In Progress" {{ 'selected' if cfg.jira.story_status == 'In Progress' else '' }}>In Progress</option>
+                            <option value="Ready for Testing" {{ 'selected' if cfg.jira.story_status == 'Ready for Testing' else '' }}>Ready for Testing</option>
+                            <option value="Done" {{ 'selected' if cfg.jira.story_status == 'Done' else '' }}>Done</option>
+                        </select>
+                        <div class="form-hint">Fetch stories with this status</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:8px;">
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Fetch Stories</div>
+                            <div class="toggle-desc">Automatically fetch new stories on pipeline run</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_fetch" {{ 'checked' if cfg.jira.auto_fetch else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary">Save Jira Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/jira-config", methods=["GET", "POST"])
+def jira_config_page():
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        config["jira"]["server_url"] = request.form.get("server_url", "")
+        config["jira"]["username"] = request.form.get("username", "")
+        config["jira"]["api_token"] = request.form.get("api_token", "")
+        config["jira"]["project_key"] = request.form.get("project_key", "").upper()
+        config["jira"]["story_status"] = request.form.get("story_status", "To Do")
+        config["jira"]["auto_fetch"] = "auto_fetch" in request.form
+        save_config(config)
+        toast_msg = "Jira configuration saved!"
+        toast_type = "success"
+
+    return render_portal(
+        "Jira Config", JIRA_CONFIG_CONTENT, active_tab="jira",
+        cfg=config, toast_msg=toast_msg, toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Copado Deployment Configuration
+# ---------------------------------------------------------------------------
+
+COPADO_CONFIG_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Copado Deployment Configuration</h1>
+        <p>Configure Copado CI/CD integration for deploying test results and triggering pipelines.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Copado Settings</h2>
+            {% if cfg.copado.enabled and cfg.copado.instance_url %}
+            <span class="status-badge status-enabled"><span class="status-dot status-dot-green"></span> Enabled</span>
+            {% elif cfg.copado.enabled %}
+            <span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Incomplete</span>
+            {% else %}
+            <span class="status-badge status-disabled"><span class="status-dot status-dot-gray"></span> Disabled</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/copado-config">
+                <div style="margin-bottom:16px;">
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Enable Copado Deployment</div>
+                            <div class="toggle-desc">Push test execution results to Copado CI/CD pipeline after each run</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="enabled" {{ 'checked' if cfg.copado.enabled else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Copado Instance URL</label>
+                    <input type="url" name="instance_url" value="{{ cfg.copado.instance_url }}"
+                           placeholder="https://your-org.my.salesforce.com">
+                    <div class="form-hint">Salesforce org URL where Copado is installed</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Copado API Token</label>
+                        <input type="password" name="api_token" value="{{ cfg.copado.api_token }}"
+                               placeholder="Enter Copado API / session token">
+                    </div>
+                    <div class="form-group">
+                        <label>Pipeline ID</label>
+                        <input type="text" name="pipeline_id" value="{{ cfg.copado.pipeline_id }}"
+                               placeholder="a0B000000000001">
+                        <div class="form-hint">Copado Pipeline record ID (copado__Deployment_Flow__c)</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Target Environment</label>
+                        <select name="environment">
+                            <option value="DEV" {{ 'selected' if cfg.copado.environment == 'DEV' else '' }}>DEV</option>
+                            <option value="SIT" {{ 'selected' if cfg.copado.environment == 'SIT' else '' }}>SIT</option>
+                            <option value="UAT" {{ 'selected' if cfg.copado.environment == 'UAT' else '' }}>UAT</option>
+                            <option value="STAGING" {{ 'selected' if cfg.copado.environment == 'STAGING' else '' }}>STAGING</option>
+                            <option value="PRODUCTION" {{ 'selected' if cfg.copado.environment == 'PRODUCTION' else '' }}>PRODUCTION</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div class="toggle-row" style="padding:0; border:none;">
+                            <div>
+                                <div class="toggle-label">Deploy on Pass</div>
+                                <div class="toggle-desc">Auto-trigger Copado deployment when all tests pass</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="deploy_on_pass" {{ 'checked' if cfg.copado.deploy_on_pass else '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary">Save Copado Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/copado-config", methods=["GET", "POST"])
+def copado_config_page():
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        config["copado"]["enabled"] = "enabled" in request.form
+        config["copado"]["instance_url"] = request.form.get("instance_url", "")
+        config["copado"]["api_token"] = request.form.get("api_token", "")
+        config["copado"]["pipeline_id"] = request.form.get("pipeline_id", "")
+        config["copado"]["environment"] = request.form.get("environment", "UAT")
+        config["copado"]["deploy_on_pass"] = "deploy_on_pass" in request.form
+        save_config(config)
+        toast_msg = "Copado configuration saved!"
+        toast_type = "success"
+
+    return render_portal(
+        "Copado Config", COPADO_CONFIG_CONTENT, active_tab="copado",
+        cfg=config, toast_msg=toast_msg, toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Report Configuration
 # ---------------------------------------------------------------------------
 
@@ -990,7 +1336,7 @@ REPORT_CONFIG_CONTENT = """
 <div class="page">
     <div class="page-header">
         <h1>Report Configuration</h1>
-        <p>Configure test execution report generation and deployment settings.</p>
+        <p>Configure test execution report generation settings.</p>
     </div>
 
     <div class="card">
@@ -1036,35 +1382,7 @@ REPORT_CONFIG_CONTENT = """
                     </div>
                 </div>
 
-                <div class="separator"><hr><span>copado deployment</span><hr></div>
-
-                <div style="margin-bottom:16px;">
-                    <div class="toggle-row">
-                        <div>
-                            <div class="toggle-label">Deploy to Copado</div>
-                            <div class="toggle-desc">Push test results to Copado CI/CD pipeline</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="copado_deploy" {{ 'checked' if cfg.reports.copado_deploy else '' }}>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Copado Instance URL</label>
-                        <input type="url" name="copado_instance_url" value="{{ cfg.reports.copado_instance_url }}"
-                               placeholder="https://your-org.my.salesforce.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Copado API Token</label>
-                        <input type="password" name="copado_api_token" value="{{ cfg.reports.copado_api_token }}"
-                               placeholder="Enter Copado API token">
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; border-top:1px solid var(--border);">
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
                     <button type="submit" class="btn btn-primary">Save Report Config</button>
                 </div>
             </form>
@@ -1084,9 +1402,6 @@ def report_config_page():
         config["reports"]["output_dir"] = request.form.get("output_dir", "test-reports")
         config["reports"]["generate_junit_xml"] = "generate_junit_xml" in request.form
         config["reports"]["generate_json"] = "generate_json" in request.form
-        config["reports"]["copado_deploy"] = "copado_deploy" in request.form
-        config["reports"]["copado_instance_url"] = request.form.get("copado_instance_url", "")
-        config["reports"]["copado_api_token"] = request.form.get("copado_api_token", "")
         save_config(config)
         toast_msg = "Report configuration saved!"
         toast_type = "success"
@@ -1104,8 +1419,10 @@ def report_config_page():
 @portal.route("/api/config", methods=["GET"])
 def api_get_config():
     safe = {**config}
-    if safe.get("reports", {}).get("copado_api_token"):
-        safe["reports"] = {**safe["reports"], "copado_api_token": "***"}
+    if safe.get("jira", {}).get("api_token"):
+        safe["jira"] = {**safe["jira"], "api_token": "***"}
+    if safe.get("copado", {}).get("api_token"):
+        safe["copado"] = {**safe["copado"], "api_token": "***"}
     return jsonify(safe)
 
 
@@ -1127,7 +1444,9 @@ if __name__ == "__main__":
     print(f"  Upload:     http://localhost:5556/upload")
     print(f"  App URL:    http://localhost:5556/app-config")
     print(f"  Selenium:   http://localhost:5556/selenium-config")
+    print(f"  Jira:       http://localhost:5556/jira-config")
     print(f"  GitHub:     http://localhost:5556/github-config")
+    print(f"  Copado:     http://localhost:5556/copado-config")
     print(f"  Reports:    http://localhost:5556/report-config")
     print(f"  API:        http://localhost:5556/api/config")
     print("=" * 60 + "\n")
