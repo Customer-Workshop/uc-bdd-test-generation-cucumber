@@ -11,6 +11,8 @@ Sections:
 - Report Config: format, output paths
 - Jira Config: server URL, credentials, project key
 - Copado Config: instance URL, API token, pipeline ID
+- Workflow: visual step-by-step agent pipeline execution display
+- AI Model Config: LLM settings for auto test case generation/modification
 """
 
 import json
@@ -68,6 +70,19 @@ DEFAULT_CONFIG = {
         "output_dir": "test-reports",
         "generate_junit_xml": True,
         "generate_json": True,
+    },
+    "ai_model": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "api_key": "",
+        "temperature": 0.3,
+        "max_tokens": 4096,
+        "auto_detect_fields": True,
+        "auto_detect_screens": True,
+        "auto_update_tests": True,
+        "auto_update_pom": True,
+        "auto_update_reports": True,
+        "diff_analysis": True,
     },
     "test_data": {
         "file_name": None,
@@ -411,6 +426,42 @@ PORTAL_TEMPLATE = """
             color: var(--dark); word-break: break-all;
         }
 
+        /* Workflow pipeline */
+        .wf-pipeline { display: flex; flex-direction: column; gap: 0; }
+        .wf-step {
+            display: flex; align-items: flex-start; gap: 16px;
+            position: relative; padding: 0 0 0 0;
+        }
+        .wf-step-connector {
+            display: flex; flex-direction: column; align-items: center;
+            width: 40px; flex-shrink: 0;
+        }
+        .wf-step-dot {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; color: white;
+            z-index: 2; flex-shrink: 0;
+        }
+        .wf-step-line {
+            width: 3px; flex: 1; min-height: 24px;
+        }
+        .wf-step-content {
+            flex: 1; padding: 6px 0 20px 0;
+        }
+        .wf-step-title { font-size: 14px; font-weight: 700; color: var(--dark); }
+        .wf-step-agent { font-size: 11px; font-weight: 600; color: var(--primary); font-family: monospace; }
+        .wf-step-desc { font-size: 12px; color: var(--text-light); margin-top: 4px; line-height: 1.5; }
+        .wf-step-io {
+            display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;
+        }
+        .wf-io-tag {
+            font-size: 10px; font-weight: 700; padding: 2px 8px;
+            border-radius: 4px; text-transform: uppercase;
+        }
+        .wf-io-in { background: #e8f5e9; color: #2e7d32; }
+        .wf-io-out { background: #e3f2fd; color: #1565c0; }
+        .wf-io-ai { background: #f3e5f5; color: #7b1fa2; }
+
         /* Footer */
         .portal-footer {
             text-align: center;
@@ -428,7 +479,9 @@ PORTAL_TEMPLATE = """
         </a>
         <div class="portal-nav-items">
             <a href="/" class="portal-nav-item {{ 'active' if active_tab == 'dashboard' else '' }}">Dashboard</a>
-            <a href="/upload" class="portal-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload Test Data</a>
+            <a href="/workflow" class="portal-nav-item {{ 'active' if active_tab == 'workflow' else '' }}">Workflow</a>
+            <a href="/ai-model" class="portal-nav-item {{ 'active' if active_tab == 'ai-model' else '' }}">AI Model</a>
+            <a href="/upload" class="portal-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload</a>
             <a href="/app-config" class="portal-nav-item {{ 'active' if active_tab == 'app-config' else '' }}">App URL</a>
             <a href="/selenium-config" class="portal-nav-item {{ 'active' if active_tab == 'selenium' else '' }}">Selenium</a>
             <a href="/jira-config" class="portal-nav-item {{ 'active' if active_tab == 'jira' else '' }}">Jira</a>
@@ -537,6 +590,11 @@ DASHBOARD_CONTENT = """
                         <td>{% if cfg.test_data.records_count > 0 %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Loaded</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No Data</span>{% endif %}</td>
                         <td>{{ cfg.test_data.records_count }} records {% if cfg.test_data.file_name %}from {{ cfg.test_data.file_name }}{% else %}(default){% endif %}</td>
                     </tr>
+                    <tr>
+                        <td>AI Model</td>
+                        <td>{% if cfg.ai_model.api_key %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No API Key</span>{% endif %}</td>
+                        <td>{{ cfg.ai_model.provider | title }} / {{ cfg.ai_model.model }} &middot; {{ 'Auto-detect ON' if cfg.ai_model.auto_detect_fields else 'Auto-detect OFF' }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -548,7 +606,9 @@ DASHBOARD_CONTENT = """
             <h2>Quick Actions</h2>
         </div>
         <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap;">
-            <a href="/upload" class="btn btn-primary">Upload Test Data</a>
+            <a href="/workflow" class="btn btn-primary">View Workflow</a>
+            <a href="/ai-model" class="btn btn-primary" style="background:#7b1fa2;">AI Model Config</a>
+            <a href="/upload" class="btn">Upload Test Data</a>
             <a href="/app-config" class="btn">Configure App URL</a>
             <a href="/selenium-config" class="btn">Selenium Settings</a>
             <a href="/jira-config" class="btn">Jira Settings</a>
@@ -580,6 +640,8 @@ DASHBOARD_CONTENT = """
                     <tr><td>GitHub Repo</td><td>{{ cfg.github.repo_url or 'Not configured' }}</td></tr>
                     <tr><td>GitHub Branch</td><td>{{ cfg.github.branch }}</td></tr>
                     <tr><td>Copado</td><td>{{ 'Enabled' if cfg.copado.enabled else 'Disabled' }}</td></tr>
+                    <tr><td>AI Model</td><td>{{ cfg.ai_model.provider | title }} / {{ cfg.ai_model.model }}</td></tr>
+                    <tr><td>AI Auto-Detect</td><td>Fields: {{ 'ON' if cfg.ai_model.auto_detect_fields else 'OFF' }} | Screens: {{ 'ON' if cfg.ai_model.auto_detect_screens else 'OFF' }} | Tests: {{ 'ON' if cfg.ai_model.auto_update_tests else 'OFF' }}</td></tr>
                     <tr><td>Report Format</td><td>{{ cfg.reports.format | upper }}</td></tr>
                     <tr><td>Report Output</td><td>{{ cfg.reports.output_dir }}</td></tr>
                 </tbody>
@@ -1413,11 +1475,413 @@ def report_config_page():
 
 
 # ---------------------------------------------------------------------------
+# Workflow Execution Pipeline
+# ---------------------------------------------------------------------------
+
+WORKFLOW_STEPS = [
+    {
+        "num": 1, "title": "Story Ingestion", "agent": "StoryIngestionAgent",
+        "color": "#0176d3",
+        "desc": "Fetch user stories from Jira API based on project key and status filter. Parse acceptance criteria, extract Given/When/Then patterns from story description.",
+        "inputs": ["Jira Config (URL, project key, status)", "API credentials"],
+        "outputs": ["UserStory objects with parsed acceptance criteria"],
+        "ai_action": None,
+    },
+    {
+        "num": 2, "title": "Analysis & Framework Detection", "agent": "AnalysisAgent",
+        "color": "#5e35b1",
+        "desc": "Analyze the target application URL to detect UI framework (Salesforce LWC, React, Angular). Classify story complexity (simple CRUD, complex workflow, integration) and determine test strategy.",
+        "inputs": ["UserStory objects", "Application URL"],
+        "outputs": ["Framework type", "Complexity classification", "Test strategy"],
+        "ai_action": "LLM classifies story complexity and suggests test approach",
+    },
+    {
+        "num": 3, "title": "Feature File Generation", "agent": "FeatureGenerationAgent",
+        "color": "#2e844a",
+        "desc": "Convert each user story into Gherkin .feature files with proper tags, Background, and Scenarios. Map acceptance criteria to Given/When/Then steps with parameterized data tables.",
+        "inputs": ["UserStory objects", "Framework analysis"],
+        "outputs": [".feature files in Gherkin syntax"],
+        "ai_action": "LLM generates Gherkin scenarios from plain-text acceptance criteria",
+    },
+    {
+        "num": 4, "title": "Test Data Preparation", "agent": "TestDataPreparationAgent",
+        "color": "#fe9339",
+        "desc": "Bundle test data per story — field values, dropdown selections, dependent picklist data. Upload configuration including Selenium settings and target application URL.",
+        "inputs": ["Feature files", "Uploaded test data JSON", "App URL config"],
+        "outputs": ["Test data bundles per scenario", "Selenium config object"],
+        "ai_action": None,
+    },
+    {
+        "num": 5, "title": "Page Object Generation", "agent": "PageObjectAgent",
+        "color": "#ea001e",
+        "desc": "Select or generate framework-specific Page Object Model (POM) classes. Salesforce LWC uses shadow DOM traversal, React uses data-testid, Angular uses formControlName.",
+        "inputs": ["Framework type", "Feature file steps"],
+        "outputs": ["POM page classes with locators and actions"],
+        "ai_action": "LLM detects new fields/screens and auto-generates POM locators",
+    },
+    {
+        "num": 6, "title": "Test Execution", "agent": "ExecutionAgent",
+        "color": "#0176d3",
+        "desc": "Execute BDD scenarios against the target application via Selenium WebDriver. Map Gherkin steps to POM page actions. Capture screenshots on failure, record step timings.",
+        "inputs": ["Feature files", "POM pages", "Test data", "Selenium config"],
+        "outputs": ["Step results (pass/fail/skip)", "Screenshots", "Timing data"],
+        "ai_action": None,
+    },
+    {
+        "num": 7, "title": "Report Generation", "agent": "ReportingAgent",
+        "color": "#5e35b1",
+        "desc": "Generate test execution reports with Chart.js dashboards, Jira ID traceability per scenario. Output in HTML, JUnit XML, and JSON formats. Include pass/fail charts, duration metrics, step coverage.",
+        "inputs": ["Execution results", "Jira story mapping"],
+        "outputs": ["HTML report with charts", "JUnit XML", "JSON summary"],
+        "ai_action": "AI auto-updates report when test cases change due to field/screen additions",
+    },
+    {
+        "num": 8, "title": "Copado Deployment", "agent": "DeploymentAgent",
+        "color": "#2e844a",
+        "desc": "Deploy test results to Copado CI/CD pipeline. Create Test_Run and Test_Result records in Copado org. Attach reports as ContentDocument. Trigger deployment on pass if configured.",
+        "inputs": ["Test results", "Copado config (URL, token, pipeline ID)"],
+        "outputs": ["Copado Test_Run record", "Deployment trigger"],
+        "ai_action": None,
+    },
+    {
+        "num": 9, "title": "Feedback & Auto-Update", "agent": "FeedbackAgent",
+        "color": "#fe9339",
+        "desc": "Monitor Git commits for changes to user stories. When application code changes (new fields, new screens, modified forms), AI analyzes the diff and auto-updates feature files, POM classes, test data, and reports.",
+        "inputs": ["Git commit diff", "Current feature files", "POM classes"],
+        "outputs": ["Updated .feature files", "Updated POM", "Updated test data"],
+        "ai_action": "LLM analyzes code diff → auto-modifies tests for new fields/screens/changes",
+    },
+]
+
+WORKFLOW_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Execution Workflow</h1>
+        <p>Step-by-step visualization of the 9-agent agentic AI pipeline. Each step shows its agent, inputs, outputs, and AI model involvement.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Agent Pipeline</h2>
+            <span style="font-size:12px; color:var(--text-light);">9 agents &middot; decide() &rarr; act() &rarr; report()</span>
+        </div>
+        <div class="card-body">
+            <div class="wf-pipeline">
+                {% for step in steps %}
+                <div class="wf-step">
+                    <div class="wf-step-connector">
+                        <div class="wf-step-dot" style="background:{{ step.color }};">{{ step.num }}</div>
+                        {% if not loop.last %}
+                        <div class="wf-step-line" style="background:{{ step.color }}; opacity:0.3;"></div>
+                        {% endif %}
+                    </div>
+                    <div class="wf-step-content">
+                        <div class="wf-step-title">{{ step.title }}</div>
+                        <div class="wf-step-agent">{{ step.agent }}</div>
+                        <div class="wf-step-desc">{{ step.desc }}</div>
+                        <div class="wf-step-io">
+                            {% for inp in step.inputs %}
+                            <span class="wf-io-tag wf-io-in">IN: {{ inp }}</span>
+                            {% endfor %}
+                            {% for out in step.outputs %}
+                            <span class="wf-io-tag wf-io-out">OUT: {{ out }}</span>
+                            {% endfor %}
+                            {% if step.ai_action %}
+                            <span class="wf-io-tag wf-io-ai">AI: {{ step.ai_action }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Auto-Update Flow -->
+    <div class="card">
+        <div class="card-header">
+            <h2>AI Auto-Update Flow</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:16px;">
+                When the application changes (new fields, new screens, modified forms), the AI model automatically cascades updates across the entire pipeline:
+            </p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                <div class="stat-card" style="border-left:3px solid #7b1fa2;">
+                    <div class="stat-value" style="font-size:14px;">New Field Detected</div>
+                    <div class="stat-label">AI scans app UI diff for added input fields, dropdowns, or form elements</div>
+                </div>
+                <div class="stat-card" style="border-left:3px solid #1565c0;">
+                    <div class="stat-value" style="font-size:14px;">POM Updated</div>
+                    <div class="stat-label">New locators and actions added to Page Object Model classes</div>
+                </div>
+                <div class="stat-card" style="border-left:3px solid #2e7d32;">
+                    <div class="stat-value" style="font-size:14px;">Tests Modified</div>
+                    <div class="stat-label">Feature files and test data updated with new field scenarios</div>
+                </div>
+                <div class="stat-card" style="border-left:3px solid #e65100;">
+                    <div class="stat-value" style="font-size:14px;">Reports Reflect</div>
+                    <div class="stat-label">Execution reports automatically include new/modified test cases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decision Types -->
+    <div class="card">
+        <div class="card-header"><h2>Agent Decision Types</h2></div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Decision</th><th>Behavior</th><th>Example</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:#2e844a; font-weight:700;">PROCEED</td><td>Agent completed successfully, pass to next agent</td><td>Stories fetched, feature files generated</td></tr>
+                    <tr><td style="color:#fe9339; font-weight:700;">RETRY</td><td>Transient failure, retry current step (max 3)</td><td>Jira API timeout, browser connection reset</td></tr>
+                    <tr><td style="color:#999; font-weight:700;">SKIP</td><td>Non-critical step, skip and continue pipeline</td><td>Copado deploy disabled, no Git commit to watch</td></tr>
+                    <tr><td style="color:#ea001e; font-weight:700;">ABORT</td><td>Critical failure, halt pipeline</td><td>Application URL unreachable, no test data</td></tr>
+                    <tr><td style="color:#0176d3; font-weight:700;">DELEGATE</td><td>Pass to another agent for specialized handling</td><td>LLM analyzes diff before updating feature files</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/workflow")
+def workflow_page():
+    return render_portal(
+        "Workflow", WORKFLOW_CONTENT, active_tab="workflow",
+        steps=WORKFLOW_STEPS,
+    )
+
+
+# ---------------------------------------------------------------------------
+# AI Model Configuration
+# ---------------------------------------------------------------------------
+
+AI_MODEL_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>AI Model Configuration</h1>
+        <p>Configure the LLM that powers automatic test case generation, field detection, screen analysis, and test maintenance.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Model Settings</h2>
+            {% if cfg.ai_model.api_key %}
+            <span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>
+            {% else %}
+            <span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No API Key</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/ai-model">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>AI Provider</label>
+                        <select name="provider">
+                            <option value="openai" {{ 'selected' if cfg.ai_model.provider == 'openai' else '' }}>OpenAI</option>
+                            <option value="azure_openai" {{ 'selected' if cfg.ai_model.provider == 'azure_openai' else '' }}>Azure OpenAI</option>
+                            <option value="anthropic" {{ 'selected' if cfg.ai_model.provider == 'anthropic' else '' }}>Anthropic (Claude)</option>
+                            <option value="google" {{ 'selected' if cfg.ai_model.provider == 'google' else '' }}>Google (Gemini)</option>
+                            <option value="local" {{ 'selected' if cfg.ai_model.provider == 'local' else '' }}>Local / Self-Hosted</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select name="model" id="modelSelect">
+                            <option value="gpt-4o" {{ 'selected' if cfg.ai_model.model == 'gpt-4o' else '' }}>GPT-4o</option>
+                            <option value="gpt-4o-mini" {{ 'selected' if cfg.ai_model.model == 'gpt-4o-mini' else '' }}>GPT-4o Mini</option>
+                            <option value="gpt-4-turbo" {{ 'selected' if cfg.ai_model.model == 'gpt-4-turbo' else '' }}>GPT-4 Turbo</option>
+                            <option value="claude-3.5-sonnet" {{ 'selected' if cfg.ai_model.model == 'claude-3.5-sonnet' else '' }}>Claude 3.5 Sonnet</option>
+                            <option value="claude-3-opus" {{ 'selected' if cfg.ai_model.model == 'claude-3-opus' else '' }}>Claude 3 Opus</option>
+                            <option value="gemini-1.5-pro" {{ 'selected' if cfg.ai_model.model == 'gemini-1.5-pro' else '' }}>Gemini 1.5 Pro</option>
+                            <option value="custom" {{ 'selected' if cfg.ai_model.model not in ['gpt-4o','gpt-4o-mini','gpt-4-turbo','claude-3.5-sonnet','claude-3-opus','gemini-1.5-pro'] else '' }}>Custom Model</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>API Key <span class="required">*</span></label>
+                    <input type="password" name="api_key" value="{{ cfg.ai_model.api_key }}"
+                           placeholder="sk-... or your provider's API key">
+                    <div class="form-hint">Required for AI-powered test generation and auto-update features</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Temperature</label>
+                        <input type="number" name="temperature" value="{{ cfg.ai_model.temperature }}"
+                               min="0" max="2" step="0.1">
+                        <div class="form-hint">Lower = more deterministic (0.1-0.3 recommended for code generation)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Max Tokens</label>
+                        <input type="number" name="max_tokens" value="{{ cfg.ai_model.max_tokens }}"
+                               min="256" max="128000" step="256">
+                        <div class="form-hint">Maximum response length for generated test code</div>
+                    </div>
+                </div>
+
+                <div class="separator"><hr><span>auto-detection capabilities</span><hr></div>
+
+                <div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Detect New Fields</div>
+                            <div class="toggle-desc">AI scans application UI for new input fields, dropdowns, checkboxes and auto-adds them to test cases and POM</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_detect_fields" {{ 'checked' if cfg.ai_model.auto_detect_fields else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Detect New Screens</div>
+                            <div class="toggle-desc">AI detects new pages/tabs/modals added to the application and generates corresponding POM classes and test scenarios</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_detect_screens" {{ 'checked' if cfg.ai_model.auto_detect_screens else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Update Test Cases</div>
+                            <div class="toggle-desc">Automatically modify/add Gherkin feature file scenarios when fields or screens change</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_update_tests" {{ 'checked' if cfg.ai_model.auto_update_tests else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Update Page Objects</div>
+                            <div class="toggle-desc">Automatically add locators and methods to POM classes for new UI elements</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_update_pom" {{ 'checked' if cfg.ai_model.auto_update_pom else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Auto-Update Reports</div>
+                            <div class="toggle-desc">Reflect all test case additions/modifications in execution reports automatically</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_update_reports" {{ 'checked' if cfg.ai_model.auto_update_reports else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Git Diff Analysis</div>
+                            <div class="toggle-desc">Analyze Git commit diffs to detect code changes that affect tests (FeedbackAgent)</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="diff_analysis" {{ 'checked' if cfg.ai_model.diff_analysis else '' }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary">Save AI Model Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Action Summary -->
+    <div class="card">
+        <div class="card-header"><h2>What the AI Model Does</h2></div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Trigger</th><th>AI Action</th><th>Output</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>New field added to app</td>
+                        <td>Scans UI, identifies field type/label/validation</td>
+                        <td>New POM locator + Gherkin step + test data entry</td>
+                    </tr>
+                    <tr>
+                        <td>New screen/page added</td>
+                        <td>Detects navigation path, analyzes form structure</td>
+                        <td>New POM page class + feature file + E2E scenario</td>
+                    </tr>
+                    <tr>
+                        <td>Field modified/removed</td>
+                        <td>Compares before/after DOM, identifies changes</td>
+                        <td>Updated POM locator + modified test steps</td>
+                    </tr>
+                    <tr>
+                        <td>Git commit with story key</td>
+                        <td>Analyzes code diff, maps to affected feature files</td>
+                        <td>Updated .feature files with new/changed scenarios</td>
+                    </tr>
+                    <tr>
+                        <td>Test execution failure</td>
+                        <td>Analyzes failure reason (stale locator, new validation)</td>
+                        <td>Suggested fix for POM/test data/feature file</td>
+                    </tr>
+                    <tr>
+                        <td>Jira story updated</td>
+                        <td>Re-parses acceptance criteria, detects additions</td>
+                        <td>New Gherkin scenarios added to existing feature file</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/ai-model", methods=["GET", "POST"])
+def ai_model_page():
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        config["ai_model"]["provider"] = request.form.get("provider", "openai")
+        config["ai_model"]["model"] = request.form.get("model", "gpt-4o")
+        config["ai_model"]["api_key"] = request.form.get("api_key", "")
+        config["ai_model"]["temperature"] = float(request.form.get("temperature", 0.3))
+        config["ai_model"]["max_tokens"] = int(request.form.get("max_tokens", 4096))
+        config["ai_model"]["auto_detect_fields"] = "auto_detect_fields" in request.form
+        config["ai_model"]["auto_detect_screens"] = "auto_detect_screens" in request.form
+        config["ai_model"]["auto_update_tests"] = "auto_update_tests" in request.form
+        config["ai_model"]["auto_update_pom"] = "auto_update_pom" in request.form
+        config["ai_model"]["auto_update_reports"] = "auto_update_reports" in request.form
+        config["ai_model"]["diff_analysis"] = "diff_analysis" in request.form
+        save_config(config)
+        toast_msg = "AI model configuration saved!"
+        toast_type = "success"
+
+    return render_portal(
+        "AI Model", AI_MODEL_CONTENT, active_tab="ai-model",
+        cfg=config, toast_msg=toast_msg, toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
 # API endpoint
 # ---------------------------------------------------------------------------
 
 @portal.route("/api/config", methods=["GET"])
 def api_get_config():
+    safe = {**config}
+    if safe.get("jira", {}).get("api_token"):
+        safe["jira"] = {**safe["jira"], "api_token": "***"}
+    if safe.get("copado", {}).get("api_token"):
+        safe["copado"] = {**safe["copado"], "api_token": "***"}
+    if safe.get("ai_model", {}).get("api_key"):
+        safe["ai_model"] = {**safe["ai_model"], "api_key": "***"}
+    return jsonify(safe)
     safe = {**config}
     if safe.get("jira", {}).get("api_token"):
         safe["jira"] = {**safe["jira"], "api_token": "***"}
@@ -1441,6 +1905,8 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"  URL:        http://localhost:5556")
     print(f"  Dashboard:  http://localhost:5556/")
+    print(f"  Workflow:   http://localhost:5556/workflow")
+    print(f"  AI Model:   http://localhost:5556/ai-model")
     print(f"  Upload:     http://localhost:5556/upload")
     print(f"  App URL:    http://localhost:5556/app-config")
     print(f"  Selenium:   http://localhost:5556/selenium-config")
