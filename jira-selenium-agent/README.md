@@ -44,7 +44,9 @@ Each agent follows the `decide() -> act() -> report()` lifecycle defined in `Bas
 | Page | Route | Description |
 |------|-------|-------------|
 | Dashboard | `/` | Integration status, quick actions, full config summary |
-| Workflow | `/workflow` | Visual 9-step agent pipeline with inputs/outputs/AI tags |
+| Workflow | `/workflow` | Visual 9-step agent pipeline with Copado CI/CD stages |
+| Traceability | `/traceability` | Jira Story → Test Case → Steps → Test Data matrix |
+| Execute | `/execute` | Scan app for changes, run full 9-agent pipeline live |
 | AI Model | `/ai-model` | LLM provider, model, API key, 6 auto-detection toggles |
 | Upload | `/upload` | Upload JSON test data, shows file path on disk |
 | App URL | `/app-config` | Target application URL + UI framework selector |
@@ -52,7 +54,7 @@ Each agent follows the `decide() -> act() -> report()` lifecycle defined in `Bas
 | Jira | `/jira-config` | Server URL, credentials, project key, status filter |
 | GitHub | `/github-config` | Repo URL, branch, workflow file, auto-trigger |
 | Copado | `/copado-config` | Instance URL, API token, pipeline ID, environment |
-| Reports | `/report-config` | Format (HTML/JSON/JUnit), output directory |
+| Reports | `/report-config` | Inline HTML report with Chart.js charts + Copado deploy status |
 | API | `/api/config` | JSON endpoint for current config (tokens masked) |
 
 ## Quick Start (Local)
@@ -224,7 +226,27 @@ Expected format:
 
 ## Reports
 
-Generated in `test-reports/` directory:
+### Inline Report on Portal (Reports Tab)
+
+When report format is set to **HTML**, the Reports page at `/report-config` displays the full test execution report inline:
+
+- **KPI Cards**: Total Scenarios, Passed, Failed, Skipped, Pass Rate, Total Steps
+- **Chart.js Charts**: Pie (pass/fail), Bar (duration per Jira ID), Doughnut (pass rate), Polar Area (steps per scenario)
+- **Scenario Results Table**: Jira ID, Test Case, Scenario, Priority, Steps, Duration, Status
+- **Execution Steps Detail**: Numbered step pipeline per scenario
+
+The report **auto-updates** every time you run the pipeline from the Execute tab — no manual refresh needed.
+
+### Copado Report Deployment
+
+When Copado is configured and enabled (`/copado-config`), the same report is:
+- Attached to `copado__Test_Run__c` as HTML Dashboard + JUnit XML + JSON
+- Viewable in Copado after deployment
+- Status shown on the Reports tab (Deployed / Ready to Deploy / Not Configured)
+
+### Generated Report Files
+
+Also output to `test-reports/` directory:
 
 - **HTML Dashboard** (`car_parts_e2e_report.html`) -- Chart.js pie/bar/doughnut/polar charts with Jira ID traceability
 - **JUnit XML** (`car_parts_e2e_report.xml`) -- CI integration
@@ -242,6 +264,34 @@ When the application changes (new fields, new screens, modified forms), the AI m
 4. **Reflects in reports** -- Execution reports include all new/modified test cases
 
 Configure the AI model at `http://localhost:5556/ai-model`.
+
+## Execute Pipeline
+
+The Execute tab (`/execute`) provides a one-click end-to-end flow:
+
+1. **Scans the target application** for field/screen changes
+2. **Runs all 9 agents** in sequence with live progress tracking
+3. **Persists results** to `latest_execution_report.json` — automatically reflected on the Reports tab
+4. **Deploys to Copado** if enabled (6-stage pipeline: Create Test Run → Upload Results → Attach Reports → Validate Pipeline → Trigger Deployment → Verify Promotion)
+
+Re-running the pipeline always generates fresh report data.
+
+## Copado CI/CD Pipeline
+
+The DeploymentAgent (Step 8) executes a 6-stage Copado promotion flow:
+
+| Stage | Copado Object | Action |
+|-------|---------------|--------|
+| 1. Create Test Run | `copado__Test_Run__c` | Create record with run metadata |
+| 2. Upload Results | `copado__Test_Result__c` | One record per scenario (pass/fail/duration) |
+| 3. Attach Reports | `ContentDocument` | Upload HTML, JUnit XML, JSON as attachments |
+| 4. Validate Pipeline | `copado__Pipeline__c` | Check pipeline and environment readiness |
+| 5. Trigger Deployment | `copado__Deployment__c` | Trigger promotion to target environment |
+| 6. Verify Promotion | `copado__Deployment__c` | Poll deployment until complete |
+
+Environment promotion path: **DEV → SIT → UAT → STAGING → PRODUCTION**
+
+Configure at `/copado-config`. The pipeline stages are visible on both the Workflow page and during Execute runs.
 
 ## Project Structure
 
@@ -271,6 +321,8 @@ jira-selenium-agent/
     car_parts_page_objects.py # Car Parts POM classes
     car_parts_e2e.feature     # Gherkin feature file (11 scenarios)
     car_parts_test_data.json  # Test data (6 scenarios, 12 dropdowns)
+    latest_execution_report.json  # Persisted report from last pipeline run
+    automation_config.json    # Portal config (auto-generated)
     selenium_e2e_runner.py    # Selenium execution engine
 ```
 
