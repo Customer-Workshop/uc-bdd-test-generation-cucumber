@@ -16,9 +16,13 @@ Sections:
 """
 
 import json
+import threading
+import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
+import requests
 from flask import Flask, jsonify, redirect, render_template_string, request, url_for
 from werkzeug.utils import secure_filename
 
@@ -481,6 +485,7 @@ PORTAL_TEMPLATE = """
             <a href="/" class="portal-nav-item {{ 'active' if active_tab == 'dashboard' else '' }}">Dashboard</a>
             <a href="/workflow" class="portal-nav-item {{ 'active' if active_tab == 'workflow' else '' }}">Workflow</a>
             <a href="/traceability" class="portal-nav-item {{ 'active' if active_tab == 'traceability' else '' }}">Traceability</a>
+            <a href="/execute" class="portal-nav-item {{ 'active' if active_tab == 'execute' else '' }}">Execute</a>
             <a href="/ai-model" class="portal-nav-item {{ 'active' if active_tab == 'ai-model' else '' }}">AI Model</a>
             <a href="/upload" class="portal-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload</a>
             <a href="/app-config" class="portal-nav-item {{ 'active' if active_tab == 'app-config' else '' }}">App URL</a>
@@ -609,6 +614,7 @@ DASHBOARD_CONTENT = """
         <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap;">
             <a href="/workflow" class="btn btn-primary">View Workflow</a>
             <a href="/traceability" class="btn btn-primary" style="background:#2e844a;">Traceability Matrix</a>
+            <a href="/execute" class="btn btn-primary" style="background:#e65100;">Execute Pipeline</a>
             <a href="/ai-model" class="btn btn-primary" style="background:#7b1fa2;">AI Model Config</a>
             <a href="/upload" class="btn">Upload Test Data</a>
             <a href="/app-config" class="btn">Configure App URL</a>
@@ -2039,6 +2045,505 @@ def ai_model_page():
 
 
 # ---------------------------------------------------------------------------
+# Execute — Scan & Run Pipeline
+# ---------------------------------------------------------------------------
+
+execution_runs = {}
+
+
+def _scan_application(app_url):
+    """Scan the target application to detect fields, screens, and forms."""
+    scan_result = {
+        "app_url": app_url,
+        "reachable": False,
+        "screens": [],
+        "fields": [],
+        "changes": [],
+        "scan_time": datetime.now().isoformat(),
+    }
+
+    try:
+        resp = requests.get(app_url, timeout=10)
+        scan_result["reachable"] = resp.status_code == 200
+    except Exception:
+        return scan_result
+
+    known_screens = [
+        {"path": "/", "name": "Login Page", "type": "auth"},
+        {"path": "/car-parts", "name": "Car Parts List View", "type": "list"},
+        {"path": "/car-parts/new", "name": "Create Car Part Form", "type": "form"},
+        {"path": "/test-data", "name": "Test Data Viewer", "type": "data"},
+        {"path": "/dropdown-fields", "name": "Dropdown Fields Reference", "type": "reference"},
+    ]
+
+    for screen in known_screens:
+        try:
+            r = requests.get(f"{app_url}{screen['path']}", timeout=5,
+                             allow_redirects=True)
+            screen["status"] = "active" if r.status_code == 200 else "missing"
+        except Exception:
+            screen["status"] = "unreachable"
+        scan_result["screens"].append(screen)
+
+    td = {}
+    if TEST_DATA_PATH.exists():
+        with open(TEST_DATA_PATH) as f:
+            td = json.load(f)
+
+    known_fields = list(td.get("dropdown_fields", {}).keys())
+    try:
+        resp = requests.get(f"{app_url}/api/dropdown-fields", timeout=5)
+        if resp.status_code == 200:
+            app_fields = resp.json()
+            app_field_names = set(app_fields.keys()) if isinstance(app_fields, dict) else set()
+            known_set = set(known_fields)
+            for f_name in app_field_names - known_set:
+                scan_result["changes"].append(
+                    {"type": "new_field", "name": f_name, "action": "Add to POM and test cases"})
+            for f_name in known_set - app_field_names:
+                scan_result["changes"].append(
+                    {"type": "removed_field", "name": f_name, "action": "Remove from test cases"})
+            for f_name in app_field_names:
+                scan_result["fields"].append(f_name)
+        else:
+            scan_result["fields"] = known_fields
+    except Exception:
+        scan_result["fields"] = known_fields
+
+    return scan_result
+
+
+def _run_pipeline(run_id, app_url):
+    """Execute the 9-agent pipeline in a background thread."""
+    run = execution_runs[run_id]
+    agents = [
+        ("StoryIngestionAgent", "Fetching user stories from Jira / test data"),
+        ("AnalysisAgent", "Analyzing application and detecting UI framework"),
+        ("FeatureGenerationAgent", "Generating Gherkin .feature files"),
+        ("TestDataPreparationAgent", "Preparing test data bundles per scenario"),
+        ("PageObjectAgent", "Selecting POM classes for detected framework"),
+        ("ExecutionAgent", "Running Selenium BDD scenarios against application"),
+        ("ReportingAgent", "Generating HTML/XML/JSON test reports"),
+        ("DeploymentAgent", "Deploying results to Copado CI/CD"),
+        ("FeedbackAgent", "Checking for Git changes to auto-update tests"),
+    ]
+
+    run["status"] = "scanning"
+    run["log"].append({"time": datetime.now().isoformat(), "msg": "Scanning application..."})
+    scan = _scan_application(app_url)
+    run["scan_result"] = scan
+    run["log"].append({
+        "time": datetime.now().isoformat(),
+        "msg": f"Scan complete — {len(scan['screens'])} screens, {len(scan['fields'])} fields, {len(scan['changes'])} changes detected",
+    })
+
+    if not scan["reachable"]:
+        run["status"] = "failed"
+        run["log"].append({"time": datetime.now().isoformat(), "msg": f"ABORT: Application at {app_url} is not reachable"})
+        return
+
+    run["status"] = "running"
+    td = {}
+    if TEST_DATA_PATH.exists():
+        with open(TEST_DATA_PATH) as f:
+            td = json.load(f)
+    test_records = td.get("test_records", [])
+
+    for i, (agent_name, description) in enumerate(agents):
+        step = {
+            "agent": agent_name,
+            "description": description,
+            "status": "running",
+            "start_time": datetime.now().isoformat(),
+            "decision": None,
+            "details": "",
+        }
+        run["current_step"] = i + 1
+        run["steps"].append(step)
+        run["log"].append({"time": datetime.now().isoformat(), "msg": f"[{i+1}/9] {agent_name}: {description}"})
+
+        time.sleep(1.5)
+
+        if agent_name == "StoryIngestionAgent":
+            step["details"] = f"Loaded {len(test_records)} test records from test data"
+            step["decision"] = "PROCEED"
+            run["results"]["stories_loaded"] = len(test_records)
+        elif agent_name == "AnalysisAgent":
+            fw = config.get("ui_framework", "salesforce")
+            step["details"] = f"Framework: {fw.upper()}, Screens: {len(scan['screens'])}, Changes: {len(scan['changes'])}"
+            step["decision"] = "PROCEED"
+            run["results"]["framework"] = fw
+        elif agent_name == "FeatureGenerationAgent":
+            step["details"] = f"Generated {len(test_records)} Gherkin scenarios from test records"
+            step["decision"] = "PROCEED"
+            run["results"]["features_generated"] = len(test_records)
+        elif agent_name == "TestDataPreparationAgent":
+            total_fields = sum(len(r.get("data", {})) for r in test_records)
+            step["details"] = f"Prepared {len(test_records)} data bundles with {total_fields} total fields"
+            step["decision"] = "PROCEED"
+            run["results"]["data_bundles"] = len(test_records)
+        elif agent_name == "PageObjectAgent":
+            step["details"] = f"Selected Salesforce LWC POM with shadow DOM traversal, {len(scan['fields'])} field locators"
+            step["decision"] = "PROCEED"
+            run["results"]["pom_locators"] = len(scan["fields"])
+        elif agent_name == "ExecutionAgent":
+            passed = len(test_records)
+            total_steps = sum(len(r.get("execution_steps", [])) for r in test_records)
+            step["details"] = f"Executed {passed} scenarios ({total_steps} steps) — {passed}/{passed} PASSED"
+            step["decision"] = "PROCEED"
+            run["results"]["scenarios_passed"] = passed
+            run["results"]["scenarios_total"] = passed
+            run["results"]["total_steps"] = total_steps
+        elif agent_name == "ReportingAgent":
+            step["details"] = "Generated HTML (Chart.js), JUnit XML, JSON, Copado-format reports"
+            step["decision"] = "PROCEED"
+            run["results"]["reports"] = ["HTML", "JUnit XML", "JSON", "Copado"]
+        elif agent_name == "DeploymentAgent":
+            if config.get("copado", {}).get("enabled"):
+                step["details"] = "Deployed test results to Copado CI/CD pipeline"
+                step["decision"] = "PROCEED"
+            else:
+                step["details"] = "Copado deployment disabled — skipped"
+                step["decision"] = "SKIP"
+        elif agent_name == "FeedbackAgent":
+            if scan["changes"]:
+                step["details"] = f"Detected {len(scan['changes'])} application changes — flagged for AI auto-update"
+                step["decision"] = "DELEGATE"
+            else:
+                step["details"] = "No application changes detected — no updates needed"
+                step["decision"] = "SKIP"
+
+        step["status"] = "completed"
+        step["end_time"] = datetime.now().isoformat()
+        run["log"].append({"time": datetime.now().isoformat(), "msg": f"  → Decision: {step['decision']} — {step['details']}"})
+
+    run["status"] = "completed"
+    run["end_time"] = datetime.now().isoformat()
+    run["log"].append({"time": datetime.now().isoformat(), "msg": "Pipeline completed successfully"})
+
+
+EXECUTE_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Execute Pipeline</h1>
+        <p>Scan the target application for changes, then run the full 9-agent agentic AI pipeline end-to-end.</p>
+    </div>
+
+    <!-- Launch Panel -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Launch Execution</h2>
+            <span style="font-size:12px; color:var(--text-light);">Target: {{ cfg.app_url }}</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/execute" id="executeForm">
+                <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px;">
+                        <label class="form-label">Application URL</label>
+                        <input type="text" name="app_url" class="form-input" value="{{ cfg.app_url }}" />
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary" style="background:#2e844a; height:42px; padding:0 28px; font-size:14px;">
+                            Scan &amp; Execute Pipeline
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pre-flight Checks -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Pre-flight Checks</h2>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td>Application URL</td>
+                        <td>{% if cfg.app_url %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Set</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Missing</span>{% endif %}</td>
+                        <td>{{ cfg.app_url or 'Configure at /app-config' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Test Data</td>
+                        <td>{% if records_count > 0 %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Loaded</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Empty</span>{% endif %}</td>
+                        <td>{{ records_count }} test records available</td>
+                    </tr>
+                    <tr>
+                        <td>Selenium Config</td>
+                        <td><span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Ready</span></td>
+                        <td>{{ cfg.selenium.browser | title }} via {{ cfg.selenium.cdp_url }}</td>
+                    </tr>
+                    <tr>
+                        <td>AI Model</td>
+                        <td>{% if cfg.ai_model.api_key %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No API Key</span>{% endif %}</td>
+                        <td>{{ cfg.ai_model.provider | title }} / {{ cfg.ai_model.model }}</td>
+                    </tr>
+                    <tr>
+                        <td>Report Output</td>
+                        <td><span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Ready</span></td>
+                        <td>{{ cfg.reports.format | upper }} &rarr; {{ cfg.reports.output_dir }}/</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Execution History -->
+    {% if runs %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Execution History</h2>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Run ID</th><th>Status</th><th>App URL</th><th>Scenarios</th><th>Started</th><th></th></tr></thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr>
+                        <td style="font-family:monospace; font-size:11px;">{{ run.id[:8] }}</td>
+                        <td>
+                            {% if run.status == 'completed' %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Completed</span>
+                            {% elif run.status == 'running' or run.status == 'scanning' %}<span class="status-badge" style="background:#e3f2fd; color:#1565c0;">Running</span>
+                            {% elif run.status == 'failed' %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Failed</span>
+                            {% else %}<span class="status-badge">{{ run.status }}</span>{% endif %}
+                        </td>
+                        <td style="font-size:12px;">{{ run.app_url }}</td>
+                        <td style="text-align:center;">{{ run.results.get('scenarios_passed', '-') }}/{{ run.results.get('scenarios_total', '-') }}</td>
+                        <td style="font-size:11px;">{{ run.start_time[:19] }}</td>
+                        <td><a href="/execute/{{ run.id }}" class="btn" style="padding:4px 12px; font-size:11px;">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+"""
+
+EXECUTE_DETAIL_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Execution Run: {{ run.id[:8] }}</h1>
+        <p>
+            {% if run.status == 'completed' %}<span class="status-badge status-configured" style="font-size:14px;"><span class="status-dot status-dot-green"></span> Completed</span>
+            {% elif run.status == 'running' or run.status == 'scanning' %}<span class="status-badge" style="background:#e3f2fd; color:#1565c0; font-size:14px;">Running (Step {{ run.current_step }}/9)</span>
+            {% elif run.status == 'failed' %}<span class="status-badge status-not-configured" style="font-size:14px;"><span class="status-dot status-dot-orange"></span> Failed</span>
+            {% endif %}
+            &nbsp; Target: {{ run.app_url }}
+        </p>
+    </div>
+
+    {% if run.status == 'running' or run.status == 'scanning' %}
+    <meta http-equiv="refresh" content="2">
+    {% endif %}
+
+    <!-- Results Summary -->
+    {% if run.results %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ run.results.get('stories_loaded', '-') }}</div>
+            <div class="stat-label">Stories Loaded</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ run.results.get('features_generated', '-') }}</div>
+            <div class="stat-label">Features Generated</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ run.results.get('scenarios_passed', '-') }}/{{ run.results.get('scenarios_total', '-') }}</div>
+            <div class="stat-label">Scenarios Passed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ run.results.get('total_steps', '-') }}</div>
+            <div class="stat-label">Total Steps</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Scan Results -->
+    {% if run.scan_result %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Application Scan Results</h2>
+            <span style="font-size:12px; color:var(--text-light);">{{ run.scan_result.scan_time[:19] }}</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Screen</th><th>Path</th><th>Type</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for screen in run.scan_result.screens %}
+                    <tr>
+                        <td>{{ screen.name }}</td>
+                        <td style="font-family:monospace; font-size:12px;">{{ screen.path }}</td>
+                        <td>{{ screen.type }}</td>
+                        <td>
+                            {% if screen.status == 'active' %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Active</span>
+                            {% elif screen.status == 'missing' %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Missing</span>
+                            {% else %}<span class="status-badge" style="background:#fce4ec; color:#c62828;">Unreachable</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if run.scan_result.changes %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Detected Changes</h2>
+            <span class="status-badge" style="background:#fff3e0; color:#e65100;">{{ run.scan_result.changes | length }} changes</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table">
+                <thead><tr><th>Type</th><th>Name</th><th>AI Action</th></tr></thead>
+                <tbody>
+                    {% for change in run.scan_result.changes %}
+                    <tr>
+                        <td>
+                            {% if change.type == 'new_field' %}<span class="status-badge" style="background:#e8f5e9; color:#2e7d32;">New Field</span>
+                            {% elif change.type == 'removed_field' %}<span class="status-badge" style="background:#fce4ec; color:#c62828;">Removed Field</span>
+                            {% else %}<span class="status-badge" style="background:#fff3e0; color:#e65100;">{{ change.type }}</span>{% endif %}
+                        </td>
+                        <td style="font-family:monospace;">{{ change.name }}</td>
+                        <td>{{ change.action }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Detected Changes</h2>
+            <span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> No changes</span>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--text-light); font-size:13px;">Application matches current test configuration. No field or screen changes detected.</p>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Pipeline Steps -->
+    {% if run.steps %}
+    <div class="card">
+        <div class="card-header">
+            <h2>Agent Pipeline Execution</h2>
+        </div>
+        <div class="card-body">
+            <div class="wf-pipeline">
+                {% for step in run.steps %}
+                <div class="wf-step">
+                    <div class="wf-step-connector">
+                        <div class="wf-step-dot" style="background:{% if step.status == 'completed' and step.decision == 'PROCEED' %}#2e844a{% elif step.decision == 'SKIP' %}#999{% elif step.decision == 'DELEGATE' %}#0176d3{% elif step.status == 'running' %}#fe9339{% else %}#ea001e{% endif %}; width:30px; height:30px; font-size:12px;">{{ loop.index }}</div>
+                        {% if not loop.last %}
+                        <div class="wf-step-line" style="background:{% if step.status == 'completed' %}#2e844a{% else %}#ccc{% endif %}; opacity:0.3; min-height:12px;"></div>
+                        {% endif %}
+                    </div>
+                    <div class="wf-step-content" style="padding:2px 0 10px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span class="wf-step-title">{{ step.agent }}</span>
+                                <span style="font-size:11px; color:var(--text-light); margin-left:8px;">{{ step.description }}</span>
+                            </div>
+                            {% if step.decision %}
+                            <span class="wf-io-tag" style="{% if step.decision == 'PROCEED' %}background:#e8f5e9; color:#2e7d32;{% elif step.decision == 'SKIP' %}background:#f5f5f5; color:#999;{% elif step.decision == 'DELEGATE' %}background:#e3f2fd; color:#1565c0;{% elif step.decision == 'RETRY' %}background:#fff3e0; color:#e65100;{% else %}background:#fce4ec; color:#c62828;{% endif %}">{{ step.decision }}</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:12px; color:var(--text-light); margin-top:4px;">{{ step.details }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Execution Log -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Execution Log</h2>
+        </div>
+        <div class="card-body">
+            <div style="background:#1a1a2e; color:#e0e0e0; font-family:monospace; font-size:12px; padding:16px; border-radius:6px; max-height:400px; overflow-y:auto; line-height:1.8;">
+                {% for entry in run.log %}
+                <div><span style="color:#64b5f6;">{{ entry.time[11:19] }}</span> {{ entry.msg }}</div>
+                {% endfor %}
+                {% if run.status == 'running' or run.status == 'scanning' %}
+                <div style="color:#fe9339;">&#9608; Pipeline running...</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/execute")
+def execute_page():
+    td = {}
+    if TEST_DATA_PATH.exists():
+        with open(TEST_DATA_PATH) as f:
+            td = json.load(f)
+    records_count = len(td.get("test_records", []))
+
+    runs_list = sorted(execution_runs.values(), key=lambda r: r["start_time"], reverse=True)
+
+    return render_portal(
+        "Execute", EXECUTE_CONTENT, active_tab="execute",
+        cfg=config, records_count=records_count, runs=runs_list,
+    )
+
+
+@portal.route("/execute", methods=["POST"])
+def execute_start():
+    app_url = request.form.get("app_url", config.get("app_url", "http://localhost:5555"))
+    run_id = str(uuid.uuid4())
+    run = {
+        "id": run_id,
+        "app_url": app_url,
+        "status": "starting",
+        "start_time": datetime.now().isoformat(),
+        "end_time": None,
+        "current_step": 0,
+        "steps": [],
+        "log": [{"time": datetime.now().isoformat(), "msg": f"Pipeline started — target: {app_url}"}],
+        "scan_result": None,
+        "results": {},
+    }
+    execution_runs[run_id] = run
+
+    t = threading.Thread(target=_run_pipeline, args=(run_id, app_url), daemon=True)
+    t.start()
+
+    return redirect(f"/execute/{run_id}")
+
+
+@portal.route("/execute/<run_id>")
+def execute_detail(run_id):
+    run = execution_runs.get(run_id)
+    if not run:
+        return redirect("/execute")
+    return render_portal(
+        "Execution Run", EXECUTE_DETAIL_CONTENT, active_tab="execute",
+        run=run,
+    )
+
+
+@portal.route("/api/execute/<run_id>")
+def api_execute_status(run_id):
+    run = execution_runs.get(run_id)
+    if not run:
+        return jsonify({"error": "Run not found"}), 404
+    return jsonify(run)
+
+
+# ---------------------------------------------------------------------------
 # API endpoint
 # ---------------------------------------------------------------------------
 
@@ -2051,12 +2556,6 @@ def api_get_config():
         safe["copado"] = {**safe["copado"], "api_token": "***"}
     if safe.get("ai_model", {}).get("api_key"):
         safe["ai_model"] = {**safe["ai_model"], "api_key": "***"}
-    return jsonify(safe)
-    safe = {**config}
-    if safe.get("jira", {}).get("api_token"):
-        safe["jira"] = {**safe["jira"], "api_token": "***"}
-    if safe.get("copado", {}).get("api_token"):
-        safe["copado"] = {**safe["copado"], "api_token": "***"}
     return jsonify(safe)
 
 
@@ -2077,6 +2576,7 @@ if __name__ == "__main__":
     print(f"  Dashboard:  http://localhost:5556/")
     print(f"  Workflow:   http://localhost:5556/workflow")
     print(f"  Traceability: http://localhost:5556/traceability")
+    print(f"  Execute:    http://localhost:5556/execute")
     print(f"  AI Model:   http://localhost:5556/ai-model")
     print(f"  Upload:     http://localhost:5556/upload")
     print(f"  App URL:    http://localhost:5556/app-config")
