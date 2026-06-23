@@ -11,9 +11,12 @@ interface for the Car_Part__c custom object, including:
 """
 
 import json
+import os
 import uuid
+from datetime import datetime
 from pathlib import Path
 from flask import Flask, jsonify, redirect, render_template_string, request, url_for
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -26,6 +29,18 @@ DROPDOWN_FIELDS = TEST_CONFIG["dropdown_fields"]
 
 # In-memory car parts store
 car_parts_db: dict[str, dict] = {}
+
+# Upload configuration store
+UPLOAD_DIR = Path(__file__).parent / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+automation_config: dict = {
+    "app_url": "http://localhost:5555",
+    "uploaded_test_data": None,
+    "uploaded_file_name": None,
+    "upload_time": None,
+    "test_records_count": len(TEST_CONFIG.get("test_records", [])),
+}
 
 # Pre-seed some records
 SEED_RECORDS = TEST_CONFIG["test_records"][:4]
@@ -466,8 +481,8 @@ BASE_TEMPLATE = """
             <a href="/" class="sf-nav-item {{ 'active' if active_tab == 'home' else '' }}">Home</a>
             <a href="/car-parts" class="sf-nav-item {{ 'active' if active_tab == 'car-parts' else '' }}">Car Parts</a>
             <a href="/test-data" class="sf-nav-item {{ 'active' if active_tab == 'test-data' else '' }}">Test Data</a>
+            <a href="/upload-test-data" class="sf-nav-item {{ 'active' if active_tab == 'upload' else '' }}">Upload</a>
             <a href="/dropdown-fields" class="sf-nav-item {{ 'active' if active_tab == 'dropdown-fields' else '' }}">Dropdown Fields</a>
-            <a href="/car-parts" class="sf-nav-item">Reports</a>
         </div>
     </nav>
 
@@ -1273,6 +1288,334 @@ def dropdown_fields_page():
 
 
 # ---------------------------------------------------------------------------
+# Upload Test Data page template
+# ---------------------------------------------------------------------------
+
+UPLOAD_TEST_DATA_CONTENT = """
+<div class="sf-page">
+    <!-- Current Configuration -->
+    <div class="td-stats-grid">
+        <div class="td-stat-card">
+            <div class="td-stat-value" style="font-size:14px; word-break:break-all;">{{ config.app_url }}</div>
+            <div class="td-stat-label">Application URL</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ config.test_records_count }}</div>
+            <div class="td-stat-label">Test Records Loaded</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ config.uploaded_file_name or 'Default' }}</div>
+            <div class="td-stat-label">Data Source</div>
+        </div>
+        <div class="td-stat-card">
+            <div class="td-stat-value">{{ config.upload_time or 'Built-in' }}</div>
+            <div class="td-stat-label">Last Upload</div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Upload Test Data &amp; Configure Application URL</h2>
+        </div>
+        <div class="sf-card-body">
+            <form method="POST" action="/upload-test-data" enctype="multipart/form-data" id="uploadForm">
+                <!-- Application URL -->
+                <div style="margin-bottom:24px;">
+                    <div class="td-section-title">
+                        <span class="td-icon">&#127760;</span> Application URL
+                    </div>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Enter the URL of the application you want to run Selenium test automation against.
+                        This URL will be used as the base URL for all BDD test scenarios.
+                    </p>
+                    <div class="sf-form-group">
+                        <label>Target Application URL <span class="required">*</span></label>
+                        <input type="url" name="app_url" id="appUrl"
+                               value="{{ config.app_url }}"
+                               placeholder="https://your-app.lightning.force.com"
+                               required
+                               style="font-size:15px; padding:12px 16px;">
+                    </div>
+                    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="sf-btn" onclick="setUrl('http://localhost:5555')" style="font-size:11px;">Mock Salesforce (localhost:5555)</button>
+                        <button type="button" class="sf-btn" onclick="setUrl('https://login.salesforce.com')" style="font-size:11px;">Salesforce Production</button>
+                        <button type="button" class="sf-btn" onclick="setUrl('https://test.salesforce.com')" style="font-size:11px;">Salesforce Sandbox</button>
+                        <button type="button" class="sf-btn" onclick="setUrl('http://localhost:3000')" style="font-size:11px;">React (localhost:3000)</button>
+                        <button type="button" class="sf-btn" onclick="setUrl('http://localhost:4200')" style="font-size:11px;">Angular (localhost:4200)</button>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div style="margin-bottom:24px;">
+                    <div class="td-section-title">
+                        <span class="td-icon">&#128194;</span> Test Data File Upload
+                    </div>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Upload a JSON file containing test records for Selenium execution.
+                        The file should follow the format shown in the sample below.
+                    </p>
+                    <div class="sf-form-group">
+                        <label>Test Data File (JSON)</label>
+                        <div id="dropZone" style="border:2px dashed var(--sf-border); border-radius:8px; padding:32px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafbfc;"
+                             ondragover="event.preventDefault(); this.style.borderColor='var(--sf-blue)'; this.style.background='#e8f4fd';"
+                             ondragleave="this.style.borderColor='var(--sf-border)'; this.style.background='#fafbfc';"
+                             ondrop="handleDrop(event)"
+                             onclick="document.getElementById('fileInput').click()">
+                            <div style="font-size:36px; margin-bottom:8px;">&#128196;</div>
+                            <div style="font-size:14px; font-weight:600; color:var(--sf-dark);">Drop JSON file here or click to browse</div>
+                            <div style="font-size:12px; color:#999; margin-top:4px;">Accepts .json files up to 5MB</div>
+                            <div id="fileName" style="margin-top:12px; font-size:13px; color:var(--sf-success); font-weight:600; display:none;"></div>
+                        </div>
+                        <input type="file" name="test_data_file" id="fileInput" accept=".json" style="display:none;" onchange="showFileName(this)">
+                    </div>
+                </div>
+
+                <!-- JSON Editor (paste) -->
+                <div style="margin-bottom:24px;">
+                    <div class="td-section-title">
+                        <span class="td-icon">&#9998;</span> Or Paste Test Data JSON
+                    </div>
+                    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+                        Alternatively, paste your test data JSON directly below. File upload takes precedence if both are provided.
+                    </p>
+                    <div class="sf-form-group">
+                        <label>Test Data JSON</label>
+                        <textarea name="test_data_json" id="jsonEditor"
+                                  style="font-family:'Courier New',monospace; font-size:12px; min-height:250px; resize:vertical; background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:6px;"
+                                  placeholder='[{"scenario": "Create Part", "data": {"Part Name": "...", "Part Category": "..."}}]'></textarea>
+                    </div>
+                    <div style="margin-top:8px; display:flex; gap:8px;">
+                        <button type="button" class="sf-btn" onclick="validateJson()">Validate JSON</button>
+                        <button type="button" class="sf-btn" onclick="formatJson()">Format JSON</button>
+                        <button type="button" class="sf-btn" onclick="loadSample()">Load Sample</button>
+                        <span id="jsonStatus" style="font-size:12px; font-weight:600; display:flex; align-items:center;"></span>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div style="display:flex; gap:12px; justify-content:flex-end; padding-top:16px; border-top:1px solid var(--sf-border);">
+                    <a href="/test-data" class="sf-btn">View Current Test Data</a>
+                    <button type="submit" class="sf-btn sf-btn-brand" style="padding:12px 32px; font-size:14px;">
+                        Upload &amp; Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sample Format Reference -->
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Expected JSON Format</h2>
+            <button class="sf-btn" onclick="copySample()" style="font-size:11px;">Copy Sample</button>
+        </div>
+        <div class="sf-card-body">
+            <pre id="sampleJson" style="background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:6px; overflow-x:auto; font-size:12px; max-height:400px; overflow-y:auto;">{{ sample_json }}</pre>
+        </div>
+    </div>
+
+    <!-- Upload History -->
+    {% if uploads %}
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <h2>Upload History</h2>
+        </div>
+        <div class="sf-card-body" style="padding:0;">
+            <table class="sf-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>File Name</th>
+                        <th>Records</th>
+                        <th>App URL</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for upload in uploads %}
+                    <tr>
+                        <td>{{ upload.time }}</td>
+                        <td>{{ upload.file_name }}</td>
+                        <td>{{ upload.records_count }}</td>
+                        <td style="font-size:12px; font-family:monospace;">{{ upload.app_url }}</td>
+                        <td><span class="sf-badge sf-badge-success">Active</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function setUrl(url) {
+    document.getElementById('appUrl').value = url;
+}
+
+function showFileName(input) {
+    var nameEl = document.getElementById('fileName');
+    if (input.files.length > 0) {
+        nameEl.textContent = '✓ ' + input.files[0].name + ' (' + (input.files[0].size/1024).toFixed(1) + ' KB)';
+        nameEl.style.display = 'block';
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    var dropZone = document.getElementById('dropZone');
+    dropZone.style.borderColor = 'var(--sf-border)';
+    dropZone.style.background = '#fafbfc';
+    var files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.json')) {
+        document.getElementById('fileInput').files = files;
+        showFileName(document.getElementById('fileInput'));
+    }
+}
+
+function validateJson() {
+    var editor = document.getElementById('jsonEditor');
+    var status = document.getElementById('jsonStatus');
+    try {
+        var parsed = JSON.parse(editor.value);
+        var count = Array.isArray(parsed) ? parsed.length : (parsed.test_records ? parsed.test_records.length : 0);
+        status.innerHTML = '<span style="color:var(--sf-success);">&#10003; Valid JSON (' + count + ' records found)</span>';
+    } catch(e) {
+        status.innerHTML = '<span style="color:var(--sf-error);">&#10007; Invalid JSON: ' + e.message + '</span>';
+    }
+}
+
+function formatJson() {
+    var editor = document.getElementById('jsonEditor');
+    try {
+        var parsed = JSON.parse(editor.value);
+        editor.value = JSON.stringify(parsed, null, 2);
+        validateJson();
+    } catch(e) {
+        document.getElementById('jsonStatus').innerHTML = '<span style="color:var(--sf-error);">&#10007; Cannot format: ' + e.message + '</span>';
+    }
+}
+
+function loadSample() {
+    var sample = document.getElementById('sampleJson').textContent;
+    document.getElementById('jsonEditor').value = sample;
+    validateJson();
+}
+
+function copySample() {
+    var sample = document.getElementById('sampleJson').textContent;
+    navigator.clipboard.writeText(sample);
+}
+</script>
+"""
+
+
+# ---------------------------------------------------------------------------
+# Upload Test Data route
+# ---------------------------------------------------------------------------
+
+upload_history: list[dict] = []
+
+
+@app.route("/upload-test-data", methods=["GET", "POST"])
+def upload_test_data():
+    global TEST_CONFIG, DROPDOWN_FIELDS, automation_config
+
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        app_url = request.form.get("app_url", "").strip()
+        if app_url:
+            automation_config["app_url"] = app_url
+
+        test_data = None
+        file_name = None
+
+        # Check file upload first
+        uploaded_file = request.files.get("test_data_file")
+        if uploaded_file and uploaded_file.filename:
+            file_name = secure_filename(uploaded_file.filename)
+            try:
+                content = uploaded_file.read().decode("utf-8")
+                test_data = json.loads(content)
+                # Save file to uploads dir
+                save_path = UPLOAD_DIR / file_name
+                save_path.write_text(content)
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                toast_msg = f"Invalid JSON file: {e}"
+                toast_type = "error"
+
+        # Fallback to pasted JSON
+        if not test_data and not toast_msg:
+            json_text = request.form.get("test_data_json", "").strip()
+            if json_text:
+                try:
+                    test_data = json.loads(json_text)
+                    file_name = "pasted_data.json"
+                    save_path = UPLOAD_DIR / file_name
+                    save_path.write_text(json.dumps(test_data, indent=2))
+                except json.JSONDecodeError as e:
+                    toast_msg = f"Invalid JSON: {e}"
+                    toast_type = "error"
+
+        # Process uploaded test data
+        if test_data and not toast_msg:
+            # Support both formats: array of records or full config with dropdown_fields
+            if isinstance(test_data, list):
+                TEST_CONFIG["test_records"] = test_data
+                records_count = len(test_data)
+            elif isinstance(test_data, dict):
+                if "test_records" in test_data:
+                    TEST_CONFIG["test_records"] = test_data["test_records"]
+                    records_count = len(test_data["test_records"])
+                else:
+                    TEST_CONFIG["test_records"] = [test_data]
+                    records_count = 1
+                if "dropdown_fields" in test_data:
+                    TEST_CONFIG["dropdown_fields"] = test_data["dropdown_fields"]
+                    DROPDOWN_FIELDS.update(test_data["dropdown_fields"])
+            else:
+                records_count = 0
+
+            automation_config["uploaded_test_data"] = test_data
+            automation_config["uploaded_file_name"] = file_name
+            automation_config["upload_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            automation_config["test_records_count"] = records_count
+
+            # Also save to the main test data file for Selenium runner
+            with open(TEST_DATA_PATH, "w") as f:
+                json.dump(TEST_CONFIG, f, indent=2)
+
+            upload_history.insert(0, {
+                "time": automation_config["upload_time"],
+                "file_name": file_name,
+                "records_count": records_count,
+                "app_url": app_url or automation_config["app_url"],
+            })
+
+            toast_msg = f"Test data uploaded successfully! {records_count} records loaded."
+            toast_type = "success"
+        elif not toast_msg and app_url:
+            toast_msg = f"Application URL updated to: {app_url}"
+            toast_type = "success"
+
+    sample_json = json.dumps(TEST_CONFIG.get("test_records", [])[:2], indent=2)
+
+    return render_page(
+        "Upload Test Data",
+        UPLOAD_TEST_DATA_CONTENT,
+        active_tab="upload",
+        config=automation_config,
+        sample_json=sample_json,
+        uploads=upload_history,
+        toast_msg=toast_msg,
+        toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
 # API endpoints for Selenium / automation
 # ---------------------------------------------------------------------------
 
@@ -1297,6 +1640,11 @@ def api_test_data():
     return jsonify(TEST_CONFIG.get("test_records", []))
 
 
+@app.route("/api/automation-config", methods=["GET"])
+def api_automation_config():
+    return jsonify(automation_config)
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("  MOCK SALESFORCE LIGHTNING - CAR PARTS MANAGEMENT")
@@ -1305,6 +1653,7 @@ if __name__ == "__main__":
     print(f"  Login:      admin@carparts.demo / demo1234")
     print(f"  Car Parts:  http://localhost:5555/car-parts")
     print(f"  Test Data:  http://localhost:5555/test-data")
+    print(f"  Upload:     http://localhost:5555/upload-test-data")
     print(f"  Dropdowns:  http://localhost:5555/dropdown-fields")
     print(f"  Records:    {len(car_parts_db)} pre-seeded")
     print("=" * 60 + "\n")
