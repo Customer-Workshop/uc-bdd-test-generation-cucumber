@@ -495,6 +495,7 @@ PORTAL_TEMPLATE = """
             <a href="/github-config" class="portal-nav-item {{ 'active' if active_tab == 'github' else '' }}">GitHub</a>
             <a href="/copado-config" class="portal-nav-item {{ 'active' if active_tab == 'copado' else '' }}">Copado</a>
             <a href="/report-config" class="portal-nav-item {{ 'active' if active_tab == 'reports' else '' }}">Reports</a>
+            <a href="/flow-diagram" class="portal-nav-item {{ 'active' if active_tab == 'flow-diagram' else '' }}">Flow Diagram</a>
         </div>
     </nav>
 
@@ -3060,6 +3061,365 @@ def api_get_config():
 
 
 # ---------------------------------------------------------------------------
+# Flow Diagram
+# ---------------------------------------------------------------------------
+
+FLOW_DIAGRAM_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>Architecture Flow Diagram</h1>
+        <p>Complete system architecture showing agent orchestration, data flow, integrations, and CI/CD pipeline.</p>
+    </div>
+
+    <!-- MCP Note -->
+    <div class="card" style="margin-bottom:20px; border-left:4px solid #ff9800;">
+        <div class="card-header">
+            <h2>MCP Server Status</h2>
+            <span class="status-badge" style="background:#fff3e0; color:#e65100;">Not Used</span>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
+                This framework uses a <strong>custom agentic orchestration pattern</strong> — not MCP (Model Context Protocol).
+                Each agent follows a <code>decide() &rarr; act() &rarr; report()</code> lifecycle managed by the <code>AgenticOrchestrator</code>.
+                Inter-agent communication happens via an in-memory message bus, not MCP tool calls.
+            </p>
+            <table class="config-table" style="font-size:12px;">
+                <thead><tr><th>Aspect</th><th>This Framework</th><th>MCP Server (if used)</th></tr></thead>
+                <tbody>
+                    <tr><td>Orchestration</td><td>Custom <code>AgenticOrchestrator</code> with 9 <code>BaseAgent</code> subclasses</td><td>MCP host calls tools exposed by MCP servers</td></tr>
+                    <tr><td>Communication</td><td>In-memory dict passing between agents in sequence</td><td>JSON-RPC over stdio/SSE between host and servers</td></tr>
+                    <tr><td>LLM Integration</td><td>Direct API calls from <code>FeedbackAgent</code> to OpenAI/Anthropic/Gemini</td><td>LLM host routes tool calls to MCP servers</td></tr>
+                    <tr><td>External Tools</td><td>Jira REST API, Selenium WebDriver, Copado REST API, GitHub API</td><td>Each would be an MCP server exposing tools</td></tr>
+                    <tr><td>State</td><td>Shared <code>run</code> dict passed through pipeline</td><td>Each MCP server manages own state</td></tr>
+                </tbody>
+            </table>
+            <p style="font-size:12px; color:var(--text-light); margin-top:10px;">
+                <strong>Optional MCP integration:</strong> Each external integration (Jira, Selenium, Copado, GitHub) could be wrapped as an MCP server, allowing any MCP-compatible LLM host (Claude, GPT) to invoke them as tools. The current design keeps agents tightly coupled for performance.
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Flow Diagram -->
+    <div class="card">
+        <div class="card-header"><h2>End-to-End System Flow</h2></div>
+        <div class="card-body" style="overflow-x:auto;">
+            <svg viewBox="0 0 1100 900" style="width:100%; max-width:1100px; margin:0 auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 z" fill="#666"/></marker>
+                    <marker id="arrow-blue" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 z" fill="#0176d3"/></marker>
+                    <marker id="arrow-green" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 z" fill="#2e844a"/></marker>
+                    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0176d3"/><stop offset="100%" stop-color="#1565c0"/></linearGradient>
+                    <linearGradient id="agentGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e3f2fd"/><stop offset="100%" stop-color="#bbdefb"/></linearGradient>
+                    <linearGradient id="copadoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8f5e9"/><stop offset="100%" stop-color="#c8e6c9"/></linearGradient>
+                    <filter id="shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.12"/></filter>
+                </defs>
+
+                <!-- Title -->
+                <rect x="0" y="0" width="1100" height="44" rx="8" fill="url(#headerGrad)"/>
+                <text x="550" y="28" text-anchor="middle" fill="white" font-size="16" font-weight="700">Jira-Selenium Agentic AI Framework — Architecture Flow</text>
+
+                <!-- External Systems (top) -->
+                <text x="90" y="72" text-anchor="middle" fill="#666" font-size="10" font-weight="600">EXTERNAL SYSTEMS</text>
+                <!-- Jira -->
+                <rect x="20" y="80" width="140" height="50" rx="8" fill="#e3f2fd" stroke="#0176d3" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="90" y="101" text-anchor="middle" fill="#0176d3" font-size="11" font-weight="700">Jira Cloud</text>
+                <text x="90" y="118" text-anchor="middle" fill="#666" font-size="9">REST API / Stories</text>
+                <!-- GitHub -->
+                <rect x="185" y="80" width="140" height="50" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="255" y="101" text-anchor="middle" fill="#7b1fa2" font-size="11" font-weight="700">GitHub</text>
+                <text x="255" y="118" text-anchor="middle" fill="#666" font-size="9">Commits / Webhooks</text>
+                <!-- Salesforce App -->
+                <rect x="350" y="80" width="140" height="50" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="420" y="101" text-anchor="middle" fill="#e65100" font-size="11" font-weight="700">Salesforce UI</text>
+                <text x="420" y="118" text-anchor="middle" fill="#666" font-size="9">LWC / React / Angular</text>
+                <!-- LLM -->
+                <rect x="515" y="80" width="140" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="585" y="101" text-anchor="middle" fill="#c62828" font-size="11" font-weight="700">LLM Provider</text>
+                <text x="585" y="118" text-anchor="middle" fill="#666" font-size="9">OpenAI / Claude / Gemini</text>
+                <!-- Copado -->
+                <rect x="680" y="80" width="140" height="50" rx="8" fill="#e8f5e9" stroke="#2e844a" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="750" y="101" text-anchor="middle" fill="#2e844a" font-size="11" font-weight="700">Copado CI/CD</text>
+                <text x="750" y="118" text-anchor="middle" fill="#666" font-size="9">Pipeline / Deploy</text>
+                <!-- Selenium -->
+                <rect x="845" y="80" width="140" height="50" rx="8" fill="#e0f2f1" stroke="#00695c" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="915" y="101" text-anchor="middle" fill="#00695c" font-size="11" font-weight="700">Selenium Grid</text>
+                <text x="915" y="118" text-anchor="middle" fill="#666" font-size="9">Chrome / CDP</text>
+
+                <!-- Connection lines from external to orchestrator -->
+                <line x1="90" y1="130" x2="90" y2="168" stroke="#0176d3" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
+                <line x1="255" y1="130" x2="255" y2="168" stroke="#7b1fa2" stroke-width="1.2" marker-end="url(#arrow)"/>
+                <line x1="420" y1="130" x2="420" y2="168" stroke="#e65100" stroke-width="1.2" marker-end="url(#arrow)"/>
+                <line x1="585" y1="130" x2="585" y2="168" stroke="#c62828" stroke-width="1.2" marker-end="url(#arrow)"/>
+                <line x1="750" y1="130" x2="750" y2="168" stroke="#2e844a" stroke-width="1.2" marker-end="url(#arrow-green)"/>
+                <line x1="915" y1="130" x2="915" y2="168" stroke="#00695c" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Orchestrator Bar -->
+                <rect x="20" y="170" width="965" height="36" rx="6" fill="#263238" filter="url(#shadow)"/>
+                <text x="502" y="193" text-anchor="middle" fill="white" font-size="13" font-weight="700">AgenticOrchestrator — decide() &rarr; act() &rarr; report() lifecycle</text>
+
+                <!-- Agent Pipeline - Row 1 -->
+                <text x="20" y="228" fill="#333" font-size="10" font-weight="600">AGENT PIPELINE</text>
+
+                <!-- Agent 1 -->
+                <rect x="20" y="236" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#0176d3" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="38" cy="255" r="10" fill="#0176d3"/><text x="38" y="259" text-anchor="middle" fill="white" font-size="10" font-weight="700">1</text>
+                <text x="54" y="258" fill="#0176d3" font-size="10" font-weight="700">StoryIngestionAgent</text>
+                <text x="30" y="275" fill="#555" font-size="9">Jira API &rarr; UserStory objects</text>
+                <text x="30" y="289" fill="#888" font-size="8">IN: Jira config &bull; OUT: stories[]</text>
+
+                <!-- Arrow 1->2 -->
+                <line x1="215" y1="270" x2="235" y2="270" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 2 -->
+                <rect x="237" y="236" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#5e35b1" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="255" cy="255" r="10" fill="#5e35b1"/><text x="255" y="259" text-anchor="middle" fill="white" font-size="10" font-weight="700">2</text>
+                <text x="271" y="258" fill="#5e35b1" font-size="10" font-weight="700">AnalysisAgent</text>
+                <text x="247" y="275" fill="#555" font-size="9">Detect framework &bull; Classify complexity</text>
+                <text x="247" y="289" fill="#888" font-size="8">IN: stories, app URL &bull; OUT: framework</text>
+
+                <!-- Arrow 2->3 -->
+                <line x1="432" y1="270" x2="452" y2="270" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 3 -->
+                <rect x="454" y="236" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#2e844a" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="472" cy="255" r="10" fill="#2e844a"/><text x="472" y="259" text-anchor="middle" fill="white" font-size="10" font-weight="700">3</text>
+                <text x="488" y="258" fill="#2e844a" font-size="10" font-weight="700">FeatureGenerationAgent</text>
+                <text x="464" y="275" fill="#555" font-size="9">Stories &rarr; Gherkin .feature files</text>
+                <text x="464" y="289" fill="#888" font-size="8">IN: stories &bull; OUT: .feature files</text>
+
+                <!-- Arrow 3->4 (down) -->
+                <line x1="551" y1="304" x2="551" y2="324" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent Pipeline - Row 2 -->
+                <!-- Agent 4 -->
+                <rect x="454" y="326" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#e65100" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="472" cy="345" r="10" fill="#e65100"/><text x="472" y="349" text-anchor="middle" fill="white" font-size="10" font-weight="700">4</text>
+                <text x="488" y="348" fill="#e65100" font-size="10" font-weight="700">TestDataPrepAgent</text>
+                <text x="464" y="365" fill="#555" font-size="9">Bundle test data per scenario</text>
+                <text x="464" y="379" fill="#888" font-size="8">IN: features &bull; OUT: data bundles</text>
+
+                <!-- Arrow 4->5 -->
+                <line x1="454" y1="360" x2="434" y2="360" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 5 -->
+                <rect x="237" y="326" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#1565c0" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="255" cy="345" r="10" fill="#1565c0"/><text x="255" y="349" text-anchor="middle" fill="white" font-size="10" font-weight="700">5</text>
+                <text x="271" y="348" fill="#1565c0" font-size="10" font-weight="700">PageObjectAgent</text>
+                <text x="247" y="365" fill="#555" font-size="9">Generate POM (LWC/React/Angular)</text>
+                <text x="247" y="379" fill="#888" font-size="8">IN: framework &bull; OUT: POM classes</text>
+
+                <!-- Arrow 5->6 -->
+                <line x1="237" y1="360" x2="217" y2="360" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 6 -->
+                <rect x="20" y="326" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#00695c" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="38" cy="345" r="10" fill="#00695c"/><text x="38" y="349" text-anchor="middle" fill="white" font-size="10" font-weight="700">6</text>
+                <text x="54" y="348" fill="#00695c" font-size="10" font-weight="700">ExecutionAgent</text>
+                <text x="30" y="365" fill="#555" font-size="9">Selenium BDD &rarr; pass/fail per step</text>
+                <text x="30" y="379" fill="#888" font-size="8">IN: POM, data &bull; OUT: results[]</text>
+
+                <!-- Arrow 6->7 (down) -->
+                <line x1="117" y1="394" x2="117" y2="414" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent Pipeline - Row 3 -->
+                <!-- Agent 7 -->
+                <rect x="20" y="416" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#7b1fa2" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="38" cy="435" r="10" fill="#7b1fa2"/><text x="38" y="439" text-anchor="middle" fill="white" font-size="10" font-weight="700">7</text>
+                <text x="54" y="438" fill="#7b1fa2" font-size="10" font-weight="700">ReportingAgent</text>
+                <text x="30" y="455" fill="#555" font-size="9">Chart.js HTML + JUnit XML + JSON</text>
+                <text x="30" y="469" fill="#888" font-size="8">IN: results &bull; OUT: reports</text>
+
+                <!-- Arrow 7->8 -->
+                <line x1="215" y1="450" x2="235" y2="450" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 8 - Copado Deployment -->
+                <rect x="237" y="416" width="310" height="68" rx="6" fill="url(#copadoGrad)" stroke="#2e844a" stroke-width="1.5" filter="url(#shadow)"/>
+                <circle cx="255" cy="435" r="10" fill="#2e844a"/><text x="255" y="439" text-anchor="middle" fill="white" font-size="10" font-weight="700">8</text>
+                <text x="271" y="438" fill="#2e844a" font-size="10" font-weight="700">DeploymentAgent &rarr; Copado CI/CD</text>
+                <text x="247" y="455" fill="#555" font-size="9">6 stages: TestRun &rarr; Results &rarr; Reports &rarr; Validate &rarr; Deploy &rarr; Verify</text>
+                <text x="247" y="469" fill="#888" font-size="8">IN: reports, config &bull; OUT: copado__Deployment__c</text>
+
+                <!-- Arrow 8->9 -->
+                <line x1="547" y1="450" x2="567" y2="450" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+                <!-- Agent 9 -->
+                <rect x="569" y="416" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#c62828" stroke-width="1.2" filter="url(#shadow)"/>
+                <circle cx="587" cy="435" r="10" fill="#c62828"/><text x="587" y="439" text-anchor="middle" fill="white" font-size="10" font-weight="700">9</text>
+                <text x="603" y="438" fill="#c62828" font-size="10" font-weight="700">FeedbackAgent</text>
+                <text x="579" y="455" fill="#555" font-size="9">LLM diff analysis &rarr; auto-update tests</text>
+                <text x="579" y="469" fill="#888" font-size="8">IN: git diff &bull; OUT: updated .features</text>
+
+                <!-- Feedback loop arrow back to Agent 1 -->
+                <path d="M 666 484 L 666 500 Q 666 510 656 510 L 28 510 Q 18 510 18 500 L 18 304 Q 18 296 28 296 L 18 304" stroke="#c62828" stroke-width="1" stroke-dasharray="5,3" fill="none" marker-end="url(#arrow)"/>
+                <text x="340" y="522" text-anchor="middle" fill="#c62828" font-size="9" font-style="italic">Feedback loop: auto-update features on git changes &rarr; re-run pipeline</text>
+
+                <!-- Decision Types -->
+                <rect x="790" y="236" width="195" height="158" rx="6" fill="#f5f5f5" stroke="#ccc" stroke-width="1" filter="url(#shadow)"/>
+                <text x="887" y="258" text-anchor="middle" fill="#333" font-size="11" font-weight="700">Agent Decisions</text>
+                <rect x="803" y="268" width="70" height="18" rx="4" fill="#2e844a"/><text x="838" y="281" text-anchor="middle" fill="white" font-size="9" font-weight="600">PROCEED</text>
+                <text x="880" y="281" fill="#555" font-size="9">Continue</text>
+                <rect x="803" y="292" width="70" height="18" rx="4" fill="#e65100"/><text x="838" y="305" text-anchor="middle" fill="white" font-size="9" font-weight="600">RETRY</text>
+                <text x="880" y="305" fill="#555" font-size="9">Try again</text>
+                <rect x="803" y="316" width="70" height="18" rx="4" fill="#999"/><text x="838" y="329" text-anchor="middle" fill="white" font-size="9" font-weight="600">SKIP</text>
+                <text x="880" y="329" fill="#555" font-size="9">Skip step</text>
+                <rect x="803" y="340" width="70" height="18" rx="4" fill="#c62828"/><text x="838" y="353" text-anchor="middle" fill="white" font-size="9" font-weight="600">ABORT</text>
+                <text x="880" y="353" fill="#555" font-size="9">Stop pipeline</text>
+                <rect x="803" y="364" width="70" height="18" rx="4" fill="#0176d3"/><text x="838" y="377" text-anchor="middle" fill="white" font-size="9" font-weight="600">DELEGATE</text>
+                <text x="880" y="377" fill="#555" font-size="9">Hand off</text>
+
+                <!-- Copado Pipeline Detail -->
+                <text x="20" y="555" fill="#333" font-size="10" font-weight="600">COPADO CI/CD PIPELINE (DeploymentAgent Step 8)</text>
+                <rect x="20" y="562" width="965" height="80" rx="6" fill="#e8f5e9" stroke="#2e844a" stroke-width="1.2" filter="url(#shadow)"/>
+
+                <!-- 6 Copado stages -->
+                <rect x="35" y="574" width="130" height="34" rx="5" fill="#2e844a"/><text x="100" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">1. Create Test Run</text>
+                <text x="100" y="627" text-anchor="middle" fill="#555" font-size="8">copado__Test_Run__c</text>
+                <text x="175" y="594" fill="#2e844a" font-size="14">&rarr;</text>
+
+                <rect x="190" y="574" width="130" height="34" rx="5" fill="#2e844a"/><text x="255" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">2. Upload Results</text>
+                <text x="255" y="627" text-anchor="middle" fill="#555" font-size="8">copado__Test_Result__c</text>
+                <text x="330" y="594" fill="#2e844a" font-size="14">&rarr;</text>
+
+                <rect x="345" y="574" width="130" height="34" rx="5" fill="#2e844a"/><text x="410" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">3. Attach Reports</text>
+                <text x="410" y="627" text-anchor="middle" fill="#555" font-size="8">ContentDocument</text>
+                <text x="485" y="594" fill="#2e844a" font-size="14">&rarr;</text>
+
+                <rect x="500" y="574" width="130" height="34" rx="5" fill="#2e844a"/><text x="565" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">4. Validate Pipeline</text>
+                <text x="565" y="627" text-anchor="middle" fill="#555" font-size="8">copado__Pipeline__c</text>
+                <text x="640" y="594" fill="#2e844a" font-size="14">&rarr;</text>
+
+                <rect x="655" y="574" width="140" height="34" rx="5" fill="#2e844a"/><text x="725" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">5. Trigger Deployment</text>
+                <text x="725" y="627" text-anchor="middle" fill="#555" font-size="8">copado__Deployment__c</text>
+                <text x="805" y="594" fill="#2e844a" font-size="14">&rarr;</text>
+
+                <rect x="820" y="574" width="140" height="34" rx="5" fill="#2e844a"/><text x="890" y="595" text-anchor="middle" fill="white" font-size="9" font-weight="600">6. Verify Promotion</text>
+                <text x="890" y="627" text-anchor="middle" fill="#555" font-size="8">copado__Deployment__c</text>
+
+                <!-- Environment Promotion Path -->
+                <text x="20" y="660" fill="#333" font-size="10" font-weight="600">ENVIRONMENT PROMOTION PATH</text>
+                <rect x="20" y="668" width="965" height="40" rx="6" fill="#f5f5f5" stroke="#ccc" stroke-width="1"/>
+                <rect x="70" y="676" width="80" height="24" rx="4" fill="#0176d3"/><text x="110" y="693" text-anchor="middle" fill="white" font-size="10" font-weight="600">DEV</text>
+                <text x="165" y="693" fill="#666" font-size="12">&rarr;</text>
+                <rect x="185" y="676" width="80" height="24" rx="4" fill="#5e35b1"/><text x="225" y="693" text-anchor="middle" fill="white" font-size="10" font-weight="600">SIT</text>
+                <text x="280" y="693" fill="#666" font-size="12">&rarr;</text>
+                <rect x="300" y="676" width="80" height="24" rx="4" fill="#e65100"/><text x="340" y="693" text-anchor="middle" fill="white" font-size="10" font-weight="600">UAT</text>
+                <text x="395" y="693" fill="#666" font-size="12">&rarr;</text>
+                <rect x="415" y="676" width="100" height="24" rx="4" fill="#00695c"/><text x="465" y="693" text-anchor="middle" fill="white" font-size="10" font-weight="600">STAGING</text>
+                <text x="530" y="693" fill="#666" font-size="12">&rarr;</text>
+                <rect x="550" y="676" width="120" height="24" rx="4" fill="#2e844a"/><text x="610" y="693" text-anchor="middle" fill="white" font-size="10" font-weight="600">PRODUCTION</text>
+
+                <!-- Data Flow -->
+                <text x="20" y="730" fill="#333" font-size="10" font-weight="600">DATA FLOW</text>
+                <rect x="20" y="738" width="965" height="76" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+
+                <!-- Data flow items -->
+                <rect x="35" y="748" width="115" height="28" rx="4" fill="#e3f2fd" stroke="#0176d3" stroke-width="1"/>
+                <text x="92" y="767" text-anchor="middle" fill="#0176d3" font-size="9" font-weight="600">Jira Stories</text>
+                <text x="160" y="766" fill="#666" font-size="11">&rarr;</text>
+                <rect x="175" y="748" width="115" height="28" rx="4" fill="#e8f5e9" stroke="#2e844a" stroke-width="1"/>
+                <text x="232" y="767" text-anchor="middle" fill="#2e844a" font-size="9" font-weight="600">.feature Files</text>
+                <text x="300" y="766" fill="#666" font-size="11">&rarr;</text>
+                <rect x="315" y="748" width="115" height="28" rx="4" fill="#fff3e0" stroke="#e65100" stroke-width="1"/>
+                <text x="372" y="767" text-anchor="middle" fill="#e65100" font-size="9" font-weight="600">Test Data JSON</text>
+                <text x="440" y="766" fill="#666" font-size="11">&rarr;</text>
+                <rect x="455" y="748" width="115" height="28" rx="4" fill="#e0f2f1" stroke="#00695c" stroke-width="1"/>
+                <text x="512" y="767" text-anchor="middle" fill="#00695c" font-size="9" font-weight="600">POM Classes</text>
+                <text x="580" y="766" fill="#666" font-size="11">&rarr;</text>
+                <rect x="595" y="748" width="130" height="28" rx="4" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="1"/>
+                <text x="660" y="767" text-anchor="middle" fill="#7b1fa2" font-size="9" font-weight="600">Execution Results</text>
+                <text x="735" y="766" fill="#666" font-size="11">&rarr;</text>
+                <rect x="750" y="748" width="115" height="28" rx="4" fill="#fce4ec" stroke="#c62828" stroke-width="1"/>
+                <text x="807" y="767" text-anchor="middle" fill="#c62828" font-size="9" font-weight="600">HTML Reports</text>
+
+                <text x="35" y="800" fill="#888" font-size="8">UserStory &rarr; Gherkin &rarr; TestBundle &rarr; PageObject &rarr; SeleniumResult &rarr; Chart.js Dashboard &rarr; copado__Test_Run__c</text>
+
+                <!-- Two Applications -->
+                <text x="20" y="830" fill="#333" font-size="10" font-weight="600">APPLICATIONS</text>
+                <rect x="20" y="838" width="470" height="48" rx="6" fill="#fff3e0" stroke="#e65100" stroke-width="1.2" filter="url(#shadow)"/>
+                <text x="255" y="858" text-anchor="middle" fill="#e65100" font-size="11" font-weight="700">Mock Salesforce Lightning UI — localhost:5555</text>
+                <text x="255" y="874" text-anchor="middle" fill="#888" font-size="9">Car Parts CRUD &bull; 12 dropdowns &bull; Dependent picklists &bull; LWC components</text>
+
+                <rect x="515" y="838" width="470" height="48" rx="6" fill="#e3f2fd" stroke="#0176d3" stroke-width="1.2" filter="url(#shadow)"/>
+                <text x="750" y="858" text-anchor="middle" fill="#0176d3" font-size="11" font-weight="700">Automation Configuration Portal — localhost:5556</text>
+                <text x="750" y="874" text-anchor="middle" fill="#888" font-size="9">Workflow &bull; Execute &bull; Reports &bull; Traceability &bull; Jira/GitHub/Copado config</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Agent Communication Sequence -->
+    <div class="card" style="margin-top:20px;">
+        <div class="card-header"><h2>Agent Communication Sequence</h2></div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table" style="font-size:12px;">
+                <thead><tr><th>Step</th><th>Agent</th><th>Receives From</th><th>Produces</th><th>Sends To</th><th>External Call</th></tr></thead>
+                <tbody>
+                    <tr><td style="font-weight:700; color:#0176d3;">1</td><td>StoryIngestionAgent</td><td>Config (Jira URL, project key)</td><td>UserStory[] with parsed acceptance criteria</td><td>AnalysisAgent</td><td>Jira REST API <code>GET /rest/api/2/search</code></td></tr>
+                    <tr><td style="font-weight:700; color:#5e35b1;">2</td><td>AnalysisAgent</td><td>UserStory[], App URL</td><td>Framework type, complexity, test strategy</td><td>FeatureGenerationAgent</td><td>HTTP GET to app URL (detect LWC/React/Angular)</td></tr>
+                    <tr><td style="font-weight:700; color:#2e844a;">3</td><td>FeatureGenerationAgent</td><td>UserStory[], framework info</td><td>.feature files (Gherkin)</td><td>TestDataPrepAgent</td><td>None (template-based generation)</td></tr>
+                    <tr><td style="font-weight:700; color:#e65100;">4</td><td>TestDataPrepAgent</td><td>.feature files, test data JSON</td><td>Data bundles per scenario</td><td>PageObjectAgent</td><td>Read <code>car_parts_test_data.json</code></td></tr>
+                    <tr><td style="font-weight:700; color:#1565c0;">5</td><td>PageObjectAgent</td><td>Framework type, field locators</td><td>POM class instances</td><td>ExecutionAgent</td><td>None (class selection based on framework)</td></tr>
+                    <tr><td style="font-weight:700; color:#00695c;">6</td><td>ExecutionAgent</td><td>POM, data bundles, app URL</td><td>Pass/fail per scenario + step timings</td><td>ReportingAgent</td><td>Selenium WebDriver via CDP</td></tr>
+                    <tr><td style="font-weight:700; color:#7b1fa2;">7</td><td>ReportingAgent</td><td>Execution results, Jira IDs</td><td>HTML (Chart.js), JUnit XML, JSON</td><td>DeploymentAgent</td><td>File system write to <code>test-reports/</code></td></tr>
+                    <tr><td style="font-weight:700; color:#2e844a;">8</td><td>DeploymentAgent</td><td>Reports, Copado config</td><td>copado__Test_Run__c, copado__Deployment__c</td><td>FeedbackAgent</td><td>Copado REST API (6-stage pipeline)</td></tr>
+                    <tr><td style="font-weight:700; color:#c62828;">9</td><td>FeedbackAgent</td><td>Git diff, current .features</td><td>Updated .feature files</td><td>Back to Agent 1 (loop)</td><td>LLM API (OpenAI/Claude/Gemini)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Optional MCP Architecture -->
+    <div class="card" style="margin-top:20px;">
+        <div class="card-header">
+            <h2>Optional MCP Server Architecture</h2>
+            <span style="font-size:12px; color:var(--text-light);">How this framework could use MCP</span>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:16px;">
+                If refactored to use MCP (Model Context Protocol), each external integration would become an MCP server exposing tools to an LLM host:
+            </p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                <div style="background:#e3f2fd; border:1px solid #0176d3; border-radius:8px; padding:12px;">
+                    <div style="font-size:12px; font-weight:700; color:#0176d3; margin-bottom:6px;">Jira MCP Server</div>
+                    <div style="font-size:11px; color:#555;">Tools: <code>search_stories</code>, <code>get_story</code>, <code>update_status</code></div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                </div>
+                <div style="background:#e0f2f1; border:1px solid #00695c; border-radius:8px; padding:12px;">
+                    <div style="font-size:12px; font-weight:700; color:#00695c; margin-bottom:6px;">Selenium MCP Server</div>
+                    <div style="font-size:11px; color:#555;">Tools: <code>run_scenario</code>, <code>click</code>, <code>fill_form</code>, <code>screenshot</code></div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over SSE</div>
+                </div>
+                <div style="background:#e8f5e9; border:1px solid #2e844a; border-radius:8px; padding:12px;">
+                    <div style="font-size:12px; font-weight:700; color:#2e844a; margin-bottom:6px;">Copado MCP Server</div>
+                    <div style="font-size:11px; color:#555;">Tools: <code>create_test_run</code>, <code>upload_results</code>, <code>trigger_deploy</code></div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                </div>
+                <div style="background:#f3e5f5; border:1px solid #7b1fa2; border-radius:8px; padding:12px;">
+                    <div style="font-size:12px; font-weight:700; color:#7b1fa2; margin-bottom:6px;">GitHub MCP Server</div>
+                    <div style="font-size:11px; color:#555;">Tools: <code>list_commits</code>, <code>get_diff</code>, <code>create_pr</code></div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                </div>
+            </div>
+            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #ff9800;">
+                <p style="font-size:12px; color:#555; margin:0;">
+                    <strong>Current approach:</strong> Direct API calls from each agent — faster, no MCP overhead, tightly coupled.<br>
+                    <strong>MCP approach:</strong> Each tool exposed as MCP server — composable, any LLM host can call them, loosely coupled.<br>
+                    <strong>Recommendation:</strong> Use MCP when you need the same Jira/Selenium/Copado tools callable by different AI assistants (Claude Desktop, GPT, Cursor, etc.).
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/flow-diagram")
+def flow_diagram_page():
+    return render_portal(
+        "Flow Diagram", FLOW_DIAGRAM_CONTENT, active_tab="flow-diagram", cfg=config,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -3085,6 +3445,7 @@ if __name__ == "__main__":
     print(f"  GitHub:     http://localhost:5556/github-config")
     print(f"  Copado:     http://localhost:5556/copado-config")
     print(f"  Reports:    http://localhost:5556/report-config")
+    print(f"  Flow Diagram: http://localhost:5556/flow-diagram")
     print(f"  API:        http://localhost:5556/api/config")
     print("=" * 60 + "\n")
     portal.run(host="0.0.0.0", port=5556, debug=False)
