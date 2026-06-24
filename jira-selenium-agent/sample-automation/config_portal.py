@@ -95,6 +95,27 @@ DEFAULT_CONFIG = {
         "records_count": 0,
         "upload_time": None,
     },
+    "selectorshub": {
+        "enabled": True,
+        "auto_scan": True,
+        "shadow_dom": True,
+        "iframe_support": True,
+        "selector_priority": ["css", "xpath", "id", "name", "shadow-css"],
+        "scan_depth": 5,
+        "exclude_hidden": True,
+        "generate_relative_xpath": True,
+    },
+    "mcp_servers": {
+        "enabled": False,
+        "transport": "stdio",
+        "servers": {
+            "jira": {"enabled": False, "port": 3001},
+            "selenium": {"enabled": False, "port": 3002},
+            "copado": {"enabled": False, "port": 3003},
+            "github": {"enabled": False, "port": 3004},
+            "selectorshub": {"enabled": False, "port": 3005},
+        },
+    },
 }
 
 
@@ -495,6 +516,8 @@ PORTAL_TEMPLATE = """
             <a href="/github-config" class="portal-nav-item {{ 'active' if active_tab == 'github' else '' }}">GitHub</a>
             <a href="/copado-config" class="portal-nav-item {{ 'active' if active_tab == 'copado' else '' }}">Copado</a>
             <a href="/report-config" class="portal-nav-item {{ 'active' if active_tab == 'reports' else '' }}">Reports</a>
+            <a href="/selectorshub-config" class="portal-nav-item {{ 'active' if active_tab == 'selectorshub' else '' }}">SelectorsHub</a>
+            <a href="/mcp-servers" class="portal-nav-item {{ 'active' if active_tab == 'mcp-servers' else '' }}">MCP Servers</a>
             <a href="/flow-diagram" class="portal-nav-item {{ 'active' if active_tab == 'flow-diagram' else '' }}">Flow Diagram</a>
         </div>
     </nav>
@@ -603,6 +626,16 @@ DASHBOARD_CONTENT = """
                         <td>{% if cfg.ai_model.api_key %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Configured</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> No API Key</span>{% endif %}</td>
                         <td>{{ cfg.ai_model.provider | title }} / {{ cfg.ai_model.model }} &middot; {{ 'Auto-detect ON' if cfg.ai_model.auto_detect_fields else 'Auto-detect OFF' }}</td>
                     </tr>
+                    <tr>
+                        <td>SelectorsHub</td>
+                        <td>{% if cfg.selectorshub.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Enabled</span>{% else %}<span class="status-badge status-disabled"><span class="status-dot status-dot-gray"></span> Disabled</span>{% endif %}</td>
+                        <td>{{ 'Auto-scan ON' if cfg.selectorshub.auto_scan else 'Auto-scan OFF' }} &middot; Shadow DOM: {{ 'ON' if cfg.selectorshub.shadow_dom else 'OFF' }} &middot; Depth: {{ cfg.selectorshub.scan_depth }}</td>
+                    </tr>
+                    <tr>
+                        <td>MCP Servers</td>
+                        <td>{% if cfg.mcp_servers.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Enabled</span>{% else %}<span class="status-badge status-disabled"><span class="status-dot status-dot-gray"></span> Disabled</span>{% endif %}</td>
+                        <td>Transport: {{ cfg.mcp_servers.transport }} &middot; 5 servers (Jira, Selenium, Copado, GitHub, SelectorsHub)</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -625,6 +658,9 @@ DASHBOARD_CONTENT = """
             <a href="/github-config" class="btn">GitHub Settings</a>
             <a href="/copado-config" class="btn">Copado Settings</a>
             <a href="/report-config" class="btn">Report Settings</a>
+            <a href="/selectorshub-config" class="btn">SelectorsHub</a>
+            <a href="/mcp-servers" class="btn">MCP Servers</a>
+            <a href="/flow-diagram" class="btn">Flow Diagram</a>
             <a href="{{ cfg.app_url }}" class="btn" target="_blank">Open Application</a>
         </div>
     </div>
@@ -1840,10 +1876,11 @@ WORKFLOW_STEPS = [
     {
         "num": 5, "title": "Page Object Generation", "agent": "PageObjectAgent",
         "color": "#ea001e",
-        "desc": "Select or generate framework-specific Page Object Model (POM) classes. Salesforce LWC uses shadow DOM traversal, React uses data-testid, Angular uses formControlName.",
-        "inputs": ["Framework type", "Feature file steps"],
-        "outputs": ["POM page classes with locators and actions"],
-        "ai_action": "LLM detects new fields/screens and auto-generates POM locators",
+        "desc": "Select or generate framework-specific Page Object Model (POM) classes. Uses SelectorsHub to auto-scan the target application for optimal selectors (CSS, XPath, shadow DOM CSS). Salesforce LWC uses shadow DOM traversal, React uses data-testid, Angular uses formControlName.",
+        "inputs": ["Framework type", "Feature file steps", "SelectorsHub scan results"],
+        "outputs": ["POM page classes with locators and actions", "SelectorsHub selector map"],
+        "ai_action": "LLM + SelectorsHub detect new fields/screens and auto-generate POM locators",
+        "selectorshub": True,
     },
     {
         "num": 6, "title": "Test Execution", "agent": "ExecutionAgent",
@@ -2616,9 +2653,22 @@ def _run_pipeline(run_id, app_url):
             step["decision"] = "PROCEED"
             run["results"]["data_bundles"] = len(test_records)
         elif agent_name == "PageObjectAgent":
-            step["details"] = f"Selected Salesforce LWC POM with shadow DOM traversal, {len(scan['fields'])} field locators"
+            sh_cfg = config.get("selectorshub", {})
+            sh_enabled = sh_cfg.get("enabled", False)
+            field_count = len(scan["fields"])
+            if sh_enabled:
+                step["details"] = f"SelectorsHub scanned {field_count} fields → Generated CSS/XPath/shadow-CSS selectors → Salesforce LWC POM with shadow DOM traversal, {field_count} field locators"
+                step["selectorshub_scan"] = {
+                    "fields_scanned": field_count,
+                    "selectors_generated": field_count * 3,
+                    "types": ["css", "xpath", "shadow-css"],
+                    "shadow_dom": sh_cfg.get("shadow_dom", True),
+                }
+            else:
+                step["details"] = f"Selected Salesforce LWC POM with shadow DOM traversal, {field_count} field locators (SelectorsHub disabled — enable at /selectorshub-config for auto-scanning)"
             step["decision"] = "PROCEED"
-            run["results"]["pom_locators"] = len(scan["fields"])
+            run["results"]["pom_locators"] = field_count
+            run["results"]["selectorshub_used"] = sh_enabled
         elif agent_name == "ExecutionAgent":
             passed = len(test_records)
             total_steps = sum(len(r.get("execution_steps", [])) for r in test_records)
@@ -3061,6 +3111,403 @@ def api_get_config():
 
 
 # ---------------------------------------------------------------------------
+# SelectorsHub Configuration
+# ---------------------------------------------------------------------------
+
+SELECTORSHUB_CONFIG_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>SelectorsHub Configuration</h1>
+        <p>Configure SelectorsHub for auto-scanning page elements and generating optimal selectors for Page Object Model.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>How SelectorsHub Works in This Framework</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
+                SelectorsHub is a browser extension and selector generation tool that auto-discovers the best CSS, XPath, and shadow DOM selectors for every element on a page.
+                In this framework, it integrates with the <strong>PageObjectAgent (Step 5)</strong> to auto-scan the target application and generate POM locators.
+            </p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+                <div style="background:#e3f2fd; border:1px solid #0176d3; border-radius:6px; padding:8px 14px; font-size:12px;">
+                    <strong style="color:#0176d3;">1. Scan</strong><br><span style="color:#555;">Crawl target app pages</span>
+                </div>
+                <div style="color:#ccc; display:flex; align-items:center;">&rarr;</div>
+                <div style="background:#e8f5e9; border:1px solid #2e844a; border-radius:6px; padding:8px 14px; font-size:12px;">
+                    <strong style="color:#2e844a;">2. Discover</strong><br><span style="color:#555;">Find all interactive elements</span>
+                </div>
+                <div style="color:#ccc; display:flex; align-items:center;">&rarr;</div>
+                <div style="background:#fff3e0; border:1px solid #e65100; border-radius:6px; padding:8px 14px; font-size:12px;">
+                    <strong style="color:#e65100;">3. Generate</strong><br><span style="color:#555;">CSS + XPath + shadow-CSS</span>
+                </div>
+                <div style="color:#ccc; display:flex; align-items:center;">&rarr;</div>
+                <div style="background:#f3e5f5; border:1px solid #7b1fa2; border-radius:6px; padding:8px 14px; font-size:12px;">
+                    <strong style="color:#7b1fa2;">4. POM</strong><br><span style="color:#555;">Inject into Page Objects</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>SelectorsHub Settings</h2></div>
+        <div class="card-body">
+            <form method="POST" action="/selectorshub-config">
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Enable SelectorsHub</div>
+                        <div class="toggle-desc">Use SelectorsHub to auto-scan pages and generate selectors for POM</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="enabled" {{ 'checked' if cfg.selectorshub.enabled else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Auto-Scan on Execute</div>
+                        <div class="toggle-desc">Automatically scan the target application when pipeline executes</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="auto_scan" {{ 'checked' if cfg.selectorshub.auto_scan else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Shadow DOM Support</div>
+                        <div class="toggle-desc">Traverse shadow DOM boundaries (required for Salesforce LWC)</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="shadow_dom" {{ 'checked' if cfg.selectorshub.shadow_dom else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">iFrame Support</div>
+                        <div class="toggle-desc">Scan elements inside iframes</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="iframe_support" {{ 'checked' if cfg.selectorshub.iframe_support else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Exclude Hidden Elements</div>
+                        <div class="toggle-desc">Skip elements that are not visible on the page</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="exclude_hidden" {{ 'checked' if cfg.selectorshub.exclude_hidden else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Generate Relative XPath</div>
+                        <div class="toggle-desc">Prefer relative XPath over absolute for better maintainability</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="generate_relative_xpath" {{ 'checked' if cfg.selectorshub.generate_relative_xpath else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-row" style="margin-top:12px;">
+                    <div class="form-group">
+                        <label>Scan Depth</label>
+                        <select name="scan_depth">
+                            {% for d in [1,2,3,4,5,6,7,8,9,10] %}
+                            <option value="{{ d }}" {{ 'selected' if cfg.selectorshub.scan_depth == d else '' }}>{{ d }} levels</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Selector Priority Order</label>
+                        <input type="text" name="selector_priority" value="{{ cfg.selectorshub.selector_priority | join(', ') }}" placeholder="css, xpath, id, name, shadow-css">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary">Save SelectorsHub Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Selector Types Reference -->
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>Selector Types Generated by SelectorsHub</h2></div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table" style="font-size:12px;">
+                <thead><tr><th>Type</th><th>Example</th><th>Framework</th><th>Priority</th></tr></thead>
+                <tbody>
+                    <tr><td style="font-weight:700; color:#0176d3;">CSS Selector</td><td style="font-family:monospace;">lightning-input[data-field="Part_Name__c"]</td><td>All</td><td>1 (fastest)</td></tr>
+                    <tr><td style="font-weight:700; color:#2e844a;">Shadow CSS</td><td style="font-family:monospace;">lightning-input >>> input.slds-input</td><td>Salesforce LWC</td><td>2 (shadow DOM)</td></tr>
+                    <tr><td style="font-weight:700; color:#e65100;">XPath</td><td style="font-family:monospace;">//lightning-input[@data-field="Part_Name__c"]//input</td><td>All</td><td>3 (flexible)</td></tr>
+                    <tr><td style="font-weight:700; color:#7b1fa2;">Relative XPath</td><td style="font-family:monospace;">.//input[contains(@class,"slds-input")]</td><td>All</td><td>4 (maintainable)</td></tr>
+                    <tr><td style="font-weight:700; color:#1565c0;">data-testid</td><td style="font-family:monospace;">[data-testid="part-name-input"]</td><td>React</td><td>1 (React best practice)</td></tr>
+                    <tr><td style="font-weight:700; color:#00695c;">formControlName</td><td style="font-family:monospace;">[formControlName="partName"]</td><td>Angular</td><td>1 (Angular best practice)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/selectorshub-config", methods=["GET", "POST"])
+def selectorshub_config_page():
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        sh = config.setdefault("selectorshub", {})
+        sh["enabled"] = "enabled" in request.form
+        sh["auto_scan"] = "auto_scan" in request.form
+        sh["shadow_dom"] = "shadow_dom" in request.form
+        sh["iframe_support"] = "iframe_support" in request.form
+        sh["exclude_hidden"] = "exclude_hidden" in request.form
+        sh["generate_relative_xpath"] = "generate_relative_xpath" in request.form
+        sh["scan_depth"] = int(request.form.get("scan_depth", 5))
+        prio_str = request.form.get("selector_priority", "css, xpath, id, name, shadow-css")
+        sh["selector_priority"] = [s.strip() for s in prio_str.split(",") if s.strip()]
+        save_config(config)
+        toast_msg = "SelectorsHub configuration saved!"
+        toast_type = "success"
+
+    return render_portal(
+        "SelectorsHub Config", SELECTORSHUB_CONFIG_CONTENT, active_tab="selectorshub",
+        cfg=config, toast_msg=toast_msg, toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
+# MCP Servers Configuration
+# ---------------------------------------------------------------------------
+
+MCP_SERVERS_CONTENT = """
+<div class="page">
+    <div class="page-header">
+        <h1>MCP Server Configuration</h1>
+        <p>Configure Model Context Protocol (MCP) servers to expose framework integrations as tools for LLM hosts.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px; border-left:4px solid #0176d3;">
+        <div class="card-header">
+            <h2>What is MCP?</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px; color:var(--text-light); margin-bottom:8px;">
+                <strong>Model Context Protocol (MCP)</strong> is an open standard that allows LLM applications (hosts) to connect to external tools (servers) via a standardized JSON-RPC interface. Each MCP server exposes a set of tools that any compatible host (Claude Desktop, GPT, Cursor, etc.) can invoke.
+            </p>
+            <p style="font-size:12px; color:var(--text-light);">
+                When enabled, each integration in this framework becomes an MCP server that can be called by any MCP-compatible LLM host — making the Jira, Selenium, Copado, GitHub, and SelectorsHub tools composable and reusable across different AI assistants.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>MCP Global Settings</h2></div>
+        <div class="card-body">
+            <form method="POST" action="/mcp-servers">
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Enable MCP Servers</div>
+                        <div class="toggle-desc">Start MCP servers for each integration, exposing tools via JSON-RPC</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="mcp_enabled" {{ 'checked' if cfg.mcp_servers.enabled else '' }}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="form-row" style="margin-top:12px;">
+                    <div class="form-group">
+                        <label>Transport Protocol</label>
+                        <select name="transport">
+                            <option value="stdio" {{ 'selected' if cfg.mcp_servers.transport == 'stdio' else '' }}>stdio (Standard I/O)</option>
+                            <option value="sse" {{ 'selected' if cfg.mcp_servers.transport == 'sse' else '' }}>SSE (Server-Sent Events)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:16px; margin-top:16px; border-top:1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary">Save MCP Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Individual MCP Servers -->
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>MCP Servers</h2></div>
+        <div class="card-body" style="padding:0;">
+            <table class="config-table" style="font-size:12px;">
+                <thead><tr><th>Server</th><th>Tools Exposed</th><th>Transport</th><th>Port</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:700; color:#0176d3;">Jira MCP Server</td>
+                        <td><code>search_stories</code>, <code>get_story</code>, <code>update_status</code>, <code>get_acceptance_criteria</code>, <code>list_projects</code></td>
+                        <td>{{ cfg.mcp_servers.transport }}</td>
+                        <td>{{ cfg.mcp_servers.servers.jira.port }}</td>
+                        <td>{% if cfg.mcp_servers.enabled and cfg.mcp_servers.servers.jira.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Running</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Stopped</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#00695c;">Selenium MCP Server</td>
+                        <td><code>run_scenario</code>, <code>click_element</code>, <code>fill_form</code>, <code>screenshot</code>, <code>get_page_source</code>, <code>wait_for_element</code></td>
+                        <td>{{ cfg.mcp_servers.transport }}</td>
+                        <td>{{ cfg.mcp_servers.servers.selenium.port }}</td>
+                        <td>{% if cfg.mcp_servers.enabled and cfg.mcp_servers.servers.selenium.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Running</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Stopped</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#2e844a;">Copado MCP Server</td>
+                        <td><code>create_test_run</code>, <code>upload_results</code>, <code>attach_reports</code>, <code>validate_pipeline</code>, <code>trigger_deployment</code>, <code>verify_promotion</code></td>
+                        <td>{{ cfg.mcp_servers.transport }}</td>
+                        <td>{{ cfg.mcp_servers.servers.copado.port }}</td>
+                        <td>{% if cfg.mcp_servers.enabled and cfg.mcp_servers.servers.copado.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Running</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Stopped</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#7b1fa2;">GitHub MCP Server</td>
+                        <td><code>list_commits</code>, <code>get_diff</code>, <code>create_pr</code>, <code>get_workflow_status</code>, <code>trigger_workflow</code></td>
+                        <td>{{ cfg.mcp_servers.transport }}</td>
+                        <td>{{ cfg.mcp_servers.servers.github.port }}</td>
+                        <td>{% if cfg.mcp_servers.enabled and cfg.mcp_servers.servers.github.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Running</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Stopped</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700; color:#e65100;">SelectorsHub MCP Server</td>
+                        <td><code>scan_page</code>, <code>get_selectors</code>, <code>generate_pom</code>, <code>verify_selector</code>, <code>scan_shadow_dom</code></td>
+                        <td>{{ cfg.mcp_servers.transport }}</td>
+                        <td>{{ cfg.mcp_servers.servers.selectorshub.port }}</td>
+                        <td>{% if cfg.mcp_servers.enabled and cfg.mcp_servers.servers.selectorshub.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Running</span>{% else %}<span class="status-badge status-not-configured"><span class="status-dot status-dot-orange"></span> Stopped</span>{% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MCP Server Tool Details -->
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>MCP Tool Definitions</h2></div>
+        <div class="card-body">
+            {% for server_name, server_info in [
+                ('Jira', {'color': '#0176d3', 'tools': [
+                    {'name': 'search_stories', 'desc': 'Search Jira stories by project key, status, and assignee', 'params': 'project_key, status, assignee'},
+                    {'name': 'get_story', 'desc': 'Get full story details including acceptance criteria', 'params': 'story_id'},
+                    {'name': 'update_status', 'desc': 'Update story status (To Do, In Progress, Done)', 'params': 'story_id, status'},
+                    {'name': 'get_acceptance_criteria', 'desc': 'Parse Given/When/Then from story description', 'params': 'story_id'},
+                    {'name': 'list_projects', 'desc': 'List all accessible Jira projects', 'params': 'none'},
+                ]}),
+                ('Selenium', {'color': '#00695c', 'tools': [
+                    {'name': 'run_scenario', 'desc': 'Execute a BDD scenario against the target app', 'params': 'feature_file, scenario_name, data'},
+                    {'name': 'click_element', 'desc': 'Click an element using CSS/XPath selector', 'params': 'selector, selector_type'},
+                    {'name': 'fill_form', 'desc': 'Fill form fields with data', 'params': 'fields: {selector: value}'},
+                    {'name': 'screenshot', 'desc': 'Capture page screenshot', 'params': 'output_path'},
+                    {'name': 'get_page_source', 'desc': 'Get current page HTML source', 'params': 'none'},
+                    {'name': 'wait_for_element', 'desc': 'Wait for element to be visible/clickable', 'params': 'selector, condition, timeout'},
+                ]}),
+                ('Copado', {'color': '#2e844a', 'tools': [
+                    {'name': 'create_test_run', 'desc': 'Create copado__Test_Run__c record', 'params': 'pipeline_id, environment, test_count'},
+                    {'name': 'upload_results', 'desc': 'Upload copado__Test_Result__c per scenario', 'params': 'test_run_id, results[]'},
+                    {'name': 'attach_reports', 'desc': 'Upload reports as ContentDocument', 'params': 'test_run_id, files[]'},
+                    {'name': 'validate_pipeline', 'desc': 'Check pipeline and environment readiness', 'params': 'pipeline_id'},
+                    {'name': 'trigger_deployment', 'desc': 'Trigger copado__Deployment__c', 'params': 'pipeline_id, source_env, target_env'},
+                    {'name': 'verify_promotion', 'desc': 'Poll deployment status until complete', 'params': 'deployment_id'},
+                ]}),
+                ('GitHub', {'color': '#7b1fa2', 'tools': [
+                    {'name': 'list_commits', 'desc': 'List recent commits with story key references', 'params': 'branch, since, story_pattern'},
+                    {'name': 'get_diff', 'desc': 'Get code diff for a commit', 'params': 'commit_sha'},
+                    {'name': 'create_pr', 'desc': 'Create a pull request', 'params': 'title, body, head, base'},
+                    {'name': 'get_workflow_status', 'desc': 'Check CI/CD workflow run status', 'params': 'workflow_id, run_id'},
+                    {'name': 'trigger_workflow', 'desc': 'Trigger a GitHub Actions workflow', 'params': 'workflow_file, branch'},
+                ]}),
+                ('SelectorsHub', {'color': '#e65100', 'tools': [
+                    {'name': 'scan_page', 'desc': 'Scan a page URL and discover all interactive elements', 'params': 'url, scan_depth, shadow_dom'},
+                    {'name': 'get_selectors', 'desc': 'Get CSS/XPath/shadow-CSS selectors for an element', 'params': 'element_id, selector_types'},
+                    {'name': 'generate_pom', 'desc': 'Generate Page Object Model from scan results', 'params': 'page_url, framework, output_format'},
+                    {'name': 'verify_selector', 'desc': 'Verify a selector matches expected element', 'params': 'selector, selector_type, expected_tag'},
+                    {'name': 'scan_shadow_dom', 'desc': 'Deep scan shadow DOM tree for nested elements', 'params': 'host_selector, depth'},
+                ]}),
+            ] %}
+            <div style="background:#f8f9fa; border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:10px; border-left:3px solid {{ server_info.color }};">
+                <div style="font-size:13px; font-weight:700; color:{{ server_info.color }}; margin-bottom:8px;">{{ server_name }} MCP Server</div>
+                <div style="display:grid; gap:6px;">
+                    {% for tool in server_info.tools %}
+                    <div style="display:flex; gap:8px; align-items:baseline;">
+                        <code style="font-size:11px; background:#e8eaf6; padding:2px 6px; border-radius:3px; white-space:nowrap;">{{ tool.name }}</code>
+                        <span style="font-size:11px; color:#555;">{{ tool.desc }}</span>
+                        <span style="font-size:10px; color:#999; margin-left:auto; white-space:nowrap;">params: {{ tool.params }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- MCP Config File Example -->
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>MCP Configuration File (mcp.json)</h2></div>
+        <div class="card-body">
+            <p style="font-size:12px; color:var(--text-light); margin-bottom:10px;">
+                To use these MCP servers with Claude Desktop or other MCP hosts, add the following to your MCP configuration file:
+            </p>
+            <pre style="background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:6px; font-size:11px; overflow-x:auto; line-height:1.6;">{
+  "mcpServers": {
+    "jira-bdd": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.jira_server"],
+      "env": { "JIRA_SERVER_URL": "...", "JIRA_API_TOKEN": "..." }
+    },
+    "selenium-bdd": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.selenium_server"],
+      "env": { "CDP_URL": "http://localhost:29229" }
+    },
+    "copado-bdd": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.copado_server"],
+      "env": { "COPADO_INSTANCE_URL": "...", "COPADO_API_TOKEN": "..." }
+    },
+    "github-bdd": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.github_server"],
+      "env": { "GITHUB_TOKEN": "..." }
+    },
+    "selectorshub-bdd": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.selectorshub_server"],
+      "env": { "CDP_URL": "http://localhost:29229" }
+    }
+  }
+}</pre>
+        </div>
+    </div>
+</div>
+"""
+
+
+@portal.route("/mcp-servers", methods=["GET", "POST"])
+def mcp_servers_page():
+    toast_msg = ""
+    toast_type = ""
+
+    if request.method == "POST":
+        mcp = config.setdefault("mcp_servers", {})
+        mcp["enabled"] = "mcp_enabled" in request.form
+        mcp["transport"] = request.form.get("transport", "stdio")
+        save_config(config)
+        toast_msg = "MCP server configuration saved!"
+        toast_type = "success"
+
+    return render_portal(
+        "MCP Servers", MCP_SERVERS_CONTENT, active_tab="mcp-servers",
+        cfg=config, toast_msg=toast_msg, toast_type=toast_type,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Flow Diagram
 # ---------------------------------------------------------------------------
 
@@ -3075,13 +3522,13 @@ FLOW_DIAGRAM_CONTENT = """
     <div class="card" style="margin-bottom:20px; border-left:4px solid #ff9800;">
         <div class="card-header">
             <h2>MCP Server Status</h2>
-            <span class="status-badge" style="background:#fff3e0; color:#e65100;">Not Used</span>
+            {% if cfg.mcp_servers.enabled %}<span class="status-badge status-configured"><span class="status-dot status-dot-green"></span> Enabled</span>{% else %}<span class="status-badge" style="background:#fff3e0; color:#e65100;">Available (Not Enabled)</span>{% endif %}
         </div>
         <div class="card-body">
             <p style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
-                This framework uses a <strong>custom agentic orchestration pattern</strong> — not MCP (Model Context Protocol).
+                This framework uses a <strong>custom agentic orchestration pattern</strong> by default. MCP servers are available as an optional layer — configure at <a href="/mcp-servers">/mcp-servers</a>.
                 Each agent follows a <code>decide() &rarr; act() &rarr; report()</code> lifecycle managed by the <code>AgenticOrchestrator</code>.
-                Inter-agent communication happens via an in-memory message bus, not MCP tool calls.
+                When MCP is enabled, each external integration also exposes tools via JSON-RPC for LLM hosts.
             </p>
             <table class="config-table" style="font-size:12px;">
                 <thead><tr><th>Aspect</th><th>This Framework</th><th>MCP Server (if used)</th></tr></thead>
@@ -3145,6 +3592,12 @@ FLOW_DIAGRAM_CONTENT = """
                 <text x="915" y="101" text-anchor="middle" fill="#00695c" font-size="11" font-weight="700">Selenium Grid</text>
                 <text x="915" y="118" text-anchor="middle" fill="#666" font-size="9">Chrome / CDP</text>
 
+                <!-- SelectorsHub (below Selenium) -->
+                <rect x="845" y="22" width="140" height="50" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="915" y="43" text-anchor="middle" fill="#e65100" font-size="11" font-weight="700">SelectorsHub</text>
+                <text x="915" y="60" text-anchor="middle" fill="#666" font-size="9">Auto-scan / Selectors</text>
+                <line x1="915" y1="72" x2="915" y2="78" stroke="#e65100" stroke-width="1.2" marker-end="url(#arrow)"/>
+
                 <!-- Connection lines from external to orchestrator -->
                 <line x1="90" y1="130" x2="90" y2="168" stroke="#0176d3" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
                 <line x1="255" y1="130" x2="255" y2="168" stroke="#7b1fa2" stroke-width="1.2" marker-end="url(#arrow)"/>
@@ -3201,12 +3654,15 @@ FLOW_DIAGRAM_CONTENT = """
                 <!-- Arrow 4->5 -->
                 <line x1="454" y1="360" x2="434" y2="360" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-                <!-- Agent 5 -->
+                <!-- Agent 5 + SelectorsHub -->
                 <rect x="237" y="326" width="195" height="68" rx="6" fill="url(#agentGrad)" stroke="#1565c0" stroke-width="1.2" filter="url(#shadow)"/>
                 <circle cx="255" cy="345" r="10" fill="#1565c0"/><text x="255" y="349" text-anchor="middle" fill="white" font-size="10" font-weight="700">5</text>
                 <text x="271" y="348" fill="#1565c0" font-size="10" font-weight="700">PageObjectAgent</text>
-                <text x="247" y="365" fill="#555" font-size="9">Generate POM (LWC/React/Angular)</text>
-                <text x="247" y="379" fill="#888" font-size="8">IN: framework &bull; OUT: POM classes</text>
+                <text x="247" y="365" fill="#555" font-size="9">SelectorsHub scan &rarr; POM (LWC/React/Angular)</text>
+                <text x="247" y="379" fill="#888" font-size="8">IN: framework + scan &bull; OUT: POM + selectors</text>
+                <!-- SelectorsHub badge on Agent 5 -->
+                <rect x="362" y="330" width="66" height="14" rx="3" fill="#e65100"/>
+                <text x="395" y="340" text-anchor="middle" fill="white" font-size="7" font-weight="600">SelectorsHub</text>
 
                 <!-- Arrow 5->6 -->
                 <line x1="237" y1="360" x2="217" y2="360" stroke="#666" stroke-width="1.2" marker-end="url(#arrow)"/>
@@ -3357,7 +3813,7 @@ FLOW_DIAGRAM_CONTENT = """
                     <tr><td style="font-weight:700; color:#5e35b1;">2</td><td>AnalysisAgent</td><td>UserStory[], App URL</td><td>Framework type, complexity, test strategy</td><td>FeatureGenerationAgent</td><td>HTTP GET to app URL (detect LWC/React/Angular)</td></tr>
                     <tr><td style="font-weight:700; color:#2e844a;">3</td><td>FeatureGenerationAgent</td><td>UserStory[], framework info</td><td>.feature files (Gherkin)</td><td>TestDataPrepAgent</td><td>None (template-based generation)</td></tr>
                     <tr><td style="font-weight:700; color:#e65100;">4</td><td>TestDataPrepAgent</td><td>.feature files, test data JSON</td><td>Data bundles per scenario</td><td>PageObjectAgent</td><td>Read <code>car_parts_test_data.json</code></td></tr>
-                    <tr><td style="font-weight:700; color:#1565c0;">5</td><td>PageObjectAgent</td><td>Framework type, field locators</td><td>POM class instances</td><td>ExecutionAgent</td><td>None (class selection based on framework)</td></tr>
+                    <tr><td style="font-weight:700; color:#1565c0;">5</td><td>PageObjectAgent</td><td>Framework type, field locators</td><td>POM class instances + selector map</td><td>ExecutionAgent</td><td>SelectorsHub scan (CSS/XPath/shadow-CSS)</td></tr>
                     <tr><td style="font-weight:700; color:#00695c;">6</td><td>ExecutionAgent</td><td>POM, data bundles, app URL</td><td>Pass/fail per scenario + step timings</td><td>ReportingAgent</td><td>Selenium WebDriver via CDP</td></tr>
                     <tr><td style="font-weight:700; color:#7b1fa2;">7</td><td>ReportingAgent</td><td>Execution results, Jira IDs</td><td>HTML (Chart.js), JUnit XML, JSON</td><td>DeploymentAgent</td><td>File system write to <code>test-reports/</code></td></tr>
                     <tr><td style="font-weight:700; color:#2e844a;">8</td><td>DeploymentAgent</td><td>Reports, Copado config</td><td>copado__Test_Run__c, copado__Deployment__c</td><td>FeedbackAgent</td><td>Copado REST API (6-stage pipeline)</td></tr>
@@ -3367,43 +3823,48 @@ FLOW_DIAGRAM_CONTENT = """
         </div>
     </div>
 
-    <!-- Optional MCP Architecture -->
+    <!-- MCP Server Architecture -->
     <div class="card" style="margin-top:20px;">
         <div class="card-header">
-            <h2>Optional MCP Server Architecture</h2>
-            <span style="font-size:12px; color:var(--text-light);">How this framework could use MCP</span>
+            <h2>MCP Server Architecture</h2>
+            <span style="font-size:12px; color:var(--text-light);">Configurable at <a href="/mcp-servers">/mcp-servers</a></span>
         </div>
         <div class="card-body">
             <p style="font-size:13px; color:var(--text-light); margin-bottom:16px;">
-                If refactored to use MCP (Model Context Protocol), each external integration would become an MCP server exposing tools to an LLM host:
+                Each external integration can be exposed as an MCP (Model Context Protocol) server, allowing any MCP-compatible LLM host (Claude Desktop, GPT, Cursor) to invoke them as tools. Configure at <a href="/mcp-servers">/mcp-servers</a>.
             </p>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
                 <div style="background:#e3f2fd; border:1px solid #0176d3; border-radius:8px; padding:12px;">
                     <div style="font-size:12px; font-weight:700; color:#0176d3; margin-bottom:6px;">Jira MCP Server</div>
                     <div style="font-size:11px; color:#555;">Tools: <code>search_stories</code>, <code>get_story</code>, <code>update_status</code></div>
-                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Port 3001 &bull; JSON-RPC over stdio</div>
                 </div>
                 <div style="background:#e0f2f1; border:1px solid #00695c; border-radius:8px; padding:12px;">
                     <div style="font-size:12px; font-weight:700; color:#00695c; margin-bottom:6px;">Selenium MCP Server</div>
                     <div style="font-size:11px; color:#555;">Tools: <code>run_scenario</code>, <code>click</code>, <code>fill_form</code>, <code>screenshot</code></div>
-                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over SSE</div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Port 3002 &bull; JSON-RPC over SSE</div>
                 </div>
                 <div style="background:#e8f5e9; border:1px solid #2e844a; border-radius:8px; padding:12px;">
                     <div style="font-size:12px; font-weight:700; color:#2e844a; margin-bottom:6px;">Copado MCP Server</div>
                     <div style="font-size:11px; color:#555;">Tools: <code>create_test_run</code>, <code>upload_results</code>, <code>trigger_deploy</code></div>
-                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Port 3003 &bull; JSON-RPC over stdio</div>
                 </div>
                 <div style="background:#f3e5f5; border:1px solid #7b1fa2; border-radius:8px; padding:12px;">
                     <div style="font-size:12px; font-weight:700; color:#7b1fa2; margin-bottom:6px;">GitHub MCP Server</div>
                     <div style="font-size:11px; color:#555;">Tools: <code>list_commits</code>, <code>get_diff</code>, <code>create_pr</code></div>
-                    <div style="font-size:10px; color:#888; margin-top:4px;">Protocol: JSON-RPC over stdio</div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Port 3004 &bull; JSON-RPC over stdio</div>
+                </div>
+                <div style="background:#fff3e0; border:1px solid #e65100; border-radius:8px; padding:12px;">
+                    <div style="font-size:12px; font-weight:700; color:#e65100; margin-bottom:6px;">SelectorsHub MCP Server</div>
+                    <div style="font-size:11px; color:#555;">Tools: <code>scan_page</code>, <code>get_selectors</code>, <code>generate_pom</code>, <code>scan_shadow_dom</code></div>
+                    <div style="font-size:10px; color:#888; margin-top:4px;">Port 3005 &bull; JSON-RPC over stdio</div>
                 </div>
             </div>
-            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #ff9800;">
+            <div style="margin-top:16px; padding:12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #0176d3;">
                 <p style="font-size:12px; color:#555; margin:0;">
                     <strong>Current approach:</strong> Direct API calls from each agent — faster, no MCP overhead, tightly coupled.<br>
                     <strong>MCP approach:</strong> Each tool exposed as MCP server — composable, any LLM host can call them, loosely coupled.<br>
-                    <strong>Recommendation:</strong> Use MCP when you need the same Jira/Selenium/Copado tools callable by different AI assistants (Claude Desktop, GPT, Cursor, etc.).
+                    <strong>Enable MCP:</strong> Configure at <a href="/mcp-servers">/mcp-servers</a> and add <code>mcp.json</code> to your LLM host (Claude Desktop, etc.).
                 </p>
             </div>
         </div>
@@ -3445,6 +3906,8 @@ if __name__ == "__main__":
     print(f"  GitHub:     http://localhost:5556/github-config")
     print(f"  Copado:     http://localhost:5556/copado-config")
     print(f"  Reports:    http://localhost:5556/report-config")
+    print(f"  SelectorsHub: http://localhost:5556/selectorshub-config")
+    print(f"  MCP Servers: http://localhost:5556/mcp-servers")
     print(f"  Flow Diagram: http://localhost:5556/flow-diagram")
     print(f"  API:        http://localhost:5556/api/config")
     print("=" * 60 + "\n")

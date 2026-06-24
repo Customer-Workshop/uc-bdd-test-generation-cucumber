@@ -55,6 +55,9 @@ Each agent follows the `decide() -> act() -> report()` lifecycle defined in `Bas
 | GitHub | `/github-config` | Repo URL, branch, workflow file, auto-trigger |
 | Copado | `/copado-config` | Instance URL, API token, pipeline ID, environment |
 | Reports | `/report-config` | Inline HTML report with Chart.js charts + Copado deploy status |
+| SelectorsHub | `/selectorshub-config` | Auto-scan settings, shadow DOM, XPath, selector priority |
+| MCP Servers | `/mcp-servers` | Enable/configure 5 MCP servers (Jira, Selenium, Copado, GitHub, SelectorsHub) |
+| Flow Diagram | `/flow-diagram` | SVG architecture diagram with agent pipeline, data flow, MCP comparison |
 | API | `/api/config` | JSON endpoint for current config (tokens masked) |
 
 ## Quick Start (Local)
@@ -292,6 +295,66 @@ The DeploymentAgent (Step 8) executes a 6-stage Copado promotion flow:
 Environment promotion path: **DEV → SIT → UAT → STAGING → PRODUCTION**
 
 Configure at `/copado-config`. The pipeline stages are visible on both the Workflow page and during Execute runs.
+
+## SelectorsHub Integration
+
+[SelectorsHub](https://selectorshub.com/) is integrated into the **PageObjectAgent (Step 5)** to auto-scan target applications and generate optimal selectors for POM classes.
+
+**How it works:**
+1. **Scan** — Crawl target app pages via Selenium/CDP
+2. **Discover** — Find all interactive elements (inputs, buttons, dropdowns, links)
+3. **Generate** — Produce multiple selector types per element (CSS, XPath, shadow-CSS, relative XPath)
+4. **Inject** — Feed selectors into POM classes for test execution
+
+**Supported selector types:**
+
+| Type | Example | Use Case |
+|------|---------|----------|
+| CSS | `lightning-input[data-field="Part_Name__c"]` | Default, fastest |
+| Shadow CSS | `lightning-input >>> input.slds-input` | Salesforce LWC shadow DOM |
+| XPath | `//lightning-input[@data-field]//input` | Flexible fallback |
+| data-testid | `[data-testid="part-name-input"]` | React best practice |
+| formControlName | `[formControlName="partName"]` | Angular Reactive Forms |
+
+Configure at `/selectorshub-config`. Settings: auto-scan, shadow DOM support, iFrame support, scan depth, selector priority order.
+
+## MCP Server Architecture
+
+The framework supports optional **MCP (Model Context Protocol)** servers that expose each integration as tools for LLM hosts (Claude Desktop, GPT, Cursor).
+
+| MCP Server | Port | Tools |
+|------------|------|-------|
+| Jira | 3001 | `search_stories`, `get_story`, `update_status`, `get_acceptance_criteria` |
+| Selenium | 3002 | `run_scenario`, `click_element`, `fill_form`, `screenshot`, `wait_for_element` |
+| Copado | 3003 | `create_test_run`, `upload_results`, `attach_reports`, `trigger_deployment` |
+| GitHub | 3004 | `list_commits`, `get_diff`, `create_pr`, `trigger_workflow` |
+| SelectorsHub | 3005 | `scan_page`, `get_selectors`, `generate_pom`, `scan_shadow_dom` |
+
+**Default architecture** uses direct API calls from agents (no MCP overhead). Enable MCP at `/mcp-servers` when you need these tools callable by external LLM hosts.
+
+**MCP config for Claude Desktop** (`mcp.json`):
+```json
+{
+  "mcpServers": {
+    "jira-bdd": { "command": "python", "args": ["-m", "mcp_servers.jira_server"] },
+    "selenium-bdd": { "command": "python", "args": ["-m", "mcp_servers.selenium_server"] },
+    "copado-bdd": { "command": "python", "args": ["-m", "mcp_servers.copado_server"] },
+    "selectorshub-bdd": { "command": "python", "args": ["-m", "mcp_servers.selectorshub_server"] }
+  }
+}
+```
+
+## Flow Diagram
+
+Visual architecture diagram available at `/flow-diagram` showing:
+- 7 external systems (Jira, GitHub, Salesforce UI, LLM, Copado, Selenium, SelectorsHub)
+- AgenticOrchestrator with `decide() → act() → report()` lifecycle
+- 9-agent pipeline layout with I/O labels
+- Copado 6-stage pipeline detail
+- Environment promotion path (DEV → SIT → UAT → STAGING → PRODUCTION)
+- Data flow (Jira Stories → .feature → Test Data → POM → Results → Reports)
+- MCP server architecture comparison
+- Agent communication sequence table
 
 ## Project Structure
 
