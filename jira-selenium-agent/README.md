@@ -172,7 +172,7 @@ cp .env.example .env
 
 ### Portal Configuration (automation_config.json)
 
-All settings from the Configuration Portal are persisted to `sample-automation/automation_config.json`. This file is auto-created on first portal run. Settings can also be configured via the portal UI at `http://localhost:5556`.
+All settings from the Configuration Portal are persisted to `config/automation_config.json`. This file is auto-created on first portal run. Settings can also be configured via the portal UI at `http://localhost:5556`.
 
 ## Multi-UI Framework Support
 
@@ -190,7 +190,7 @@ Detection is automatic via `UIAgent` which checks for `$A` (Aura), `lightning-ap
 
 ### Default Test Data
 
-6 test scenarios pre-loaded in `sample-automation/car_parts_test_data.json`:
+6 test scenarios pre-loaded in `test-data/car_parts_test_data.json`:
 
 | Scenario | Jira ID | Fields |
 |----------|---------|--------|
@@ -210,7 +210,7 @@ Part Category (12), Part Sub-Category (42 dependent), Manufacturer (23), Conditi
 Upload your own JSON via the portal at `http://localhost:5556/upload` or place a file at:
 
 ```
-jira-selenium-agent/sample-automation/car_parts_test_data.json
+jira-selenium-agent/test-data/car_parts_test_data.json
 ```
 
 Expected format:

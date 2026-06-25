@@ -108,7 +108,7 @@ class TestExecutionReport:
 class ReportGenerator:
     """Generates test execution reports for CI/CD integration."""
 
-    REPORT_DIR = "test-reports"
+    REPORT_DIR = "reports"
 
     def __init__(self, output_dir: str = None):
         self.output_dir = Path(output_dir or self.REPORT_DIR)

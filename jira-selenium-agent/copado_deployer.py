@@ -440,7 +440,7 @@ class CopadoDeployer:
                     "steps": steps_detail,
                 })
 
-        report_dir = Path("test-reports")
+        report_dir = Path("reports")
         report_dir.mkdir(parents=True, exist_ok=True)
         report_path = report_dir / f"copado-report-{report.run_id}.json"
         report_path.write_text(json.dumps(copado_report, indent=2), encoding="utf-8")

@@ -51,9 +51,18 @@ class CarPartsTestRunner:
         self.copado_deployer = CopadoDeployer(self.config)
         self.test_data_agent = TestDataAgent(self.config)
         self.test_data = self._load_test_data()
-        self.features_dir = Path(__file__).parent.parent / "features" / "car-parts"
-        self.feature_path = self.features_dir
+        self.features_dir = Path(__file__).parent.parent / "features"
+        self.feature_path = self._discover_features()
         self.scenarios: list[ScenarioResult] = []
+
+    def _discover_features(self) -> Path:
+        """Discover feature files dynamically from the features directory."""
+        feature_files = sorted(self.features_dir.rglob("*.feature"))
+        if feature_files:
+            logger.info("Discovered %d feature files in %s", len(feature_files), self.features_dir)
+            for f in feature_files:
+                logger.info("  -> %s", f.relative_to(self.features_dir))
+        return self.features_dir
 
     def _load_test_data(self) -> dict:
         """Load test data from JSON file."""

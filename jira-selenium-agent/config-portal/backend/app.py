@@ -117,6 +117,40 @@ def upload_test_data():
     return jsonify({"message": "Test data uploaded", "records": len(data)})
 
 
+# ─── Features API ─────────────────────────────────────────────────────────────
+
+FEATURES_DIR = BASE_DIR.parent.parent / "features"
+
+
+@app.route('/api/features', methods=['GET'])
+def list_features():
+    """List all generated feature files, grouped by app and category."""
+    result = {}
+    if FEATURES_DIR.exists():
+        for app_dir in sorted(FEATURES_DIR.iterdir()):
+            if app_dir.is_dir():
+                app_name = app_dir.name
+                result[app_name] = {}
+                for cat_dir in sorted(app_dir.iterdir()):
+                    if cat_dir.is_dir():
+                        files = sorted([
+                            {"name": f.name, "path": str(f.relative_to(FEATURES_DIR))}
+                            for f in cat_dir.glob("*.feature")
+                        ], key=lambda x: x["name"])
+                        if files:
+                            result[app_name][cat_dir.name] = files
+    return jsonify(result)
+
+
+@app.route('/api/features/<path:feature_path>', methods=['GET'])
+def get_feature_content(feature_path):
+    """Read the content of a specific feature file."""
+    fp = FEATURES_DIR / feature_path
+    if fp.exists() and fp.suffix == '.feature':
+        return jsonify({"path": feature_path, "content": fp.read_text(encoding="utf-8")})
+    return jsonify({"error": "Feature file not found"}), 404
+
+
 # ─── Serve React App ──────────────────────────────────────────────────────────
 
 @app.route('/static/<path:filename>')

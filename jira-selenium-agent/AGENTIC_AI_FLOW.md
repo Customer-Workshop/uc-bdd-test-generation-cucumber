@@ -465,11 +465,26 @@ jira-selenium-agent/
 ├── requirements.txt                  # Python dependencies
 ├── .env.example                      # Environment variable template
 │
-└── sample-automation/                # Car Parts E2E Example
-    ├── car_parts_page_objects.py     # LWC page objects (12 dropdowns)
-    ├── car_parts_e2e.feature         # 10 Gherkin scenarios
-    ├── car_parts_test_data.json      # Test data + dropdown dependency map
-    └── car_parts_runner.py           # Standalone runner with reports
+├── features/                         # Generated Gherkin feature files (dynamic)
+│   └── car-parts/                   # Auto-created per scanned app
+│       ├── create/                  # CAR-1001 to CAR-1004
+│       ├── read/                    # CAR-1005, CAR-1007, CAR-1008
+│       ├── update/                  # CAR-1006
+│       ├── delete/                  # CAR-1009
+│       └── validation/              # CAR-1010
+│
+├── runners/                         # Test execution code
+│   ├── car_parts_runner.py          # Standalone runner with reports
+│   ├── car_parts_page_objects.py    # LWC page objects (12 dropdowns)
+│   └── selenium_e2e_runner.py       # Selenium execution engine
+│
+├── test-data/                       # Test data files
+│   └── car_parts_test_data.json     # Test data + dropdown dependency map
+│
+├── config/                          # Configuration files
+│   └── automation_config.json       # Portal config (auto-generated)
+│
+└── reports/                         # Generated test reports
 ```
 
 ---

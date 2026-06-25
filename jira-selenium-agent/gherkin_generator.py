@@ -53,18 +53,23 @@ class GherkinGenerator:
 
         return "\n".join(lines)
 
-    def generate_and_save(self, story: UserStory) -> Path:
+    def generate_and_save(self, story: UserStory, app_name: str = "") -> Path:
         """Generate a feature file and save it to disk.
 
         Args:
             story: The UserStory to convert.
+            app_name: Optional app name for subfolder (auto-derived from story key if empty).
 
         Returns:
             Path to the created feature file.
         """
         content = self.generate_feature_file(story)
         filename = self._story_to_filename(story)
-        output_path = Path(self.config.output_dir) / filename
+
+        # Dynamic subfolder: features/{app-name}/{category}/
+        subfolder = app_name or self._derive_app_folder(story)
+        category = self._categorize_story(story)
+        output_path = Path(self.config.output_dir) / subfolder / category / filename
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -403,8 +408,34 @@ class GherkinGenerator:
 
     def _story_to_filename(self, story: UserStory) -> str:
         """Convert a user story to a feature file name."""
-        name = re.sub(r"[^a-zA-Z0-9]+", "-", story.summary).strip("-").lower()
-        return f"{story.key.lower()}-{name}.feature"
+        name = re.sub(r"[^a-zA-Z0-9]+", "_", story.summary).strip("_").lower()
+        return f"{story.key}_{name}.feature"
+
+    def _derive_app_folder(self, story: UserStory) -> str:
+        """Derive app folder name from the story key prefix (e.g. CAR -> car-parts)."""
+        prefix = story.key.split("-")[0].lower() if "-" in story.key else story.key.lower()
+        return prefix
+
+    def _categorize_story(self, story: UserStory) -> str:
+        """Categorize story into CRUD subfolder based on summary/labels."""
+        summary_lower = story.summary.lower()
+        labels_lower = [l.lower() for l in story.labels]
+
+        if any(kw in summary_lower for kw in ["create", "add", "new", "insert"]):
+            return "create"
+        if any(kw in summary_lower for kw in ["edit", "update", "modify", "change"]):
+            return "update"
+        if any(kw in summary_lower for kw in ["delete", "remove"]):
+            return "delete"
+        if any(kw in summary_lower for kw in ["valid", "required", "error"]):
+            return "validation"
+        if any(kw in labels_lower for kw in ["create"]):
+            return "create"
+        if any(kw in labels_lower for kw in ["edit", "update"]):
+            return "update"
+        if any(kw in labels_lower for kw in ["delete"]):
+            return "delete"
+        return "general"
 
     def _sanitize_step_text(self, text: str) -> str:
         """Sanitize text for use in a Gherkin step."""

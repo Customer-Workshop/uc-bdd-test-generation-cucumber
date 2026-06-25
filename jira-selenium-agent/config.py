@@ -34,7 +34,7 @@ class OutputConfig:
     """Feature file output configuration."""
     output_dir: str = os.getenv(
         "FEATURE_OUTPUT_DIR",
-        "src/test/resources/features/generated"
+        "features"
     )
     step_definitions_dir: str = os.getenv(
         "STEP_DEFINITIONS_DIR",
