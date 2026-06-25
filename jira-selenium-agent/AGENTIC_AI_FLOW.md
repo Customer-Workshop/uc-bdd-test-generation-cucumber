@@ -144,7 +144,7 @@ Feature: Create Engine Component Car Part in Salesforce LWC
 
 **Test Data Bundle (per story):**
 ```
-src/test/test-data/CAR-1001/
+test-data/CAR-1001/
 ├── test-data.json          # Field values, dropdown options
 ├── test-manifest.json      # Story metadata, feature path, app URL
 └── selenium-config.json    # Browser config, timeouts, base URL
@@ -152,7 +152,7 @@ src/test/test-data/CAR-1001/
 
 **Outputs:**
 - `context.test_data`: Dict of story_key → TestDataSet
-- Files written to `src/test/test-data/{story_key}/`
+- Files written to `test-data/{story_key}/`
 - Message to PageObjectAgent: `test_data_ready`
 
 **Code:** `agentic_orchestrator.py → TestDataPreparationAgent`, `test_data_agent.py`

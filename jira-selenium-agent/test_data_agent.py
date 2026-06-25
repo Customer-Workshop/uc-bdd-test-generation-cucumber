@@ -45,7 +45,7 @@ class TestDataAgent:
 
     def __init__(self, config: AgentConfig):
         self.config = config
-        self.base_dir = Path(config.output.output_dir).parent.parent.parent
+        self.base_dir = Path(config.output.output_dir).parent
         self._ensure_directories()
 
     def _ensure_directories(self):
