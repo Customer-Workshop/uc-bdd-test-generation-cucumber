@@ -1,0 +1,367 @@
+{
+  "testRunName": "BDD Test Run - agentic-1781789858",
+  "timestamp": "2026-06-18T13:37:38.945810+00:00",
+  "environment": "salesforce-lwc",
+  "status": "Passed",
+  "summary": {
+    "totalTests": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "passRate": 100.0,
+    "duration": 9640.908121793773
+  },
+  "testResults": [
+    {
+      "testName": "Create Engine Component Car Part in Salesforce LWC",
+      "testClass": "CAR-1001.Create Engine Component Car Part in Salesforce LWC",
+      "status": "Pass",
+      "duration": 1.0000217632441868,
+      "storyKey": "CAR-1001",
+      "tags": [
+        "@CAR-1001",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is logged in to Salesforce",
+          "status": "passed",
+          "duration": 316.72854216556675,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user fills the Car Part form with Part Category \"Engine Components\" and sub-category \"Turbocharger\"",
+          "status": "passed",
+          "duration": 303.3368486565158,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the car part record should be created successfully",
+          "status": "passed",
+          "duration": 379.9563724221043,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create Braking System Car Part with Dependent Picklists",
+      "testClass": "CAR-1002.Create Braking System Car Part with Dependent Picklists",
+      "status": "Pass",
+      "duration": 1.0180646533813351,
+      "storyKey": "CAR-1002",
+      "tags": [
+        "@CAR-1002",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts creation form",
+          "status": "passed",
+          "duration": 249.03819553876156,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Braking System\" from Part Category",
+          "status": "passed",
+          "duration": 399.50223373384847,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the Part Sub-Category dropdown should show braking-related options",
+          "status": "passed",
+          "duration": 369.52422410872504,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create Suspension Car Part",
+      "testClass": "CAR-1003.Create Suspension Car Part",
+      "status": "Pass",
+      "duration": 0.9436313117180846,
+      "storyKey": "CAR-1003",
+      "tags": [
+        "@CAR-1003",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 226.6390519966758,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user creates a new Suspension part with Coilover Kit details",
+          "status": "passed",
+          "duration": 228.7231628149398,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the record is saved with all fields populated",
+          "status": "passed",
+          "duration": 488.269096906469,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create Electrical and Lighting Car Part",
+      "testClass": "CAR-1004.Create Electrical and Lighting Car Part",
+      "status": "Pass",
+      "duration": 1.158018655783261,
+      "storyKey": "CAR-1004",
+      "tags": [
+        "@CAR-1004",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 301.50106139021455,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user creates a new Electrical part",
+          "status": "passed",
+          "duration": 468.5033594775921,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the LED Headlight record is created",
+          "status": "passed",
+          "duration": 388.0142349154544,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Traverse All Dropdown Fields and Verify Values",
+      "testClass": "CAR-1005.Traverse All Dropdown Fields and Verify Values",
+      "status": "Pass",
+      "duration": 1.0921628878839087,
+      "storyKey": "CAR-1005",
+      "tags": [
+        "@CAR-1005",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the Car Part creation form is displayed",
+          "status": "passed",
+          "duration": 313.618350574623,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens each dropdown field",
+          "status": "passed",
+          "duration": 460.866546081114,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "all expected picklist values should be present",
+          "status": "passed",
+          "duration": 317.6779912281719,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Edit Existing Car Part and Update Dropdowns",
+      "testClass": "CAR-1006.Edit Existing Car Part and Update Dropdowns",
+      "status": "Pass",
+      "duration": 0.9928748559051326,
+      "storyKey": "CAR-1006",
+      "tags": [
+        "@CAR-1006",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "an existing car part record is displayed",
+          "status": "passed",
+          "duration": 339.9935469002341,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user edits dropdown fields and saves",
+          "status": "passed",
+          "duration": 493.49798257577055,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the updated values should be reflected on the record",
+          "status": "passed",
+          "duration": 159.38332642912792,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Search and Filter Car Parts",
+      "testClass": "CAR-1007.Search and Filter Car Parts",
+      "status": "Pass",
+      "duration": 0.8655800292282215,
+      "storyKey": "CAR-1007",
+      "tags": [
+        "@CAR-1007",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 395.61583111154613,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user searches and filters",
+          "status": "passed",
+          "duration": 276.61279058777063,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "matching results should be displayed",
+          "status": "passed",
+          "duration": 193.35140752890464,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Verify Dependent Picklist Behavior",
+      "testClass": "CAR-1008.Verify Dependent Picklist Behavior",
+      "status": "Pass",
+      "duration": 1.178492310453391,
+      "storyKey": "CAR-1008",
+      "tags": [
+        "@CAR-1008",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the Car Part form is open",
+          "status": "passed",
+          "duration": 438.72369738972,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user changes Part Category",
+          "status": "passed",
+          "duration": 432.86406319450987,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "Part Sub-Category options should update accordingly",
+          "status": "passed",
+          "duration": 306.90454986916126,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Delete Car Part Record",
+      "testClass": "CAR-1009.Delete Car Part Record",
+      "status": "Pass",
+      "duration": 0.6021905297052527,
+      "storyKey": "CAR-1009",
+      "tags": [
+        "@CAR-1009",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "a car part record exists",
+          "status": "passed",
+          "duration": 116.31172254359666,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user deletes the record",
+          "status": "passed",
+          "duration": 90.01577825485799,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the record should be removed and a success message shown",
+          "status": "passed",
+          "duration": 395.863028906798,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Validate Required Fields on Car Part Form",
+      "testClass": "CAR-1010.Validate Required Fields on Car Part Form",
+      "status": "Pass",
+      "duration": 0.7898711244909983,
+      "storyKey": "CAR-1010",
+      "tags": [
+        "@CAR-1010",
+        "@ui"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Part creation form",
+          "status": "passed",
+          "duration": 487.4522637908908,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks Save without filling required fields",
+          "status": "passed",
+          "duration": 103.41952455704302,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "validation errors should be displayed for all required fields",
+          "status": "passed",
+          "duration": 198.99933614306437,
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "reportFiles": {
+    "json": "test-reports/report-agentic-1781789858.json",
+    "html": "test-reports/report-agentic-1781789858.html",
+    "junit_xml": "test-reports/report-agentic-1781789858.xml",
+    "summary": "test-reports/report-agentic-1781789858.txt"
+  },
+  "copadoMetadata": {
+    "format": "copado-test-result-v2",
+    "source": "jira-selenium-gherkin-agent",
+    "pipelineReady": true
+  }
+}

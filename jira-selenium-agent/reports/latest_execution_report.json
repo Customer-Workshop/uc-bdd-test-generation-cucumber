@@ -1,6 +1,6 @@
 {
-  "run_id": "15f5d180-7b22-4a39-a6dd-90b5dabf3e31",
-  "run_time": "2026-06-23T14:18:05.054661",
+  "run_id": "18676623-1a71-45c1-8dba-c6a73e26dca4",
+  "run_time": "2026-06-24T12:30:28.318783",
   "app_url": "http://localhost:5555",
   "scenarios": [
     {
@@ -22,7 +22,7 @@
         "Fill Description field",
         "Click Save and verify success toast"
       ],
-      "duration": 1.58,
+      "duration": 4.11,
       "status": "PASSED"
     },
     {
@@ -43,7 +43,7 @@
         "Select Vehicle Make, Year Range, Availability, Warehouse, Quality, Shipping, Warranty",
         "Click Save and verify success toast"
       ],
-      "duration": 2.53,
+      "duration": 3.99,
       "status": "PASSED"
     },
     {
@@ -64,7 +64,7 @@
         "Select Warehouse, Quality, Shipping, Warranty",
         "Click Save and verify success toast"
       ],
-      "duration": 3.07,
+      "duration": 2.51,
       "status": "PASSED"
     },
     {
@@ -86,7 +86,7 @@
         "Select Shipping: Oversized, Warranty: Manufacturer Warranty",
         "Click Save and verify success toast"
       ],
-      "duration": 3.78,
+      "duration": 4.21,
       "status": "PASSED"
     },
     {
@@ -107,7 +107,7 @@
         "Update Unit Price and Stock Quantity",
         "Click Save and verify success toast"
       ],
-      "duration": 3.07,
+      "duration": 2.14,
       "status": "PASSED"
     },
     {
@@ -124,7 +124,7 @@
         "Confirm deletion in modal",
         "Verify success toast and redirect to list view"
       ],
-      "duration": 2.37,
+      "duration": 1.2,
       "status": "PASSED"
     }
   ],

@@ -106,10 +106,10 @@ Features: 15 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, 
 Open a third terminal:
 
 ```bash
-python sample-automation/car_parts_runner.py
+python runners/car_parts_runner.py
 ```
 
-Runs 11 BDD scenarios (142 steps) against the mock Salesforce app. Generates reports in `test-reports/`.
+Runs 10 BDD scenarios against the mock Salesforce app. Feature files from `features/car-parts/`, test data from `test-data/`, reports output to `reports/`.
 
 ### 5. Run the Agentic Orchestrator
 
@@ -420,13 +420,22 @@ jira-selenium-agent/
       validation/             # Validation scenarios
         CAR-1010_validate_required_fields.feature
 
-  sample-automation/
+  runners/                    # Test execution code
     car_parts_runner.py       # E2E test runner
     car_parts_page_objects.py # Car Parts POM classes
-    car_parts_test_data.json  # Test data (6 scenarios, 12 dropdowns)
-    latest_execution_report.json  # Persisted report from last pipeline run
-    automation_config.json    # Portal config (auto-generated)
     selenium_e2e_runner.py    # Selenium execution engine
+
+  test-data/                  # Test data files
+    car_parts_test_data.json  # Test data (6 scenarios, 12 dropdowns)
+
+  config/                     # Configuration files
+    automation_config.json    # Portal config (auto-generated)
+
+  reports/                    # Generated test reports
+    latest_execution_report.json  # Latest pipeline run report
+    report-*.html             # HTML reports with Chart.js
+    report-*.xml              # JUnit XML reports
+    report-*.json             # JSON reports
 ```
 
 ## CI/CD

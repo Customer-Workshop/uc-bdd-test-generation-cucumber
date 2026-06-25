@@ -1,0 +1,59 @@
+{
+  "app_url": "http://localhost:5555",
+  "ui_framework": "salesforce",
+  "selenium": {
+    "browser": "chrome",
+    "cdp_url": "http://localhost:29229",
+    "headless": false,
+    "implicit_wait": 10,
+    "page_load_timeout": 30,
+    "screenshot_on_failure": true
+  },
+  "github": {
+    "repo_url": "",
+    "branch": "main",
+    "workflow_file": "bdd-test-agent.yml",
+    "auto_trigger": false
+  },
+  "jira": {
+    "server_url": "",
+    "username": "",
+    "api_token": "",
+    "project_key": "",
+    "story_status": "To Do",
+    "auto_fetch": false
+  },
+  "copado": {
+    "enabled": false,
+    "instance_url": "",
+    "api_token": "",
+    "pipeline_id": "",
+    "deploy_on_pass": true,
+    "environment": "UAT"
+  },
+  "reports": {
+    "format": "html",
+    "output_dir": "test-reports",
+    "generate_junit_xml": true,
+    "generate_json": true
+  },
+  "ai_model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "api_key": "",
+    "temperature": 0.3,
+    "max_tokens": 4096,
+    "auto_detect_fields": true,
+    "auto_detect_screens": true,
+    "auto_update_tests": true,
+    "auto_update_pom": true,
+    "auto_update_reports": true,
+    "diff_analysis": true
+  },
+  "test_data": {
+    "file_name": null,
+    "file_path": null,
+    "records_count": 6,
+    "upload_time": null
+  }
+}

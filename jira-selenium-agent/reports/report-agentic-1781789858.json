@@ -1,0 +1,460 @@
+{
+  "run_id": "agentic-1781789858",
+  "timestamp": "2026-06-18T13:37:38.945810+00:00",
+  "environment": "salesforce-lwc",
+  "app_url": "http://localhost:8080",
+  "summary": {
+    "total_features": 10,
+    "total_scenarios": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "pass_rate": 100.0,
+    "total_steps": 30,
+    "passed_steps": 30,
+    "duration_ms": 9640.908121793773
+  },
+  "features": [
+    {
+      "name": "Create Engine Component Car Part in Salesforce LWC",
+      "story_key": "CAR-1001",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 1000.0217632441869,
+      "scenarios": [
+        {
+          "name": "Create Engine Component Car Part in Salesforce LWC",
+          "status": "passed",
+          "tags": [
+            "@CAR-1001",
+            "@ui"
+          ],
+          "duration_ms": 1000.0217632441869,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is logged in to Salesforce",
+              "status": "passed",
+              "duration_ms": 316.72854216556675,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user fills the Car Part form with Part Category \"Engine Components\" and sub-category \"Turbocharger\"",
+              "status": "passed",
+              "duration_ms": 303.3368486565158,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the car part record should be created successfully",
+              "status": "passed",
+              "duration_ms": 379.9563724221043,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Braking System Car Part with Dependent Picklists",
+      "story_key": "CAR-1002",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 1018.0646533813351,
+      "scenarios": [
+        {
+          "name": "Create Braking System Car Part with Dependent Picklists",
+          "status": "passed",
+          "tags": [
+            "@CAR-1002",
+            "@ui"
+          ],
+          "duration_ms": 1018.0646533813351,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts creation form",
+              "status": "passed",
+              "duration_ms": 249.03819553876156,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Braking System\" from Part Category",
+              "status": "passed",
+              "duration_ms": 399.50223373384847,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the Part Sub-Category dropdown should show braking-related options",
+              "status": "passed",
+              "duration_ms": 369.52422410872504,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Suspension Car Part",
+      "story_key": "CAR-1003",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 943.6313117180846,
+      "scenarios": [
+        {
+          "name": "Create Suspension Car Part",
+          "status": "passed",
+          "tags": [
+            "@CAR-1003",
+            "@ui"
+          ],
+          "duration_ms": 943.6313117180846,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 226.6390519966758,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user creates a new Suspension part with Coilover Kit details",
+              "status": "passed",
+              "duration_ms": 228.7231628149398,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the record is saved with all fields populated",
+              "status": "passed",
+              "duration_ms": 488.269096906469,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Electrical and Lighting Car Part",
+      "story_key": "CAR-1004",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 1158.018655783261,
+      "scenarios": [
+        {
+          "name": "Create Electrical and Lighting Car Part",
+          "status": "passed",
+          "tags": [
+            "@CAR-1004",
+            "@ui"
+          ],
+          "duration_ms": 1158.018655783261,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 301.50106139021455,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user creates a new Electrical part",
+              "status": "passed",
+              "duration_ms": 468.5033594775921,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the LED Headlight record is created",
+              "status": "passed",
+              "duration_ms": 388.0142349154544,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Traverse All Dropdown Fields and Verify Values",
+      "story_key": "CAR-1005",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 1092.1628878839088,
+      "scenarios": [
+        {
+          "name": "Traverse All Dropdown Fields and Verify Values",
+          "status": "passed",
+          "tags": [
+            "@CAR-1005",
+            "@ui"
+          ],
+          "duration_ms": 1092.1628878839088,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the Car Part creation form is displayed",
+              "status": "passed",
+              "duration_ms": 313.618350574623,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens each dropdown field",
+              "status": "passed",
+              "duration_ms": 460.866546081114,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "all expected picklist values should be present",
+              "status": "passed",
+              "duration_ms": 317.6779912281719,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Edit Existing Car Part and Update Dropdowns",
+      "story_key": "CAR-1006",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 992.8748559051326,
+      "scenarios": [
+        {
+          "name": "Edit Existing Car Part and Update Dropdowns",
+          "status": "passed",
+          "tags": [
+            "@CAR-1006",
+            "@ui"
+          ],
+          "duration_ms": 992.8748559051326,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "an existing car part record is displayed",
+              "status": "passed",
+              "duration_ms": 339.9935469002341,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user edits dropdown fields and saves",
+              "status": "passed",
+              "duration_ms": 493.49798257577055,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the updated values should be reflected on the record",
+              "status": "passed",
+              "duration_ms": 159.38332642912792,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Search and Filter Car Parts",
+      "story_key": "CAR-1007",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 865.5800292282215,
+      "scenarios": [
+        {
+          "name": "Search and Filter Car Parts",
+          "status": "passed",
+          "tags": [
+            "@CAR-1007",
+            "@ui"
+          ],
+          "duration_ms": 865.5800292282215,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 395.61583111154613,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user searches and filters",
+              "status": "passed",
+              "duration_ms": 276.61279058777063,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "matching results should be displayed",
+              "status": "passed",
+              "duration_ms": 193.35140752890464,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Verify Dependent Picklist Behavior",
+      "story_key": "CAR-1008",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 1178.4923104533912,
+      "scenarios": [
+        {
+          "name": "Verify Dependent Picklist Behavior",
+          "status": "passed",
+          "tags": [
+            "@CAR-1008",
+            "@ui"
+          ],
+          "duration_ms": 1178.4923104533912,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the Car Part form is open",
+              "status": "passed",
+              "duration_ms": 438.72369738972,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user changes Part Category",
+              "status": "passed",
+              "duration_ms": 432.86406319450987,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "Part Sub-Category options should update accordingly",
+              "status": "passed",
+              "duration_ms": 306.90454986916126,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Delete Car Part Record",
+      "story_key": "CAR-1009",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 602.1905297052526,
+      "scenarios": [
+        {
+          "name": "Delete Car Part Record",
+          "status": "passed",
+          "tags": [
+            "@CAR-1009",
+            "@ui"
+          ],
+          "duration_ms": 602.1905297052526,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "a car part record exists",
+              "status": "passed",
+              "duration_ms": 116.31172254359666,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user deletes the record",
+              "status": "passed",
+              "duration_ms": 90.01577825485799,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the record should be removed and a success message shown",
+              "status": "passed",
+              "duration_ms": 395.863028906798,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validate Required Fields on Car Part Form",
+      "story_key": "CAR-1010",
+      "file_path": "src/test/resources/features/generated/car-1001-create-engine-component-car-part-in-salesforce-lwc.feature",
+      "status": "passed",
+      "duration_ms": 789.8711244909982,
+      "scenarios": [
+        {
+          "name": "Validate Required Fields on Car Part Form",
+          "status": "passed",
+          "tags": [
+            "@CAR-1010",
+            "@ui"
+          ],
+          "duration_ms": 789.8711244909982,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Part creation form",
+              "status": "passed",
+              "duration_ms": 487.4522637908908,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks Save without filling required fields",
+              "status": "passed",
+              "duration_ms": 103.41952455704302,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "validation errors should be displayed for all required fields",
+              "status": "passed",
+              "duration_ms": 198.99933614306437,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {}
+}

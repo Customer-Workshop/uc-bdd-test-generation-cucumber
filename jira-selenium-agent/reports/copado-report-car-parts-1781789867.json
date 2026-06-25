@@ -1,0 +1,1829 @@
+{
+  "testRunName": "BDD Test Run - car-parts-1781789867",
+  "timestamp": "2026-06-18T13:37:47.324595+00:00",
+  "environment": "salesforce-lwc",
+  "status": "Passed",
+  "summary": {
+    "totalTests": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "passRate": 100.0,
+    "duration": 1.043558120727539
+  },
+  "testResults": [
+    {
+      "testName": "Create a new Engine Component car part with all dropdown fields",
+      "testClass": "CAR-1001.Create Engine Component Car Part",
+      "status": "Pass",
+      "duration": 6.840284020426951,
+      "storyKey": "CAR-1001",
+      "tags": [
+        "@CAR_PARTS",
+        "@create",
+        "@engine"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is logged in to Salesforce",
+          "status": "passed",
+          "duration": 111.09173075297082,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user navigates to the Car Parts application",
+          "status": "passed",
+          "duration": 56.91247131108153,
+          "error": ""
+        },
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 323.179879573183,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 195.59685994653898,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the Car Part creation form should be displayed",
+          "status": "passed",
+          "duration": 234.42108348501753,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user enters \"Turbocharger Assembly - GT3582R\" in the \"Part Name\" field",
+          "status": "passed",
+          "duration": 366.7140552581242,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"ENG-TURBO-3582R-001\" in the \"Part Number\" field",
+          "status": "passed",
+          "duration": 178.35473306345094,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Engine Components\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 424.1247011648005,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the dependent \"Part Sub-Category\" dropdown refreshes",
+          "status": "passed",
+          "duration": 225.8678568942191,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Turbocharger\" from the \"Part Sub-Category\" dropdown",
+          "status": "passed",
+          "duration": 290.4353219774815,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"BorgWarner\" from the \"Manufacturer\" dropdown",
+          "status": "passed",
+          "duration": 221.45464515997142,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"New\" from the \"Condition\" dropdown",
+          "status": "passed",
+          "duration": 311.27854577896545,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"2499.99\" in the \"Unit Price\" field",
+          "status": "passed",
+          "duration": 275.5278684096665,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"25\" in the \"Stock Quantity\" field",
+          "status": "passed",
+          "duration": 328.22897436416116,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Toyota\" from the \"Vehicle Make\" dropdown",
+          "status": "passed",
+          "duration": 50.66725739284011,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"2015-2019\" from the \"Model Year Range\" dropdown",
+          "status": "passed",
+          "duration": 357.5735450423574,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+          "status": "passed",
+          "duration": 122.45602517215387,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Warehouse A - North\" from the \"Warehouse Location\" dropdown",
+          "status": "passed",
+          "duration": 392.2026911506891,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"OEM\" from the \"Quality Grade\" dropdown",
+          "status": "passed",
+          "duration": 334.985201151421,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Freight / LTL\" from the \"Shipping Class\" dropdown",
+          "status": "passed",
+          "duration": 285.5248074787469,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"2-Year Limited\" from the \"Warranty Type\" dropdown",
+          "status": "passed",
+          "duration": 183.42891314926638,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"USD\" from the \"Currency\" dropdown",
+          "status": "passed",
+          "duration": 196.85950026462015,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters the description in the \"Description\" field",
+          "status": "passed",
+          "duration": 82.2802981336032,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"Save\" button",
+          "status": "passed",
+          "duration": 100.96495343608987,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was created\" should be displayed",
+          "status": "passed",
+          "duration": 417.82885758764394,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the Car Part record page should show \"Turbocharger Assembly - GT3582R\"",
+          "status": "passed",
+          "duration": 106.07174692466565,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Part Category\" field should display \"Engine Components\"",
+          "status": "passed",
+          "duration": 202.69935149032287,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Manufacturer\" field should display \"BorgWarner\"",
+          "status": "passed",
+          "duration": 114.44078178430064,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Condition\" field should display \"New\"",
+          "status": "passed",
+          "duration": 349.11136312859907,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create a Braking System car part with dependent picklists",
+      "testClass": "CAR-1002.Create Braking System Car Part",
+      "status": "Pass",
+      "duration": 6.729720752701877,
+      "storyKey": "CAR-1002",
+      "tags": [
+        "@CAR_PARTS",
+        "@create",
+        "@braking"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 101.82445756435528,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 72.71699943539659,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the Car Part creation form should be displayed",
+          "status": "passed",
+          "duration": 132.44333147471696,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user enters \"Performance Brake Kit - Front Axle\" in the \"Part Name\" field",
+          "status": "passed",
+          "duration": 459.91056136347294,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"BRK-PERF-FA-004\" in the \"Part Number\" field",
+          "status": "passed",
+          "duration": 216.68424705441407,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Braking System\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 298.7763270081923,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the dependent \"Part Sub-Category\" dropdown refreshes",
+          "status": "passed",
+          "duration": 154.54243651537607,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Brake Pad\" from the \"Part Sub-Category\" dropdown",
+          "status": "passed",
+          "duration": 431.556964268267,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Brembo\" from the \"Manufacturer\" dropdown",
+          "status": "passed",
+          "duration": 432.2942020546597,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"New\" from the \"Condition\" dropdown",
+          "status": "passed",
+          "duration": 471.220070046598,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"349.99\" in the \"Unit Price\" field",
+          "status": "passed",
+          "duration": 454.96658540394924,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"150\" in the \"Stock Quantity\" field",
+          "status": "passed",
+          "duration": 171.41728979296988,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"BMW\" from the \"Vehicle Make\" dropdown",
+          "status": "passed",
+          "duration": 86.56884414392627,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"2020-2026\" from the \"Model Year Range\" dropdown",
+          "status": "passed",
+          "duration": 407.18899586289683,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+          "status": "passed",
+          "duration": 453.8109494194119,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Warehouse B - South\" from the \"Warehouse Location\" dropdown",
+          "status": "passed",
+          "duration": 255.4725510774344,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Aftermarket Premium\" from the \"Quality Grade\" dropdown",
+          "status": "passed",
+          "duration": 495.4874556066674,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Express 2-Day\" from the \"Shipping Class\" dropdown",
+          "status": "passed",
+          "duration": 449.4753158180836,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Manufacturer Warranty\" from the \"Warranty Type\" dropdown",
+          "status": "passed",
+          "duration": 132.5470381865187,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"Save\" button",
+          "status": "passed",
+          "duration": 279.68084187433715,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was created\" should be displayed",
+          "status": "passed",
+          "duration": 336.40788399766905,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Part Category\" field should display \"Braking System\"",
+          "status": "passed",
+          "duration": 149.14796777797076,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Manufacturer\" field should display \"Brembo\"",
+          "status": "passed",
+          "duration": 285.57943695459414,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create a Suspension and Steering car part",
+      "testClass": "CAR-1003.Create Suspension Car Part",
+      "status": "Pass",
+      "duration": 5.1228778395718875,
+      "storyKey": "CAR-1003",
+      "tags": [
+        "@CAR_PARTS",
+        "@create",
+        "@suspension"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 489.766671598188,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 369.12182668643226,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"Coilover Suspension Kit - Adjustable\" in the \"Part Name\" field",
+          "status": "passed",
+          "duration": 94.91382210219903,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"SUS-COIL-ADJ-007\" in the \"Part Number\" field",
+          "status": "passed",
+          "duration": 251.82946525702837,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Suspension & Steering\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 346.6372747149593,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Shock Absorber\" from the \"Part Sub-Category\" dropdown",
+          "status": "passed",
+          "duration": 96.36341760251804,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"KYB\" from the \"Manufacturer\" dropdown",
+          "status": "passed",
+          "duration": 106.04642108630699,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"New\" from the \"Condition\" dropdown",
+          "status": "passed",
+          "duration": 488.61094653728526,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"899.50\" in the \"Unit Price\" field",
+          "status": "passed",
+          "duration": 278.8146006803746,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"40\" in the \"Stock Quantity\" field",
+          "status": "passed",
+          "duration": 252.98053403555465,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Honda\" from the \"Vehicle Make\" dropdown",
+          "status": "passed",
+          "duration": 221.25053497702737,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"2010-2014\" from the \"Model Year Range\" dropdown",
+          "status": "passed",
+          "duration": 324.594890381319,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Low Stock\" from the \"Availability Status\" dropdown",
+          "status": "passed",
+          "duration": 272.6299663508139,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Warehouse C - East\" from the \"Warehouse Location\" dropdown",
+          "status": "passed",
+          "duration": 304.1609097116393,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"OES\" from the \"Quality Grade\" dropdown",
+          "status": "passed",
+          "duration": 136.13819503931984,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Standard Ground\" from the \"Shipping Class\" dropdown",
+          "status": "passed",
+          "duration": 189.11140203222558,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"1-Year Limited\" from the \"Warranty Type\" dropdown",
+          "status": "passed",
+          "duration": 74.41047548516619,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"Save\" button",
+          "status": "passed",
+          "duration": 333.07476949853253,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was created\" should be displayed",
+          "status": "passed",
+          "duration": 492.42171579499717,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Create an Electrical and Lighting car part",
+      "testClass": "CAR-1004.Create Electrical Car Part",
+      "status": "Pass",
+      "duration": 4.793096999803753,
+      "storyKey": "CAR-1004",
+      "tags": [
+        "@CAR_PARTS",
+        "@create",
+        "@electrical"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 401.1492284033015,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 462.267293941787,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"LED Headlight Assembly - Projector\" in the \"Part Name\" field",
+          "status": "passed",
+          "duration": 155.2427981401218,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"ELC-LED-PROJ-012\" in the \"Part Number\" field",
+          "status": "passed",
+          "duration": 288.80452527687356,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Electrical & Lighting\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 199.3123914723544,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Headlight\" from the \"Part Sub-Category\" dropdown",
+          "status": "passed",
+          "duration": 364.08191048352836,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Hella\" from the \"Manufacturer\" dropdown",
+          "status": "passed",
+          "duration": 359.98471955937765,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"New\" from the \"Condition\" dropdown",
+          "status": "passed",
+          "duration": 309.36625877860723,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"574.00\" in the \"Unit Price\" field",
+          "status": "passed",
+          "duration": 314.7345340998098,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user enters \"75\" in the \"Stock Quantity\" field",
+          "status": "passed",
+          "duration": 125.42545313946482,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Mercedes-Benz\" from the \"Vehicle Make\" dropdown",
+          "status": "passed",
+          "duration": 381.46093021104315,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"2020-2026\" from the \"Model Year Range\" dropdown",
+          "status": "passed",
+          "duration": 88.44433380028357,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+          "status": "passed",
+          "duration": 205.2756316212256,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Warehouse E - Central\" from the \"Warehouse Location\" dropdown",
+          "status": "passed",
+          "duration": 150.557950813667,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"OEM\" from the \"Quality Grade\" dropdown",
+          "status": "passed",
+          "duration": 218.49132493317086,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Oversized\" from the \"Shipping Class\" dropdown",
+          "status": "passed",
+          "duration": 122.86879509000164,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user selects \"Manufacturer Warranty\" from the \"Warranty Type\" dropdown",
+          "status": "passed",
+          "duration": 342.7933311965718,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"Save\" button",
+          "status": "passed",
+          "duration": 102.03250978064014,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was created\" should be displayed",
+          "status": "passed",
+          "duration": 200.80307906192294,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Traverse and verify all dropdown fields and their values",
+      "testClass": "CAR-1005.Traverse All Dropdown Fields",
+      "status": "Pass",
+      "duration": 21.825303069603066,
+      "storyKey": "CAR-1005",
+      "tags": [
+        "@CAR_PARTS",
+        "@dropdowns",
+        "@traverse"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 143.0156225780877,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 444.6946533516144,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the Car Part creation form should be displayed",
+          "status": "passed",
+          "duration": 184.67653175851527,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 306.85051994916995,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 12 values",
+          "status": "passed",
+          "duration": 187.52654781248552,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Engine Components\" should be available",
+          "status": "passed",
+          "duration": 302.99085403940455,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Transmission & Drivetrain\" should be available",
+          "status": "passed",
+          "duration": 141.15443620775295,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Braking System\" should be available",
+          "status": "passed",
+          "duration": 401.18750205517085,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Suspension & Steering\" should be available",
+          "status": "passed",
+          "duration": 215.28088143059682,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Electrical & Lighting\" should be available",
+          "status": "passed",
+          "duration": 118.84416297300481,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Manufacturer\" dropdown",
+          "status": "passed",
+          "duration": 105.50290827156081,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 23 values",
+          "status": "passed",
+          "duration": 276.4784190185063,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Bosch\" should be available",
+          "status": "passed",
+          "duration": 452.4720856849541,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Denso\" should be available",
+          "status": "passed",
+          "duration": 274.6301627233986,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Continental\" should be available",
+          "status": "passed",
+          "duration": 498.77894474887836,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Delphi\" should be available",
+          "status": "passed",
+          "duration": 229.96380016518208,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Valeo\" should be available",
+          "status": "passed",
+          "duration": 471.11014544138385,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Condition\" dropdown",
+          "status": "passed",
+          "duration": 159.28082572415417,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 6 values",
+          "status": "passed",
+          "duration": 381.1563201711932,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"New\" should be available",
+          "status": "passed",
+          "duration": 333.95767989138426,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Refurbished\" should be available",
+          "status": "passed",
+          "duration": 192.1672053020629,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Used - Grade A\" should be available",
+          "status": "passed",
+          "duration": 489.0660909850195,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Used - Grade B\" should be available",
+          "status": "passed",
+          "duration": 274.0513136192569,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Used - Grade C\" should be available",
+          "status": "passed",
+          "duration": 328.9861188244734,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Availability Status\" dropdown",
+          "status": "passed",
+          "duration": 241.72268273805176,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 7 values",
+          "status": "passed",
+          "duration": 394.9493238381257,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"In Stock\" should be available",
+          "status": "passed",
+          "duration": 362.66512091316525,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Low Stock\" should be available",
+          "status": "passed",
+          "duration": 303.46488421692584,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Out of Stock\" should be available",
+          "status": "passed",
+          "duration": 213.68702195188737,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Back Ordered\" should be available",
+          "status": "passed",
+          "duration": 346.2347494484773,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Discontinued\" should be available",
+          "status": "passed",
+          "duration": 223.33860805277152,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Vehicle Make\" dropdown",
+          "status": "passed",
+          "duration": 390.68123331614225,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 21 values",
+          "status": "passed",
+          "duration": 251.5376613561473,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Toyota\" should be available",
+          "status": "passed",
+          "duration": 445.69018572073776,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Honda\" should be available",
+          "status": "passed",
+          "duration": 289.8751794587695,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Ford\" should be available",
+          "status": "passed",
+          "duration": 428.4086488107436,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Chevrolet\" should be available",
+          "status": "passed",
+          "duration": 123.53551692572745,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"BMW\" should be available",
+          "status": "passed",
+          "duration": 61.69033150431345,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Model Year Range\" dropdown",
+          "status": "passed",
+          "duration": 478.32315829826433,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 9 values",
+          "status": "passed",
+          "duration": 392.46547713957176,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2020-2026\" should be available",
+          "status": "passed",
+          "duration": 282.72848068812834,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2015-2019\" should be available",
+          "status": "passed",
+          "duration": 374.58825691517217,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2010-2014\" should be available",
+          "status": "passed",
+          "duration": 275.2698818516998,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2005-2009\" should be available",
+          "status": "passed",
+          "duration": 75.54643807885533,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2000-2004\" should be available",
+          "status": "passed",
+          "duration": 51.402835966878364,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Warehouse Location\" dropdown",
+          "status": "passed",
+          "duration": 437.5995838324936,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 7 values",
+          "status": "passed",
+          "duration": 358.7536301663755,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Warehouse A - North\" should be available",
+          "status": "passed",
+          "duration": 448.4812837927851,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Warehouse B - South\" should be available",
+          "status": "passed",
+          "duration": 144.76002026932315,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Warehouse C - East\" should be available",
+          "status": "passed",
+          "duration": 466.2399224347002,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Warehouse D - West\" should be available",
+          "status": "passed",
+          "duration": 329.3157838577487,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Warehouse E - Central\" should be available",
+          "status": "passed",
+          "duration": 274.10793214908995,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Quality Grade\" dropdown",
+          "status": "passed",
+          "duration": 141.67397300013536,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 5 values",
+          "status": "passed",
+          "duration": 289.02537311540704,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"OEM\" should be available",
+          "status": "passed",
+          "duration": 85.46418140352827,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"OES\" should be available",
+          "status": "passed",
+          "duration": 236.84004655967783,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Aftermarket Premium\" should be available",
+          "status": "passed",
+          "duration": 67.41621721891823,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Aftermarket Standard\" should be available",
+          "status": "passed",
+          "duration": 61.29234620175855,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Economy\" should be available",
+          "status": "passed",
+          "duration": 97.42187672468967,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Shipping Class\" dropdown",
+          "status": "passed",
+          "duration": 449.8950618625615,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 7 values",
+          "status": "passed",
+          "duration": 473.5809488776956,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Standard Ground\" should be available",
+          "status": "passed",
+          "duration": 307.82343238694165,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Express 2-Day\" should be available",
+          "status": "passed",
+          "duration": 76.2606278217508,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Overnight\" should be available",
+          "status": "passed",
+          "duration": 222.7410152586841,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Freight / LTL\" should be available",
+          "status": "passed",
+          "duration": 106.41781847675811,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"Oversized\" should be available",
+          "status": "passed",
+          "duration": 295.5531250584598,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Warranty Type\" dropdown",
+          "status": "passed",
+          "duration": 228.53750461206045,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 7 values",
+          "status": "passed",
+          "duration": 172.46508051654513,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"No Warranty\" should be available",
+          "status": "passed",
+          "duration": 277.7177327050016,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"30-Day Limited\" should be available",
+          "status": "passed",
+          "duration": 135.11652460531195,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"90-Day Limited\" should be available",
+          "status": "passed",
+          "duration": 60.030531618480246,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"1-Year Limited\" should be available",
+          "status": "passed",
+          "duration": 235.27742884579175,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"2-Year Limited\" should be available",
+          "status": "passed",
+          "duration": 257.6167672374811,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the \"Currency\" dropdown",
+          "status": "passed",
+          "duration": 224.03055662998483,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the dropdown should contain 7 values",
+          "status": "passed",
+          "duration": 466.1361509671331,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"USD\" should be available",
+          "status": "passed",
+          "duration": 485.9568477240913,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"EUR\" should be available",
+          "status": "passed",
+          "duration": 408.3942267668186,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"GBP\" should be available",
+          "status": "passed",
+          "duration": 154.79668848469248,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"CAD\" should be available",
+          "status": "passed",
+          "duration": 326.95473164643914,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "dropdown option \"AUD\" should be available",
+          "status": "passed",
+          "duration": 99.97868685599346,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Edit an existing Car Part and update dropdown fields",
+      "testClass": "CAR-1006.Edit Existing Car Part",
+      "status": "Pass",
+      "duration": 3.7793505096876285,
+      "storyKey": "CAR-1006",
+      "tags": [
+        "@CAR_PARTS",
+        "@edit"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 386.40966410289593,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user searches for \"Turbocharger Assembly\" in the list",
+          "status": "passed",
+          "duration": 214.27172213929404,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the first matching record",
+          "status": "passed",
+          "duration": 298.85978989378293,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user clicks the \"Edit\" button",
+          "status": "passed",
+          "duration": 443.74111978743343,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user changes the \"Condition\" dropdown to \"Refurbished\"",
+          "status": "passed",
+          "duration": 172.60151665766008,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user changes the \"Availability Status\" dropdown to \"Low Stock\"",
+          "status": "passed",
+          "duration": 430.9644211321564,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user changes the \"Warehouse Location\" dropdown to \"Warehouse D - West\"",
+          "status": "passed",
+          "duration": 220.81871366687267,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user changes the \"Quality Grade\" dropdown to \"Aftermarket Premium\"",
+          "status": "passed",
+          "duration": 130.49686510106335,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user updates the \"Unit Price\" field to \"1899.99\"",
+          "status": "passed",
+          "duration": 117.94859160279785,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user updates the \"Stock Quantity\" field to \"10\"",
+          "status": "passed",
+          "duration": 350.9605456601391,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"Save\" button",
+          "status": "passed",
+          "duration": 430.5782062711227,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was saved\" should be displayed",
+          "status": "passed",
+          "duration": 218.38157294973573,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Condition\" field should display \"Refurbished\"",
+          "status": "passed",
+          "duration": 189.04306021989998,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the \"Availability Status\" field should display \"Low Stock\"",
+          "status": "passed",
+          "duration": 174.27472050277464,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Search and filter Car Parts by different criteria",
+      "testClass": "CAR-1007.Search and Filter Car Parts",
+      "status": "Pass",
+      "duration": 3.156961862671051,
+      "storyKey": "CAR-1007",
+      "tags": [
+        "@CAR_PARTS",
+        "@search",
+        "@filter"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 416.61010594807595,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user searches for \"Brake\" in the list",
+          "status": "passed",
+          "duration": 275.6617060361906,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the list should display parts containing \"Brake\"",
+          "status": "passed",
+          "duration": 485.2772053751443,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects the \"All Car Parts\" list view",
+          "status": "passed",
+          "duration": 79.7807207373541,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "all car parts should be displayed",
+          "status": "passed",
+          "duration": 352.6556345854257,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects the \"In Stock Parts\" list view",
+          "status": "passed",
+          "duration": 489.2510729435649,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "only parts with availability \"In Stock\" should be displayed",
+          "status": "passed",
+          "duration": 339.0158364102739,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user sorts by the \"Part Name\" column",
+          "status": "passed",
+          "duration": 93.2472067961551,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the list should be sorted alphabetically",
+          "status": "passed",
+          "duration": 99.38067452879847,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user sorts by the \"Unit Price\" column",
+          "status": "passed",
+          "duration": 229.48360534292775,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the list should be sorted by price",
+          "status": "passed",
+          "duration": 296.5980939671398,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Verify dependent picklist values change based on parent selection",
+      "testClass": "CAR-1008.Verify Dependent Picklists",
+      "status": "Pass",
+      "duration": 8.19851371268975,
+      "storyKey": "CAR-1008",
+      "tags": [
+        "@CAR_PARTS",
+        "@dependent_picklist"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 472.40856117279014,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 385.9145911868135,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Engine Components\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 409.9114084394567,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the \"Part Sub-Category\" dropdown should contain engine components sub-categories",
+          "status": "passed",
+          "duration": 155.83185430512145,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Cylinder Head\" should be available",
+          "status": "passed",
+          "duration": 358.21651081746523,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Piston\" should be available",
+          "status": "passed",
+          "duration": 308.23333011853424,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Crankshaft\" should be available",
+          "status": "passed",
+          "duration": 448.83691351228174,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Transmission & Drivetrain\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 58.81302591342469,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the \"Part Sub-Category\" dropdown should contain transmission & drivetrain sub-categories",
+          "status": "passed",
+          "duration": 459.04947515845754,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Gearbox\" should be available",
+          "status": "passed",
+          "duration": 361.1428090656243,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Clutch Kit\" should be available",
+          "status": "passed",
+          "duration": 185.83383082214425,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Drive Shaft\" should be available",
+          "status": "passed",
+          "duration": 164.64336517701156,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Braking System\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 384.63447893367675,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the \"Part Sub-Category\" dropdown should contain braking system sub-categories",
+          "status": "passed",
+          "duration": 429.39354408981694,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Brake Pad\" should be available",
+          "status": "passed",
+          "duration": 153.48527364117916,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Brake Disc\" should be available",
+          "status": "passed",
+          "duration": 330.0186756012499,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Brake Caliper\" should be available",
+          "status": "passed",
+          "duration": 489.70247997319126,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Suspension & Steering\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 237.4319754874625,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the \"Part Sub-Category\" dropdown should contain suspension & steering sub-categories",
+          "status": "passed",
+          "duration": 487.2214800244932,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Shock Absorber\" should be available",
+          "status": "passed",
+          "duration": 63.5608617966491,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Strut Assembly\" should be available",
+          "status": "passed",
+          "duration": 334.2366971233764,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Control Arm\" should be available",
+          "status": "passed",
+          "duration": 117.44256092575343,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user selects \"Electrical & Lighting\" from the \"Part Category\" dropdown",
+          "status": "passed",
+          "duration": 255.31855926792497,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "the \"Part Sub-Category\" dropdown should contain electrical & lighting sub-categories",
+          "status": "passed",
+          "duration": 102.79438731255252,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Alternator\" should be available",
+          "status": "passed",
+          "duration": 427.13559764262703,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Starter Motor\" should be available",
+          "status": "passed",
+          "duration": 464.9971985311919,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "sub-category option \"Battery\" should be available",
+          "status": "passed",
+          "duration": 152.3042666494789,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Delete a Car Part record",
+      "testClass": "CAR-1009.Delete Car Part Record",
+      "status": "Pass",
+      "duration": 2.06610624844326,
+      "storyKey": "CAR-1009",
+      "tags": [
+        "@CAR_PARTS",
+        "@delete"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 210.9723944482135,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user searches for \"LED Headlight Assembly\" in the list",
+          "status": "passed",
+          "duration": 65.02657086614413,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user opens the first matching record",
+          "status": "passed",
+          "duration": 302.0651645418428,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user clicks \"Delete\" from the record actions",
+          "status": "passed",
+          "duration": 457.201201877695,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user confirms the deletion",
+          "status": "passed",
+          "duration": 476.8508254900942,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "a success toast message \"was deleted\" should be displayed",
+          "status": "passed",
+          "duration": 309.1065439896554,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user should be redirected to the list view",
+          "status": "passed",
+          "duration": 244.88354722961498,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "testName": "Validate required fields on Car Part form",
+      "testClass": "CAR-1010.Validate Required Fields",
+      "status": "Pass",
+      "duration": 2.0621310676956783,
+      "storyKey": "CAR-1010",
+      "tags": [
+        "@CAR_PARTS",
+        "@validation"
+      ],
+      "steps": [
+        {
+          "keyword": "Given",
+          "name": "the user is on the Car Parts list view",
+          "status": "passed",
+          "duration": 150.85854610918614,
+          "error": ""
+        },
+        {
+          "keyword": "When",
+          "name": "the user clicks the \"New\" button",
+          "status": "passed",
+          "duration": 99.3747883093735,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "the user clicks the \"Save\" button without filling required fields",
+          "status": "passed",
+          "duration": 120.33004830537152,
+          "error": ""
+        },
+        {
+          "keyword": "Then",
+          "name": "validation error messages should be displayed for \"Part Name\"",
+          "status": "passed",
+          "duration": 90.41599255822689,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "validation error messages should be displayed for \"Part Number\"",
+          "status": "passed",
+          "duration": 420.91052982366193,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "validation error messages should be displayed for \"Part Category\"",
+          "status": "passed",
+          "duration": 379.79746023050626,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "validation error messages should be displayed for \"Part Sub-Category\"",
+          "status": "passed",
+          "duration": 213.2488046119347,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "validation error messages should be displayed for \"Manufacturer\"",
+          "status": "passed",
+          "duration": 117.11978868299242,
+          "error": ""
+        },
+        {
+          "keyword": "And",
+          "name": "validation error messages should be displayed for \"Condition\"",
+          "status": "passed",
+          "duration": 470.0751090644247,
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "reportFiles": {
+    "json": "test-reports/report-car-parts-1781789867.json",
+    "html": "test-reports/report-car-parts-1781789867.html",
+    "junit_xml": "test-reports/report-car-parts-1781789867.xml",
+    "summary": "test-reports/report-car-parts-1781789867.txt"
+  },
+  "copadoMetadata": {
+    "format": "copado-test-result-v2",
+    "source": "jira-selenium-gherkin-agent",
+    "pipelineReady": true
+  }
+}

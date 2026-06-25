@@ -1,0 +1,48 @@
+======================================================================
+  TEST EXECUTION SUMMARY
+======================================================================
+
+  Run ID:       agentic-1781789858
+  Timestamp:    2026-06-18T13:37:38.945810+00:00
+  Environment:  salesforce-lwc
+  App URL:      http://localhost:8080
+  Duration:     9641ms
+
+----------------------------------------------------------------------
+  RESULTS: 10 passed | 0 failed | 0 skipped | 10 total
+  PASS RATE: 100.0%
+----------------------------------------------------------------------
+
+  [PASS] Create Engine Component Car Part in Salesforce LWC (CAR-1001)
+      + Create Engine Component Car Part in Salesforce LWC
+
+  [PASS] Create Braking System Car Part with Dependent Picklists (CAR-1002)
+      + Create Braking System Car Part with Dependent Picklists
+
+  [PASS] Create Suspension Car Part (CAR-1003)
+      + Create Suspension Car Part
+
+  [PASS] Create Electrical and Lighting Car Part (CAR-1004)
+      + Create Electrical and Lighting Car Part
+
+  [PASS] Traverse All Dropdown Fields and Verify Values (CAR-1005)
+      + Traverse All Dropdown Fields and Verify Values
+
+  [PASS] Edit Existing Car Part and Update Dropdowns (CAR-1006)
+      + Edit Existing Car Part and Update Dropdowns
+
+  [PASS] Search and Filter Car Parts (CAR-1007)
+      + Search and Filter Car Parts
+
+  [PASS] Verify Dependent Picklist Behavior (CAR-1008)
+      + Verify Dependent Picklist Behavior
+
+  [PASS] Delete Car Part Record (CAR-1009)
+      + Delete Car Part Record
+
+  [PASS] Validate Required Fields on Car Part Form (CAR-1010)
+      + Validate Required Fields on Car Part Form
+
+======================================================================
+  Report generated at 2026-06-18T13:37:38.945810+00:00
+======================================================================

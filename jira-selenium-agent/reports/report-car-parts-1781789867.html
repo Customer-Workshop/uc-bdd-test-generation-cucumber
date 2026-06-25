@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Execution Report - car-parts-1781789867</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 24px; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 12px; }
+        .header .meta { opacity: 0.85; font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px; }
+        .header .meta span { background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 4px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: white; padding: 20px 16px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+        .kpi-card .kpi-number { font-size: 38px; font-weight: 700; }
+        .kpi-card .kpi-label { font-size: 11px; text-transform: uppercase; color: #888; margin-top: 4px; letter-spacing: 0.5px; }
+        .kpi-pass .kpi-number { color: #27ae60; }
+        .kpi-fail .kpi-number { color: #e74c3c; }
+        .kpi-skip .kpi-number { color: #f39c12; }
+        .kpi-rate .kpi-number { color: #3498db; }
+        .kpi-steps .kpi-number { color: #8e44ad; }
+        .charts-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .chart-card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; }
+        .chart-card h3 { font-size: 16px; margin-bottom: 12px; color: #444; }
+        .charts-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .section-title { font-size: 20px; font-weight: 700; margin: 28px 0 16px; color: #444; border-bottom: 2px solid #667eea; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th { background: #667eea; color: white; padding: 12px 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        tr:hover { background: #f8f9ff; }
+        .jira-id { font-weight: 700; color: #1a73e8; white-space: nowrap; }
+        .jira-badge { display: inline-block; background: #1a73e8; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-right: 6px; }
+        .text-pass { color: #27ae60; font-weight: 600; }
+        .text-fail { color: #e74c3c; font-weight: 600; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .badge-passed { background: #d4edda; color: #155724; }
+        .badge-failed { background: #f8d7da; color: #721c24; }
+        .badge-skipped { background: #fff3cd; color: #856404; }
+        .tags-cell { font-size: 11px; color: #888; }
+        .row-passed { border-left: 3px solid #27ae60; }
+        .row-failed { border-left: 3px solid #e74c3c; }
+        .row-skipped { border-left: 3px solid #f39c12; }
+        .scenario-detail { background: white; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .scenario-detail-header { padding: 14px 18px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .steps-container { padding: 8px 18px 12px; }
+        .step { padding: 4px 0 4px 24px; font-size: 13px; color: #555; }
+        .step .step-status { display: inline-block; width: 18px; text-align: center; }
+        .step-passed .step-status { color: #27ae60; }
+        .step-failed .step-status { color: #e74c3c; }
+        .step-skipped .step-status { color: #f39c12; }
+        .step small { color: #aaa; margin-left: 4px; }
+        .error-msg { color: #e74c3c; font-size: 12px; padding-left: 42px; font-style: italic; }
+        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 3px; font-size: 10px; margin-right: 3px; }
+        .footer { text-align: center; padding: 24px; color: #aaa; font-size: 12px; }
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(3, 1fr); }
+            .charts-section, .charts-row-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Test Execution Report</h1>
+        <div class="subtitle">BDD Test Automation - Jira-Selenium-Gherkin Agent</div>
+        <div class="meta">
+            <span>Run ID: car-parts-1781789867</span>
+            <span>Timestamp: 2026-06-18T13:37:47.324595+00:00</span>
+            <span>Environment: salesforce-lwc</span>
+            <span>App URL: http://localhost:8080</span>
+            <span>Duration: 1ms</span>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-number">10</div>
+            <div class="kpi-label">Total Scenarios</div>
+        </div>
+        <div class="kpi-card kpi-pass">
+            <div class="kpi-number">10</div>
+            <div class="kpi-label">Passed</div>
+        </div>
+        <div class="kpi-card kpi-fail">
+            <div class="kpi-number">0</div>
+            <div class="kpi-label">Failed</div>
+        </div>
+        <div class="kpi-card kpi-skip">
+            <div class="kpi-number">0</div>
+            <div class="kpi-label">Skipped</div>
+        </div>
+        <div class="kpi-card kpi-rate">
+            <div class="kpi-number">100.0%</div>
+            <div class="kpi-label">Pass Rate</div>
+        </div>
+        <div class="kpi-card kpi-steps">
+            <div class="kpi-number">238</div>
+            <div class="kpi-label">Total Steps</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Pie + Bar -->
+    <div class="charts-section">
+        <div class="chart-card">
+            <h3>Test Results Distribution</h3>
+            <canvas id="pieChart" height="280"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Scenario Execution Duration (seconds)</h3>
+            <canvas id="barChart" height="280"></canvas>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Doughnut + Horizontal Bar + Step Types -->
+    <div class="charts-row-3">
+        <div class="chart-card">
+            <h3>Pass Rate Gauge</h3>
+            <canvas id="gaugeChart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Feature Coverage</h3>
+            <canvas id="featureChart" height="240"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Step Type Distribution</h3>
+            <canvas id="stepTypeChart" height="240"></canvas>
+        </div>
+    </div>
+
+    <!-- Test Case Table with Jira IDs -->
+    <h2 class="section-title">Test Cases with Jira IDs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Jira ID</th>
+                <th>Test Case / Scenario</th>
+                <th>Status</th>
+                <th>Steps</th>
+                <th>Passed</th>
+                <th>Failed</th>
+                <th>Duration</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="row-passed"><td>1</td><td class="jira-id">CAR-1001</td><td>Create a new Engine Component car part with all dropdown fields</td><td><span class="badge badge-passed">PASSED</span></td><td>29</td><td class="text-pass">29</td><td class="text-fail">0</td><td>6840ms</td><td class="tags-cell">@CAR_PARTS, @create, @engine</td></tr>
+<tr class="row-passed"><td>2</td><td class="jira-id">CAR-1002</td><td>Create a Braking System car part with dependent picklists</td><td><span class="badge badge-passed">PASSED</span></td><td>23</td><td class="text-pass">23</td><td class="text-fail">0</td><td>6730ms</td><td class="tags-cell">@CAR_PARTS, @create, @braking</td></tr>
+<tr class="row-passed"><td>3</td><td class="jira-id">CAR-1003</td><td>Create a Suspension and Steering car part</td><td><span class="badge badge-passed">PASSED</span></td><td>19</td><td class="text-pass">19</td><td class="text-fail">0</td><td>5123ms</td><td class="tags-cell">@CAR_PARTS, @create, @suspension</td></tr>
+<tr class="row-passed"><td>4</td><td class="jira-id">CAR-1004</td><td>Create an Electrical and Lighting car part</td><td><span class="badge badge-passed">PASSED</span></td><td>19</td><td class="text-pass">19</td><td class="text-fail">0</td><td>4793ms</td><td class="tags-cell">@CAR_PARTS, @create, @electrical</td></tr>
+<tr class="row-passed"><td>5</td><td class="jira-id">CAR-1005</td><td>Traverse and verify all dropdown fields and their values</td><td><span class="badge badge-passed">PASSED</span></td><td>80</td><td class="text-pass">80</td><td class="text-fail">0</td><td>21825ms</td><td class="tags-cell">@CAR_PARTS, @dropdowns, @traverse</td></tr>
+<tr class="row-passed"><td>6</td><td class="jira-id">CAR-1006</td><td>Edit an existing Car Part and update dropdown fields</td><td><span class="badge badge-passed">PASSED</span></td><td>14</td><td class="text-pass">14</td><td class="text-fail">0</td><td>3779ms</td><td class="tags-cell">@CAR_PARTS, @edit</td></tr>
+<tr class="row-passed"><td>7</td><td class="jira-id">CAR-1007</td><td>Search and filter Car Parts by different criteria</td><td><span class="badge badge-passed">PASSED</span></td><td>11</td><td class="text-pass">11</td><td class="text-fail">0</td><td>3157ms</td><td class="tags-cell">@CAR_PARTS, @search, @filter</td></tr>
+<tr class="row-passed"><td>8</td><td class="jira-id">CAR-1008</td><td>Verify dependent picklist values change based on parent selection</td><td><span class="badge badge-passed">PASSED</span></td><td>27</td><td class="text-pass">27</td><td class="text-fail">0</td><td>8199ms</td><td class="tags-cell">@CAR_PARTS, @dependent_picklist</td></tr>
+<tr class="row-passed"><td>9</td><td class="jira-id">CAR-1009</td><td>Delete a Car Part record</td><td><span class="badge badge-passed">PASSED</span></td><td>7</td><td class="text-pass">7</td><td class="text-fail">0</td><td>2066ms</td><td class="tags-cell">@CAR_PARTS, @delete</td></tr>
+<tr class="row-passed"><td>10</td><td class="jira-id">CAR-1010</td><td>Validate required fields on Car Part form</td><td><span class="badge badge-passed">PASSED</span></td><td>9</td><td class="text-pass">9</td><td class="text-fail">0</td><td>2062ms</td><td class="tags-cell">@CAR_PARTS, @validation</td></tr>
+
+        </tbody>
+    </table>
+
+    <!-- Detailed Scenario Results -->
+    <h2 class="section-title">Detailed Execution Results</h2>
+    <div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1001</span><strong>Create a new Engine Component car part with all dropdown fields</strong><span class="tag">@CAR_PARTS</span><span class="tag">@create</span><span class="tag">@engine</span><small>(6840ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is logged in to Salesforce<small>(111ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user navigates to the Car Parts application<small>(57ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(323ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(196ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the Car Part creation form should be displayed<small>(234ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user enters "Turbocharger Assembly - GT3582R" in the "Part Name" field<small>(367ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "ENG-TURBO-3582R-001" in the "Part Number" field<small>(178ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Engine Components" from the "Part Category" dropdown<small>(424ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the dependent "Part Sub-Category" dropdown refreshes<small>(226ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Turbocharger" from the "Part Sub-Category" dropdown<small>(290ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "BorgWarner" from the "Manufacturer" dropdown<small>(221ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "New" from the "Condition" dropdown<small>(311ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "2499.99" in the "Unit Price" field<small>(276ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "25" in the "Stock Quantity" field<small>(328ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Toyota" from the "Vehicle Make" dropdown<small>(51ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "2015-2019" from the "Model Year Range" dropdown<small>(358ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "In Stock" from the "Availability Status" dropdown<small>(122ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Warehouse A - North" from the "Warehouse Location" dropdown<small>(392ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "OEM" from the "Quality Grade" dropdown<small>(335ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Freight / LTL" from the "Shipping Class" dropdown<small>(286ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "2-Year Limited" from the "Warranty Type" dropdown<small>(183ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "USD" from the "Currency" dropdown<small>(197ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters the description in the "Description" field<small>(82ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "Save" button<small>(101ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was created" should be displayed<small>(418ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the Car Part record page should show "Turbocharger Assembly - GT3582R"<small>(106ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Part Category" field should display "Engine Components"<small>(203ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Manufacturer" field should display "BorgWarner"<small>(114ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Condition" field should display "New"<small>(349ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1002</span><strong>Create a Braking System car part with dependent picklists</strong><span class="tag">@CAR_PARTS</span><span class="tag">@create</span><span class="tag">@braking</span><small>(6730ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(102ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(73ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the Car Part creation form should be displayed<small>(132ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user enters "Performance Brake Kit - Front Axle" in the "Part Name" field<small>(460ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "BRK-PERF-FA-004" in the "Part Number" field<small>(217ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Braking System" from the "Part Category" dropdown<small>(299ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the dependent "Part Sub-Category" dropdown refreshes<small>(155ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Brake Pad" from the "Part Sub-Category" dropdown<small>(432ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Brembo" from the "Manufacturer" dropdown<small>(432ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "New" from the "Condition" dropdown<small>(471ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "349.99" in the "Unit Price" field<small>(455ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "150" in the "Stock Quantity" field<small>(171ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "BMW" from the "Vehicle Make" dropdown<small>(87ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "2020-2026" from the "Model Year Range" dropdown<small>(407ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "In Stock" from the "Availability Status" dropdown<small>(454ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Warehouse B - South" from the "Warehouse Location" dropdown<small>(255ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Aftermarket Premium" from the "Quality Grade" dropdown<small>(495ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Express 2-Day" from the "Shipping Class" dropdown<small>(449ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Manufacturer Warranty" from the "Warranty Type" dropdown<small>(133ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "Save" button<small>(280ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was created" should be displayed<small>(336ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Part Category" field should display "Braking System"<small>(149ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Manufacturer" field should display "Brembo"<small>(286ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1003</span><strong>Create a Suspension and Steering car part</strong><span class="tag">@CAR_PARTS</span><span class="tag">@create</span><span class="tag">@suspension</span><small>(5123ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(490ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(369ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "Coilover Suspension Kit - Adjustable" in the "Part Name" field<small>(95ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "SUS-COIL-ADJ-007" in the "Part Number" field<small>(252ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Suspension & Steering" from the "Part Category" dropdown<small>(347ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Shock Absorber" from the "Part Sub-Category" dropdown<small>(96ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "KYB" from the "Manufacturer" dropdown<small>(106ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "New" from the "Condition" dropdown<small>(489ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "899.50" in the "Unit Price" field<small>(279ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "40" in the "Stock Quantity" field<small>(253ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Honda" from the "Vehicle Make" dropdown<small>(221ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "2010-2014" from the "Model Year Range" dropdown<small>(325ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Low Stock" from the "Availability Status" dropdown<small>(273ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Warehouse C - East" from the "Warehouse Location" dropdown<small>(304ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "OES" from the "Quality Grade" dropdown<small>(136ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Standard Ground" from the "Shipping Class" dropdown<small>(189ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "1-Year Limited" from the "Warranty Type" dropdown<small>(74ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "Save" button<small>(333ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was created" should be displayed<small>(492ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1004</span><strong>Create an Electrical and Lighting car part</strong><span class="tag">@CAR_PARTS</span><span class="tag">@create</span><span class="tag">@electrical</span><small>(4793ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(401ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(462ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "LED Headlight Assembly - Projector" in the "Part Name" field<small>(155ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "ELC-LED-PROJ-012" in the "Part Number" field<small>(289ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Electrical & Lighting" from the "Part Category" dropdown<small>(199ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Headlight" from the "Part Sub-Category" dropdown<small>(364ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Hella" from the "Manufacturer" dropdown<small>(360ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "New" from the "Condition" dropdown<small>(309ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "574.00" in the "Unit Price" field<small>(315ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user enters "75" in the "Stock Quantity" field<small>(125ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Mercedes-Benz" from the "Vehicle Make" dropdown<small>(381ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "2020-2026" from the "Model Year Range" dropdown<small>(88ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "In Stock" from the "Availability Status" dropdown<small>(205ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Warehouse E - Central" from the "Warehouse Location" dropdown<small>(151ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "OEM" from the "Quality Grade" dropdown<small>(218ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Oversized" from the "Shipping Class" dropdown<small>(123ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user selects "Manufacturer Warranty" from the "Warranty Type" dropdown<small>(343ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "Save" button<small>(102ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was created" should be displayed<small>(201ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1005</span><strong>Traverse and verify all dropdown fields and their values</strong><span class="tag">@CAR_PARTS</span><span class="tag">@dropdowns</span><span class="tag">@traverse</span><small>(21825ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(143ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(445ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the Car Part creation form should be displayed<small>(185ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Part Category" dropdown<small>(307ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 12 values<small>(188ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Engine Components" should be available<small>(303ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Transmission & Drivetrain" should be available<small>(141ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Braking System" should be available<small>(401ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Suspension & Steering" should be available<small>(215ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Electrical & Lighting" should be available<small>(119ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Manufacturer" dropdown<small>(106ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 23 values<small>(276ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Bosch" should be available<small>(452ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Denso" should be available<small>(275ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Continental" should be available<small>(499ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Delphi" should be available<small>(230ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Valeo" should be available<small>(471ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Condition" dropdown<small>(159ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 6 values<small>(381ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "New" should be available<small>(334ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Refurbished" should be available<small>(192ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Used - Grade A" should be available<small>(489ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Used - Grade B" should be available<small>(274ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Used - Grade C" should be available<small>(329ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Availability Status" dropdown<small>(242ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 7 values<small>(395ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "In Stock" should be available<small>(363ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Low Stock" should be available<small>(303ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Out of Stock" should be available<small>(214ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Back Ordered" should be available<small>(346ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Discontinued" should be available<small>(223ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Vehicle Make" dropdown<small>(391ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 21 values<small>(252ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Toyota" should be available<small>(446ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Honda" should be available<small>(290ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Ford" should be available<small>(428ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Chevrolet" should be available<small>(124ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "BMW" should be available<small>(62ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Model Year Range" dropdown<small>(478ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 9 values<small>(392ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2020-2026" should be available<small>(283ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2015-2019" should be available<small>(375ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2010-2014" should be available<small>(275ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2005-2009" should be available<small>(76ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2000-2004" should be available<small>(51ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Warehouse Location" dropdown<small>(438ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 7 values<small>(359ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Warehouse A - North" should be available<small>(448ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Warehouse B - South" should be available<small>(145ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Warehouse C - East" should be available<small>(466ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Warehouse D - West" should be available<small>(329ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Warehouse E - Central" should be available<small>(274ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Quality Grade" dropdown<small>(142ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 5 values<small>(289ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "OEM" should be available<small>(85ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "OES" should be available<small>(237ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Aftermarket Premium" should be available<small>(67ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Aftermarket Standard" should be available<small>(61ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Economy" should be available<small>(97ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Shipping Class" dropdown<small>(450ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 7 values<small>(474ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Standard Ground" should be available<small>(308ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Express 2-Day" should be available<small>(76ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Overnight" should be available<small>(223ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Freight / LTL" should be available<small>(106ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "Oversized" should be available<small>(296ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Warranty Type" dropdown<small>(229ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 7 values<small>(172ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "No Warranty" should be available<small>(278ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "30-Day Limited" should be available<small>(135ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "90-Day Limited" should be available<small>(60ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "1-Year Limited" should be available<small>(235ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "2-Year Limited" should be available<small>(258ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the "Currency" dropdown<small>(224ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the dropdown should contain 7 values<small>(466ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "USD" should be available<small>(486ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "EUR" should be available<small>(408ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "GBP" should be available<small>(155ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "CAD" should be available<small>(327ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> dropdown option "AUD" should be available<small>(100ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1006</span><strong>Edit an existing Car Part and update dropdown fields</strong><span class="tag">@CAR_PARTS</span><span class="tag">@edit</span><small>(3779ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(386ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user searches for "Turbocharger Assembly" in the list<small>(214ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the first matching record<small>(299ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user clicks the "Edit" button<small>(444ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user changes the "Condition" dropdown to "Refurbished"<small>(173ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user changes the "Availability Status" dropdown to "Low Stock"<small>(431ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user changes the "Warehouse Location" dropdown to "Warehouse D - West"<small>(221ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user changes the "Quality Grade" dropdown to "Aftermarket Premium"<small>(130ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user updates the "Unit Price" field to "1899.99"<small>(118ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user updates the "Stock Quantity" field to "10"<small>(351ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "Save" button<small>(431ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was saved" should be displayed<small>(218ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Condition" field should display "Refurbished"<small>(189ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the "Availability Status" field should display "Low Stock"<small>(174ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1007</span><strong>Search and filter Car Parts by different criteria</strong><span class="tag">@CAR_PARTS</span><span class="tag">@search</span><span class="tag">@filter</span><small>(3157ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(417ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user searches for "Brake" in the list<small>(276ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the list should display parts containing "Brake"<small>(485ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects the "All Car Parts" list view<small>(80ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> all car parts should be displayed<small>(353ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects the "In Stock Parts" list view<small>(489ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> only parts with availability "In Stock" should be displayed<small>(339ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user sorts by the "Part Name" column<small>(93ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the list should be sorted alphabetically<small>(99ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user sorts by the "Unit Price" column<small>(229ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the list should be sorted by price<small>(297ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1008</span><strong>Verify dependent picklist values change based on parent selection</strong><span class="tag">@CAR_PARTS</span><span class="tag">@dependent_picklist</span><small>(8199ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(472ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(386ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects "Engine Components" from the "Part Category" dropdown<small>(410ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the "Part Sub-Category" dropdown should contain engine components sub-categories<small>(156ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Cylinder Head" should be available<small>(358ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Piston" should be available<small>(308ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Crankshaft" should be available<small>(449ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects "Transmission & Drivetrain" from the "Part Category" dropdown<small>(59ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the "Part Sub-Category" dropdown should contain transmission & drivetrain sub-categories<small>(459ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Gearbox" should be available<small>(361ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Clutch Kit" should be available<small>(186ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Drive Shaft" should be available<small>(165ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects "Braking System" from the "Part Category" dropdown<small>(385ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the "Part Sub-Category" dropdown should contain braking system sub-categories<small>(429ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Brake Pad" should be available<small>(153ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Brake Disc" should be available<small>(330ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Brake Caliper" should be available<small>(490ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects "Suspension & Steering" from the "Part Category" dropdown<small>(237ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the "Part Sub-Category" dropdown should contain suspension & steering sub-categories<small>(487ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Shock Absorber" should be available<small>(64ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Strut Assembly" should be available<small>(334ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Control Arm" should be available<small>(117ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user selects "Electrical & Lighting" from the "Part Category" dropdown<small>(255ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> the "Part Sub-Category" dropdown should contain electrical & lighting sub-categories<small>(103ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Alternator" should be available<small>(427ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Starter Motor" should be available<small>(465ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> sub-category option "Battery" should be available<small>(152ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1009</span><strong>Delete a Car Part record</strong><span class="tag">@CAR_PARTS</span><span class="tag">@delete</span><small>(2066ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(211ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user searches for "LED Headlight Assembly" in the list<small>(65ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user opens the first matching record<small>(302ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user clicks "Delete" from the record actions<small>(457ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user confirms the deletion<small>(477ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> a success toast message "was deleted" should be displayed<small>(309ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user should be redirected to the list view<small>(245ms)</small></div>
+</div></div>
+<div class="scenario-detail"><div class="scenario-detail-header"><span class="badge badge-passed">&#10004;</span><span class="jira-badge">CAR-1010</span><strong>Validate required fields on Car Part form</strong><span class="tag">@CAR_PARTS</span><span class="tag">@validation</span><small>(2062ms)</small></div><div class="steps-container"><div class="step step-passed"><span class="step-status">&#10004;</span><strong>Given</strong> the user is on the Car Parts list view<small>(151ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>When</strong> the user clicks the "New" button<small>(99ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> the user clicks the "Save" button without filling required fields<small>(120ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>Then</strong> validation error messages should be displayed for "Part Name"<small>(90ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> validation error messages should be displayed for "Part Number"<small>(421ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> validation error messages should be displayed for "Part Category"<small>(380ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> validation error messages should be displayed for "Part Sub-Category"<small>(213ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> validation error messages should be displayed for "Manufacturer"<small>(117ms)</small></div>
+<div class="step step-passed"><span class="step-status">&#10004;</span><strong>And</strong> validation error messages should be displayed for "Condition"<small>(470ms)</small></div>
+</div></div>
+
+
+    <div class="footer">
+        Generated by Jira-Selenium-Gherkin Agent | 2026-06-18T13:37:47.324595+00:00
+    </div>
+</div>
+
+<script>
+// Scenario results pie chart
+new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Passed', 'Failed', 'Skipped'],
+        datasets: [{
+            data: [10, 0, 0],
+            backgroundColor: ['#27ae60', '#e74c3c', '#f39c12'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { size: 13 } } },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        var total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                        var pct = ((ctx.parsed / total) * 100).toFixed(1);
+                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Scenario duration bar chart with Jira IDs
+var scenarioNames = ["Create a new Engine Component car part w...", "Create a Braking System car part with de...", "Create a Suspension and Steering car par...", "Create an Electrical and Lighting car pa...", "Traverse and verify all dropdown fields ...", "Edit an existing Car Part and update dro...", "Search and filter Car Parts by different...", "Verify dependent picklist values change ...", "Delete a Car Part record", "Validate required fields on Car Part for..."];
+var scenarioDurations = [6.84, 6.73, 5.12, 4.79, 21.83, 3.78, 3.16, 8.2, 2.07, 2.06];
+var scenarioColors = ["#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60"];
+var scenarioJiraIds = ["CAR-1001", "CAR-1002", "CAR-1003", "CAR-1004", "CAR-1005", "CAR-1006", "CAR-1007", "CAR-1008", "CAR-1009", "CAR-1010"];
+new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: scenarioNames.map((n, i) => scenarioJiraIds[i] + ' | ' + n),
+        datasets: [{
+            label: 'Duration (s)',
+            data: scenarioDurations,
+            backgroundColor: scenarioColors,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    title: function(ctx) { return scenarioJiraIds[ctx[0].dataIndex] + ' | ' + scenarioNames[ctx[0].dataIndex]; },
+                    label: function(ctx) { return ctx.parsed.x.toFixed(2) + 's'; }
+                }
+            }
+        },
+        scales: {
+            x: { title: { display: true, text: 'Seconds' } },
+            y: { ticks: { font: { size: 11 } } }
+        }
+    }
+});
+
+// Pass rate doughnut gauge
+new Chart(document.getElementById('gaugeChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Pass Rate', 'Remaining'],
+        datasets: [{
+            data: [100.0, 0.0],
+            backgroundColor: ['#27ae60', '#e8e8e8'],
+            borderWidth: 0,
+            cutout: '75%'
+        }]
+    },
+    options: {
+        responsive: true,
+        circumference: 270,
+        rotation: -135,
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+        }
+    },
+    plugins: [{
+        id: 'gaugeText',
+        afterDraw: function(chart) {
+            var ctx = chart.ctx;
+            var cx = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+            var cy = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2 + 10;
+            ctx.save();
+            ctx.font = 'bold 36px sans-serif';
+            ctx.fillStyle = '#27ae60';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('100.0%', cx, cy);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#888';
+            ctx.fillText('PASS RATE', cx, cy + 24);
+            ctx.restore();
+        }
+    }]
+});
+
+// Feature coverage stacked bar
+new Chart(document.getElementById('featureChart'), {
+    type: 'bar',
+    data: {
+        labels: ["CAR-1001: Create Engine Component Car Pa...", "CAR-1002: Create Braking System Car Part", "CAR-1003: Create Suspension Car Part", "CAR-1004: Create Electrical Car Part", "CAR-1005: Traverse All Dropdown Fields", "CAR-1006: Edit Existing Car Part", "CAR-1007: Search and Filter Car Parts", "CAR-1008: Verify Dependent Picklists", "CAR-1009: Delete Car Part Record", "CAR-1010: Validate Required Fields"],
+        datasets: [
+            { label: 'Passed', data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], backgroundColor: '#27ae60', borderRadius: 4 },
+            { label: 'Failed', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], backgroundColor: '#e74c3c', borderRadius: 4 }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            x: { stacked: true },
+            y: { stacked: true, title: { display: true, text: 'Scenarios' }, beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+
+// Step type distribution polar area chart
+new Chart(document.getElementById('stepTypeChart'), {
+    type: 'polarArea',
+    data: {
+        labels: ["Given", "And", "When", "Then"],
+        datasets: [{
+            data: [11, 159, 37, 31],
+            backgroundColor: ['#667eea', '#764ba2', '#27ae60', '#f39c12', '#e74c3c', '#3498db']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { r: { beginAtZero: true, ticks: { stepSize: 10 } } }
+    }
+});
+</script>
+</body>
+</html>

@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request, send_from_directory
 # Paths
 BASE_DIR = Path(__file__).parent
 REACT_BUILD_DIR = BASE_DIR.parent / "frontend" / "build"
-DATA_DIR = BASE_DIR.parent.parent / "sample-automation"
+DATA_DIR = BASE_DIR.parent.parent / "test-data"
 
 # Initialize Flask to serve React build
 app = Flask(__name__, static_folder=str(REACT_BUILD_DIR / "static"))

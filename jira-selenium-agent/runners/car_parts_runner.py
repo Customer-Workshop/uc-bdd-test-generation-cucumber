@@ -5,7 +5,7 @@ Selenium test flow using POM page objects, and generates CI/CD and
 Copado execution reports.
 
 Usage:
-    python sample-automation/car_parts_runner.py
+    python runners/car_parts_runner.py
 """
 
 import json
@@ -57,7 +57,7 @@ class CarPartsTestRunner:
 
     def _load_test_data(self) -> dict:
         """Load test data from JSON file."""
-        data_path = Path(__file__).parent / "car_parts_test_data.json"
+        data_path = Path(__file__).parent.parent / "test-data" / "car_parts_test_data.json"
         with open(data_path, encoding="utf-8") as f:
             return json.load(f)
 

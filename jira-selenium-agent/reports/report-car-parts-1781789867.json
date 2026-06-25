@@ -1,0 +1,2130 @@
+{
+  "run_id": "car-parts-1781789867",
+  "timestamp": "2026-06-18T13:37:47.324595+00:00",
+  "environment": "salesforce-lwc",
+  "app_url": "http://localhost:8080",
+  "summary": {
+    "total_features": 10,
+    "total_scenarios": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "pass_rate": 100.0,
+    "total_steps": 238,
+    "passed_steps": 238,
+    "duration_ms": 1.043558120727539
+  },
+  "features": [
+    {
+      "name": "Create Engine Component Car Part",
+      "story_key": "CAR-1001",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 6840.284020426951,
+      "scenarios": [
+        {
+          "name": "Create a new Engine Component car part with all dropdown fields",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@create",
+            "@engine"
+          ],
+          "duration_ms": 6840.284020426951,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is logged in to Salesforce",
+              "status": "passed",
+              "duration_ms": 111.09173075297082,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user navigates to the Car Parts application",
+              "status": "passed",
+              "duration_ms": 56.91247131108153,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 323.179879573183,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 195.59685994653898,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the Car Part creation form should be displayed",
+              "status": "passed",
+              "duration_ms": 234.42108348501753,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user enters \"Turbocharger Assembly - GT3582R\" in the \"Part Name\" field",
+              "status": "passed",
+              "duration_ms": 366.7140552581242,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"ENG-TURBO-3582R-001\" in the \"Part Number\" field",
+              "status": "passed",
+              "duration_ms": 178.35473306345094,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Engine Components\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 424.1247011648005,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the dependent \"Part Sub-Category\" dropdown refreshes",
+              "status": "passed",
+              "duration_ms": 225.8678568942191,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Turbocharger\" from the \"Part Sub-Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 290.4353219774815,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"BorgWarner\" from the \"Manufacturer\" dropdown",
+              "status": "passed",
+              "duration_ms": 221.45464515997142,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"New\" from the \"Condition\" dropdown",
+              "status": "passed",
+              "duration_ms": 311.27854577896545,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"2499.99\" in the \"Unit Price\" field",
+              "status": "passed",
+              "duration_ms": 275.5278684096665,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"25\" in the \"Stock Quantity\" field",
+              "status": "passed",
+              "duration_ms": 328.22897436416116,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Toyota\" from the \"Vehicle Make\" dropdown",
+              "status": "passed",
+              "duration_ms": 50.66725739284011,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"2015-2019\" from the \"Model Year Range\" dropdown",
+              "status": "passed",
+              "duration_ms": 357.5735450423574,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+              "status": "passed",
+              "duration_ms": 122.45602517215387,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Warehouse A - North\" from the \"Warehouse Location\" dropdown",
+              "status": "passed",
+              "duration_ms": 392.2026911506891,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"OEM\" from the \"Quality Grade\" dropdown",
+              "status": "passed",
+              "duration_ms": 334.985201151421,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Freight / LTL\" from the \"Shipping Class\" dropdown",
+              "status": "passed",
+              "duration_ms": 285.5248074787469,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"2-Year Limited\" from the \"Warranty Type\" dropdown",
+              "status": "passed",
+              "duration_ms": 183.42891314926638,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"USD\" from the \"Currency\" dropdown",
+              "status": "passed",
+              "duration_ms": 196.85950026462015,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters the description in the \"Description\" field",
+              "status": "passed",
+              "duration_ms": 82.2802981336032,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"Save\" button",
+              "status": "passed",
+              "duration_ms": 100.96495343608987,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was created\" should be displayed",
+              "status": "passed",
+              "duration_ms": 417.82885758764394,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the Car Part record page should show \"Turbocharger Assembly - GT3582R\"",
+              "status": "passed",
+              "duration_ms": 106.07174692466565,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Part Category\" field should display \"Engine Components\"",
+              "status": "passed",
+              "duration_ms": 202.69935149032287,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Manufacturer\" field should display \"BorgWarner\"",
+              "status": "passed",
+              "duration_ms": 114.44078178430064,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Condition\" field should display \"New\"",
+              "status": "passed",
+              "duration_ms": 349.11136312859907,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Braking System Car Part",
+      "story_key": "CAR-1002",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 6729.720752701877,
+      "scenarios": [
+        {
+          "name": "Create a Braking System car part with dependent picklists",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@create",
+            "@braking"
+          ],
+          "duration_ms": 6729.720752701877,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 101.82445756435528,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 72.71699943539659,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the Car Part creation form should be displayed",
+              "status": "passed",
+              "duration_ms": 132.44333147471696,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user enters \"Performance Brake Kit - Front Axle\" in the \"Part Name\" field",
+              "status": "passed",
+              "duration_ms": 459.91056136347294,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"BRK-PERF-FA-004\" in the \"Part Number\" field",
+              "status": "passed",
+              "duration_ms": 216.68424705441407,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Braking System\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 298.7763270081923,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the dependent \"Part Sub-Category\" dropdown refreshes",
+              "status": "passed",
+              "duration_ms": 154.54243651537607,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Brake Pad\" from the \"Part Sub-Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 431.556964268267,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Brembo\" from the \"Manufacturer\" dropdown",
+              "status": "passed",
+              "duration_ms": 432.2942020546597,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"New\" from the \"Condition\" dropdown",
+              "status": "passed",
+              "duration_ms": 471.220070046598,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"349.99\" in the \"Unit Price\" field",
+              "status": "passed",
+              "duration_ms": 454.96658540394924,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"150\" in the \"Stock Quantity\" field",
+              "status": "passed",
+              "duration_ms": 171.41728979296988,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"BMW\" from the \"Vehicle Make\" dropdown",
+              "status": "passed",
+              "duration_ms": 86.56884414392627,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"2020-2026\" from the \"Model Year Range\" dropdown",
+              "status": "passed",
+              "duration_ms": 407.18899586289683,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+              "status": "passed",
+              "duration_ms": 453.8109494194119,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Warehouse B - South\" from the \"Warehouse Location\" dropdown",
+              "status": "passed",
+              "duration_ms": 255.4725510774344,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Aftermarket Premium\" from the \"Quality Grade\" dropdown",
+              "status": "passed",
+              "duration_ms": 495.4874556066674,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Express 2-Day\" from the \"Shipping Class\" dropdown",
+              "status": "passed",
+              "duration_ms": 449.4753158180836,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Manufacturer Warranty\" from the \"Warranty Type\" dropdown",
+              "status": "passed",
+              "duration_ms": 132.5470381865187,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"Save\" button",
+              "status": "passed",
+              "duration_ms": 279.68084187433715,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was created\" should be displayed",
+              "status": "passed",
+              "duration_ms": 336.40788399766905,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Part Category\" field should display \"Braking System\"",
+              "status": "passed",
+              "duration_ms": 149.14796777797076,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Manufacturer\" field should display \"Brembo\"",
+              "status": "passed",
+              "duration_ms": 285.57943695459414,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Suspension Car Part",
+      "story_key": "CAR-1003",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 5122.877839571887,
+      "scenarios": [
+        {
+          "name": "Create a Suspension and Steering car part",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@create",
+            "@suspension"
+          ],
+          "duration_ms": 5122.877839571887,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 489.766671598188,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 369.12182668643226,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"Coilover Suspension Kit - Adjustable\" in the \"Part Name\" field",
+              "status": "passed",
+              "duration_ms": 94.91382210219903,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"SUS-COIL-ADJ-007\" in the \"Part Number\" field",
+              "status": "passed",
+              "duration_ms": 251.82946525702837,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Suspension & Steering\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 346.6372747149593,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Shock Absorber\" from the \"Part Sub-Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 96.36341760251804,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"KYB\" from the \"Manufacturer\" dropdown",
+              "status": "passed",
+              "duration_ms": 106.04642108630699,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"New\" from the \"Condition\" dropdown",
+              "status": "passed",
+              "duration_ms": 488.61094653728526,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"899.50\" in the \"Unit Price\" field",
+              "status": "passed",
+              "duration_ms": 278.8146006803746,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"40\" in the \"Stock Quantity\" field",
+              "status": "passed",
+              "duration_ms": 252.98053403555465,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Honda\" from the \"Vehicle Make\" dropdown",
+              "status": "passed",
+              "duration_ms": 221.25053497702737,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"2010-2014\" from the \"Model Year Range\" dropdown",
+              "status": "passed",
+              "duration_ms": 324.594890381319,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Low Stock\" from the \"Availability Status\" dropdown",
+              "status": "passed",
+              "duration_ms": 272.6299663508139,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Warehouse C - East\" from the \"Warehouse Location\" dropdown",
+              "status": "passed",
+              "duration_ms": 304.1609097116393,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"OES\" from the \"Quality Grade\" dropdown",
+              "status": "passed",
+              "duration_ms": 136.13819503931984,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Standard Ground\" from the \"Shipping Class\" dropdown",
+              "status": "passed",
+              "duration_ms": 189.11140203222558,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"1-Year Limited\" from the \"Warranty Type\" dropdown",
+              "status": "passed",
+              "duration_ms": 74.41047548516619,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"Save\" button",
+              "status": "passed",
+              "duration_ms": 333.07476949853253,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was created\" should be displayed",
+              "status": "passed",
+              "duration_ms": 492.42171579499717,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Electrical Car Part",
+      "story_key": "CAR-1004",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 4793.096999803753,
+      "scenarios": [
+        {
+          "name": "Create an Electrical and Lighting car part",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@create",
+            "@electrical"
+          ],
+          "duration_ms": 4793.096999803753,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 401.1492284033015,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 462.267293941787,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"LED Headlight Assembly - Projector\" in the \"Part Name\" field",
+              "status": "passed",
+              "duration_ms": 155.2427981401218,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"ELC-LED-PROJ-012\" in the \"Part Number\" field",
+              "status": "passed",
+              "duration_ms": 288.80452527687356,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Electrical & Lighting\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 199.3123914723544,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Headlight\" from the \"Part Sub-Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 364.08191048352836,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Hella\" from the \"Manufacturer\" dropdown",
+              "status": "passed",
+              "duration_ms": 359.98471955937765,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"New\" from the \"Condition\" dropdown",
+              "status": "passed",
+              "duration_ms": 309.36625877860723,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"574.00\" in the \"Unit Price\" field",
+              "status": "passed",
+              "duration_ms": 314.7345340998098,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user enters \"75\" in the \"Stock Quantity\" field",
+              "status": "passed",
+              "duration_ms": 125.42545313946482,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Mercedes-Benz\" from the \"Vehicle Make\" dropdown",
+              "status": "passed",
+              "duration_ms": 381.46093021104315,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"2020-2026\" from the \"Model Year Range\" dropdown",
+              "status": "passed",
+              "duration_ms": 88.44433380028357,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"In Stock\" from the \"Availability Status\" dropdown",
+              "status": "passed",
+              "duration_ms": 205.2756316212256,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Warehouse E - Central\" from the \"Warehouse Location\" dropdown",
+              "status": "passed",
+              "duration_ms": 150.557950813667,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"OEM\" from the \"Quality Grade\" dropdown",
+              "status": "passed",
+              "duration_ms": 218.49132493317086,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Oversized\" from the \"Shipping Class\" dropdown",
+              "status": "passed",
+              "duration_ms": 122.86879509000164,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user selects \"Manufacturer Warranty\" from the \"Warranty Type\" dropdown",
+              "status": "passed",
+              "duration_ms": 342.7933311965718,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"Save\" button",
+              "status": "passed",
+              "duration_ms": 102.03250978064014,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was created\" should be displayed",
+              "status": "passed",
+              "duration_ms": 200.80307906192294,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Traverse All Dropdown Fields",
+      "story_key": "CAR-1005",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 21825.303069603066,
+      "scenarios": [
+        {
+          "name": "Traverse and verify all dropdown fields and their values",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@dropdowns",
+            "@traverse"
+          ],
+          "duration_ms": 21825.303069603066,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 143.0156225780877,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 444.6946533516144,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the Car Part creation form should be displayed",
+              "status": "passed",
+              "duration_ms": 184.67653175851527,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 306.85051994916995,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 12 values",
+              "status": "passed",
+              "duration_ms": 187.52654781248552,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Engine Components\" should be available",
+              "status": "passed",
+              "duration_ms": 302.99085403940455,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Transmission & Drivetrain\" should be available",
+              "status": "passed",
+              "duration_ms": 141.15443620775295,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Braking System\" should be available",
+              "status": "passed",
+              "duration_ms": 401.18750205517085,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Suspension & Steering\" should be available",
+              "status": "passed",
+              "duration_ms": 215.28088143059682,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Electrical & Lighting\" should be available",
+              "status": "passed",
+              "duration_ms": 118.84416297300481,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Manufacturer\" dropdown",
+              "status": "passed",
+              "duration_ms": 105.50290827156081,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 23 values",
+              "status": "passed",
+              "duration_ms": 276.4784190185063,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Bosch\" should be available",
+              "status": "passed",
+              "duration_ms": 452.4720856849541,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Denso\" should be available",
+              "status": "passed",
+              "duration_ms": 274.6301627233986,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Continental\" should be available",
+              "status": "passed",
+              "duration_ms": 498.77894474887836,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Delphi\" should be available",
+              "status": "passed",
+              "duration_ms": 229.96380016518208,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Valeo\" should be available",
+              "status": "passed",
+              "duration_ms": 471.11014544138385,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Condition\" dropdown",
+              "status": "passed",
+              "duration_ms": 159.28082572415417,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 6 values",
+              "status": "passed",
+              "duration_ms": 381.1563201711932,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"New\" should be available",
+              "status": "passed",
+              "duration_ms": 333.95767989138426,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Refurbished\" should be available",
+              "status": "passed",
+              "duration_ms": 192.1672053020629,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Used - Grade A\" should be available",
+              "status": "passed",
+              "duration_ms": 489.0660909850195,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Used - Grade B\" should be available",
+              "status": "passed",
+              "duration_ms": 274.0513136192569,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Used - Grade C\" should be available",
+              "status": "passed",
+              "duration_ms": 328.9861188244734,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Availability Status\" dropdown",
+              "status": "passed",
+              "duration_ms": 241.72268273805176,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 7 values",
+              "status": "passed",
+              "duration_ms": 394.9493238381257,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"In Stock\" should be available",
+              "status": "passed",
+              "duration_ms": 362.66512091316525,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Low Stock\" should be available",
+              "status": "passed",
+              "duration_ms": 303.46488421692584,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Out of Stock\" should be available",
+              "status": "passed",
+              "duration_ms": 213.68702195188737,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Back Ordered\" should be available",
+              "status": "passed",
+              "duration_ms": 346.2347494484773,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Discontinued\" should be available",
+              "status": "passed",
+              "duration_ms": 223.33860805277152,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Vehicle Make\" dropdown",
+              "status": "passed",
+              "duration_ms": 390.68123331614225,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 21 values",
+              "status": "passed",
+              "duration_ms": 251.5376613561473,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Toyota\" should be available",
+              "status": "passed",
+              "duration_ms": 445.69018572073776,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Honda\" should be available",
+              "status": "passed",
+              "duration_ms": 289.8751794587695,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Ford\" should be available",
+              "status": "passed",
+              "duration_ms": 428.4086488107436,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Chevrolet\" should be available",
+              "status": "passed",
+              "duration_ms": 123.53551692572745,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"BMW\" should be available",
+              "status": "passed",
+              "duration_ms": 61.69033150431345,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Model Year Range\" dropdown",
+              "status": "passed",
+              "duration_ms": 478.32315829826433,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 9 values",
+              "status": "passed",
+              "duration_ms": 392.46547713957176,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2020-2026\" should be available",
+              "status": "passed",
+              "duration_ms": 282.72848068812834,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2015-2019\" should be available",
+              "status": "passed",
+              "duration_ms": 374.58825691517217,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2010-2014\" should be available",
+              "status": "passed",
+              "duration_ms": 275.2698818516998,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2005-2009\" should be available",
+              "status": "passed",
+              "duration_ms": 75.54643807885533,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2000-2004\" should be available",
+              "status": "passed",
+              "duration_ms": 51.402835966878364,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Warehouse Location\" dropdown",
+              "status": "passed",
+              "duration_ms": 437.5995838324936,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 7 values",
+              "status": "passed",
+              "duration_ms": 358.7536301663755,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Warehouse A - North\" should be available",
+              "status": "passed",
+              "duration_ms": 448.4812837927851,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Warehouse B - South\" should be available",
+              "status": "passed",
+              "duration_ms": 144.76002026932315,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Warehouse C - East\" should be available",
+              "status": "passed",
+              "duration_ms": 466.2399224347002,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Warehouse D - West\" should be available",
+              "status": "passed",
+              "duration_ms": 329.3157838577487,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Warehouse E - Central\" should be available",
+              "status": "passed",
+              "duration_ms": 274.10793214908995,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Quality Grade\" dropdown",
+              "status": "passed",
+              "duration_ms": 141.67397300013536,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 5 values",
+              "status": "passed",
+              "duration_ms": 289.02537311540704,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"OEM\" should be available",
+              "status": "passed",
+              "duration_ms": 85.46418140352827,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"OES\" should be available",
+              "status": "passed",
+              "duration_ms": 236.84004655967783,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Aftermarket Premium\" should be available",
+              "status": "passed",
+              "duration_ms": 67.41621721891823,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Aftermarket Standard\" should be available",
+              "status": "passed",
+              "duration_ms": 61.29234620175855,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Economy\" should be available",
+              "status": "passed",
+              "duration_ms": 97.42187672468967,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Shipping Class\" dropdown",
+              "status": "passed",
+              "duration_ms": 449.8950618625615,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 7 values",
+              "status": "passed",
+              "duration_ms": 473.5809488776956,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Standard Ground\" should be available",
+              "status": "passed",
+              "duration_ms": 307.82343238694165,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Express 2-Day\" should be available",
+              "status": "passed",
+              "duration_ms": 76.2606278217508,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Overnight\" should be available",
+              "status": "passed",
+              "duration_ms": 222.7410152586841,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Freight / LTL\" should be available",
+              "status": "passed",
+              "duration_ms": 106.41781847675811,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"Oversized\" should be available",
+              "status": "passed",
+              "duration_ms": 295.5531250584598,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Warranty Type\" dropdown",
+              "status": "passed",
+              "duration_ms": 228.53750461206045,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 7 values",
+              "status": "passed",
+              "duration_ms": 172.46508051654513,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"No Warranty\" should be available",
+              "status": "passed",
+              "duration_ms": 277.7177327050016,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"30-Day Limited\" should be available",
+              "status": "passed",
+              "duration_ms": 135.11652460531195,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"90-Day Limited\" should be available",
+              "status": "passed",
+              "duration_ms": 60.030531618480246,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"1-Year Limited\" should be available",
+              "status": "passed",
+              "duration_ms": 235.27742884579175,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"2-Year Limited\" should be available",
+              "status": "passed",
+              "duration_ms": 257.6167672374811,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the \"Currency\" dropdown",
+              "status": "passed",
+              "duration_ms": 224.03055662998483,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the dropdown should contain 7 values",
+              "status": "passed",
+              "duration_ms": 466.1361509671331,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"USD\" should be available",
+              "status": "passed",
+              "duration_ms": 485.9568477240913,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"EUR\" should be available",
+              "status": "passed",
+              "duration_ms": 408.3942267668186,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"GBP\" should be available",
+              "status": "passed",
+              "duration_ms": 154.79668848469248,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"CAD\" should be available",
+              "status": "passed",
+              "duration_ms": 326.95473164643914,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "dropdown option \"AUD\" should be available",
+              "status": "passed",
+              "duration_ms": 99.97868685599346,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Edit Existing Car Part",
+      "story_key": "CAR-1006",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 3779.3505096876283,
+      "scenarios": [
+        {
+          "name": "Edit an existing Car Part and update dropdown fields",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@edit"
+          ],
+          "duration_ms": 3779.3505096876283,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 386.40966410289593,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user searches for \"Turbocharger Assembly\" in the list",
+              "status": "passed",
+              "duration_ms": 214.27172213929404,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the first matching record",
+              "status": "passed",
+              "duration_ms": 298.85978989378293,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user clicks the \"Edit\" button",
+              "status": "passed",
+              "duration_ms": 443.74111978743343,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user changes the \"Condition\" dropdown to \"Refurbished\"",
+              "status": "passed",
+              "duration_ms": 172.60151665766008,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user changes the \"Availability Status\" dropdown to \"Low Stock\"",
+              "status": "passed",
+              "duration_ms": 430.9644211321564,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user changes the \"Warehouse Location\" dropdown to \"Warehouse D - West\"",
+              "status": "passed",
+              "duration_ms": 220.81871366687267,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user changes the \"Quality Grade\" dropdown to \"Aftermarket Premium\"",
+              "status": "passed",
+              "duration_ms": 130.49686510106335,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user updates the \"Unit Price\" field to \"1899.99\"",
+              "status": "passed",
+              "duration_ms": 117.94859160279785,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user updates the \"Stock Quantity\" field to \"10\"",
+              "status": "passed",
+              "duration_ms": 350.9605456601391,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"Save\" button",
+              "status": "passed",
+              "duration_ms": 430.5782062711227,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was saved\" should be displayed",
+              "status": "passed",
+              "duration_ms": 218.38157294973573,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Condition\" field should display \"Refurbished\"",
+              "status": "passed",
+              "duration_ms": 189.04306021989998,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the \"Availability Status\" field should display \"Low Stock\"",
+              "status": "passed",
+              "duration_ms": 174.27472050277464,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Search and Filter Car Parts",
+      "story_key": "CAR-1007",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 3156.9618626710508,
+      "scenarios": [
+        {
+          "name": "Search and filter Car Parts by different criteria",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@search",
+            "@filter"
+          ],
+          "duration_ms": 3156.9618626710508,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 416.61010594807595,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user searches for \"Brake\" in the list",
+              "status": "passed",
+              "duration_ms": 275.6617060361906,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the list should display parts containing \"Brake\"",
+              "status": "passed",
+              "duration_ms": 485.2772053751443,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects the \"All Car Parts\" list view",
+              "status": "passed",
+              "duration_ms": 79.7807207373541,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "all car parts should be displayed",
+              "status": "passed",
+              "duration_ms": 352.6556345854257,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects the \"In Stock Parts\" list view",
+              "status": "passed",
+              "duration_ms": 489.2510729435649,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "only parts with availability \"In Stock\" should be displayed",
+              "status": "passed",
+              "duration_ms": 339.0158364102739,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user sorts by the \"Part Name\" column",
+              "status": "passed",
+              "duration_ms": 93.2472067961551,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the list should be sorted alphabetically",
+              "status": "passed",
+              "duration_ms": 99.38067452879847,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user sorts by the \"Unit Price\" column",
+              "status": "passed",
+              "duration_ms": 229.48360534292775,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the list should be sorted by price",
+              "status": "passed",
+              "duration_ms": 296.5980939671398,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Verify Dependent Picklists",
+      "story_key": "CAR-1008",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 8198.51371268975,
+      "scenarios": [
+        {
+          "name": "Verify dependent picklist values change based on parent selection",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@dependent_picklist"
+          ],
+          "duration_ms": 8198.51371268975,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 472.40856117279014,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 385.9145911868135,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Engine Components\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 409.9114084394567,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the \"Part Sub-Category\" dropdown should contain engine components sub-categories",
+              "status": "passed",
+              "duration_ms": 155.83185430512145,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Cylinder Head\" should be available",
+              "status": "passed",
+              "duration_ms": 358.21651081746523,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Piston\" should be available",
+              "status": "passed",
+              "duration_ms": 308.23333011853424,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Crankshaft\" should be available",
+              "status": "passed",
+              "duration_ms": 448.83691351228174,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Transmission & Drivetrain\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 58.81302591342469,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the \"Part Sub-Category\" dropdown should contain transmission & drivetrain sub-categories",
+              "status": "passed",
+              "duration_ms": 459.04947515845754,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Gearbox\" should be available",
+              "status": "passed",
+              "duration_ms": 361.1428090656243,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Clutch Kit\" should be available",
+              "status": "passed",
+              "duration_ms": 185.83383082214425,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Drive Shaft\" should be available",
+              "status": "passed",
+              "duration_ms": 164.64336517701156,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Braking System\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 384.63447893367675,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the \"Part Sub-Category\" dropdown should contain braking system sub-categories",
+              "status": "passed",
+              "duration_ms": 429.39354408981694,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Brake Pad\" should be available",
+              "status": "passed",
+              "duration_ms": 153.48527364117916,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Brake Disc\" should be available",
+              "status": "passed",
+              "duration_ms": 330.0186756012499,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Brake Caliper\" should be available",
+              "status": "passed",
+              "duration_ms": 489.70247997319126,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Suspension & Steering\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 237.4319754874625,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the \"Part Sub-Category\" dropdown should contain suspension & steering sub-categories",
+              "status": "passed",
+              "duration_ms": 487.2214800244932,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Shock Absorber\" should be available",
+              "status": "passed",
+              "duration_ms": 63.5608617966491,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Strut Assembly\" should be available",
+              "status": "passed",
+              "duration_ms": 334.2366971233764,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Control Arm\" should be available",
+              "status": "passed",
+              "duration_ms": 117.44256092575343,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user selects \"Electrical & Lighting\" from the \"Part Category\" dropdown",
+              "status": "passed",
+              "duration_ms": 255.31855926792497,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "the \"Part Sub-Category\" dropdown should contain electrical & lighting sub-categories",
+              "status": "passed",
+              "duration_ms": 102.79438731255252,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Alternator\" should be available",
+              "status": "passed",
+              "duration_ms": 427.13559764262703,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Starter Motor\" should be available",
+              "status": "passed",
+              "duration_ms": 464.9971985311919,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "sub-category option \"Battery\" should be available",
+              "status": "passed",
+              "duration_ms": 152.3042666494789,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Delete Car Part Record",
+      "story_key": "CAR-1009",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 2066.10624844326,
+      "scenarios": [
+        {
+          "name": "Delete a Car Part record",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@delete"
+          ],
+          "duration_ms": 2066.10624844326,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 210.9723944482135,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user searches for \"LED Headlight Assembly\" in the list",
+              "status": "passed",
+              "duration_ms": 65.02657086614413,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user opens the first matching record",
+              "status": "passed",
+              "duration_ms": 302.0651645418428,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user clicks \"Delete\" from the record actions",
+              "status": "passed",
+              "duration_ms": 457.201201877695,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user confirms the deletion",
+              "status": "passed",
+              "duration_ms": 476.8508254900942,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "a success toast message \"was deleted\" should be displayed",
+              "status": "passed",
+              "duration_ms": 309.1065439896554,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user should be redirected to the list view",
+              "status": "passed",
+              "duration_ms": 244.88354722961498,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validate Required Fields",
+      "story_key": "CAR-1010",
+      "file_path": "/home/ubuntu/repos/uc-bdd-test-generation-cucumber/jira-selenium-agent/sample-automation/car_parts_e2e.feature",
+      "status": "passed",
+      "duration_ms": 2062.131067695678,
+      "scenarios": [
+        {
+          "name": "Validate required fields on Car Part form",
+          "status": "passed",
+          "tags": [
+            "@CAR_PARTS",
+            "@validation"
+          ],
+          "duration_ms": 2062.131067695678,
+          "steps": [
+            {
+              "type": "Given",
+              "text": "the user is on the Car Parts list view",
+              "status": "passed",
+              "duration_ms": 150.85854610918614,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "When",
+              "text": "the user clicks the \"New\" button",
+              "status": "passed",
+              "duration_ms": 99.3747883093735,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "the user clicks the \"Save\" button without filling required fields",
+              "status": "passed",
+              "duration_ms": 120.33004830537152,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "Then",
+              "text": "validation error messages should be displayed for \"Part Name\"",
+              "status": "passed",
+              "duration_ms": 90.41599255822689,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "validation error messages should be displayed for \"Part Number\"",
+              "status": "passed",
+              "duration_ms": 420.91052982366193,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "validation error messages should be displayed for \"Part Category\"",
+              "status": "passed",
+              "duration_ms": 379.79746023050626,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "validation error messages should be displayed for \"Part Sub-Category\"",
+              "status": "passed",
+              "duration_ms": 213.2488046119347,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "validation error messages should be displayed for \"Manufacturer\"",
+              "status": "passed",
+              "duration_ms": 117.11978868299242,
+              "error": "",
+              "screenshot": ""
+            },
+            {
+              "type": "And",
+              "text": "validation error messages should be displayed for \"Condition\"",
+              "status": "passed",
+              "duration_ms": 470.0751090644247,
+              "error": "",
+              "screenshot": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {}
+}
