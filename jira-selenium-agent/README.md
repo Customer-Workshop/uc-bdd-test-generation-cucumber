@@ -402,10 +402,27 @@ jira-selenium-agent/
       package.json            # Node.js dependencies
       tsconfig.json           # TypeScript config
 
+  features/                   # Generated Gherkin feature files
+    car-parts/
+      create/                 # Create (CRUD) scenarios
+        CAR-1001_create_engine_component.feature
+        CAR-1002_create_braking_system.feature
+        CAR-1003_create_suspension_part.feature
+        CAR-1004_create_electrical_part.feature
+      read/                   # Read / query scenarios
+        CAR-1005_traverse_dropdown_fields.feature
+        CAR-1007_search_and_filter.feature
+        CAR-1008_dependent_picklist_verification.feature
+      update/                 # Update scenarios
+        CAR-1006_edit_car_part.feature
+      delete/                 # Delete scenarios
+        CAR-1009_delete_car_part.feature
+      validation/             # Validation scenarios
+        CAR-1010_validate_required_fields.feature
+
   sample-automation/
     car_parts_runner.py       # E2E test runner
     car_parts_page_objects.py # Car Parts POM classes
-    car_parts_e2e.feature     # Gherkin feature file (11 scenarios)
     car_parts_test_data.json  # Test data (6 scenarios, 12 dropdowns)
     latest_execution_report.json  # Persisted report from last pipeline run
     automation_config.json    # Portal config (auto-generated)

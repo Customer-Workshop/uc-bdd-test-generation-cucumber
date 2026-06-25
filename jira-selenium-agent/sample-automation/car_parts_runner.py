@@ -51,7 +51,8 @@ class CarPartsTestRunner:
         self.copado_deployer = CopadoDeployer(self.config)
         self.test_data_agent = TestDataAgent(self.config)
         self.test_data = self._load_test_data()
-        self.feature_path = Path(__file__).parent / "car_parts_e2e.feature"
+        self.features_dir = Path(__file__).parent.parent / "features" / "car-parts"
+        self.feature_path = self.features_dir
         self.scenarios: list[ScenarioResult] = []
 
     def _load_test_data(self) -> dict:

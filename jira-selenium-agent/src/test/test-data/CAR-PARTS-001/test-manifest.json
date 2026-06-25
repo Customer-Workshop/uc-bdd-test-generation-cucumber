@@ -1,0 +1,364 @@
+{
+  "story_key": "CAR-PARTS-001",
+  "environment": "test",
+  "app_url": "http://localhost:8080",
+  "test_data": {
+    "test_suite": "Car Parts Salesforce LWC E2E Automation",
+    "application": "Salesforce Lightning - Car Parts Management",
+    "framework": "Lightning Web Components (LWC)",
+    "dropdown_fields": {
+      "Part_Category__c": {
+        "label": "Part Category",
+        "is_required": true,
+        "values": [
+          "Engine Components",
+          "Transmission & Drivetrain",
+          "Braking System",
+          "Suspension & Steering",
+          "Electrical & Lighting",
+          "Exhaust System",
+          "Body & Exterior",
+          "Interior & Comfort",
+          "Cooling System",
+          "Fuel System",
+          "HVAC & Climate Control",
+          "Wheels & Tires"
+        ]
+      },
+      "Part_Sub_Category__c": {
+        "label": "Part Sub-Category",
+        "is_required": true,
+        "dependent_on": "Part_Category__c",
+        "dependency_map": {
+          "Engine Components": [
+            "Cylinder Head",
+            "Piston",
+            "Crankshaft",
+            "Camshaft",
+            "Valve",
+            "Gasket Set",
+            "Timing Belt",
+            "Oil Pump",
+            "Engine Block",
+            "Turbocharger"
+          ],
+          "Transmission & Drivetrain": [
+            "Gearbox",
+            "Clutch Kit",
+            "Drive Shaft",
+            "CV Joint",
+            "Differential",
+            "Flywheel",
+            "Transfer Case",
+            "Torque Converter"
+          ],
+          "Braking System": [
+            "Brake Pad",
+            "Brake Disc",
+            "Brake Caliper",
+            "Brake Line",
+            "Master Cylinder",
+            "ABS Module",
+            "Brake Drum",
+            "Brake Shoe"
+          ],
+          "Suspension & Steering": [
+            "Shock Absorber",
+            "Strut Assembly",
+            "Control Arm",
+            "Ball Joint",
+            "Tie Rod",
+            "Sway Bar",
+            "Steering Rack",
+            "Power Steering Pump"
+          ],
+          "Electrical & Lighting": [
+            "Alternator",
+            "Starter Motor",
+            "Battery",
+            "Ignition Coil",
+            "Spark Plug",
+            "Headlight",
+            "Tail Light",
+            "Wiring Harness"
+          ]
+        }
+      },
+      "Manufacturer__c": {
+        "label": "Manufacturer",
+        "is_required": true,
+        "values": [
+          "Bosch",
+          "Denso",
+          "Continental",
+          "Delphi",
+          "Valeo",
+          "ZF Friedrichshafen",
+          "Aisin",
+          "Magna International",
+          "BorgWarner",
+          "Mahle",
+          "NGK",
+          "ACDelco",
+          "Brembo",
+          "Monroe",
+          "KYB",
+          "Gates",
+          "Hella",
+          "Moog",
+          "Dayco",
+          "TRW",
+          "Sachs",
+          "SKF",
+          "NTN"
+        ]
+      },
+      "Condition__c": {
+        "label": "Condition",
+        "is_required": true,
+        "values": [
+          "New",
+          "Refurbished",
+          "Used - Grade A",
+          "Used - Grade B",
+          "Used - Grade C",
+          "Salvage"
+        ]
+      },
+      "Availability_Status__c": {
+        "label": "Availability Status",
+        "values": [
+          "In Stock",
+          "Low Stock",
+          "Out of Stock",
+          "Back Ordered",
+          "Discontinued",
+          "Pre-Order",
+          "Made to Order"
+        ]
+      },
+      "Vehicle_Make__c": {
+        "label": "Vehicle Make",
+        "values": [
+          "Toyota",
+          "Honda",
+          "Ford",
+          "Chevrolet",
+          "BMW",
+          "Mercedes-Benz",
+          "Audi",
+          "Volkswagen",
+          "Hyundai",
+          "Kia",
+          "Nissan",
+          "Mazda",
+          "Subaru",
+          "Volvo",
+          "Jeep",
+          "Ram",
+          "GMC",
+          "Lexus",
+          "Porsche",
+          "Tesla",
+          "Universal / Multi-Fit"
+        ]
+      },
+      "Model_Year_Range__c": {
+        "label": "Model Year Range",
+        "values": [
+          "2020-2026",
+          "2015-2019",
+          "2010-2014",
+          "2005-2009",
+          "2000-2004",
+          "1995-1999",
+          "1990-1994",
+          "Pre-1990",
+          "All Years"
+        ]
+      },
+      "Warehouse_Location__c": {
+        "label": "Warehouse Location",
+        "values": [
+          "Warehouse A - North",
+          "Warehouse B - South",
+          "Warehouse C - East",
+          "Warehouse D - West",
+          "Warehouse E - Central",
+          "Distributor Hub",
+          "Transit / In Shipment"
+        ]
+      },
+      "Quality_Grade__c": {
+        "label": "Quality Grade",
+        "values": [
+          "OEM",
+          "OES",
+          "Aftermarket Premium",
+          "Aftermarket Standard",
+          "Economy"
+        ]
+      },
+      "Shipping_Class__c": {
+        "label": "Shipping Class",
+        "values": [
+          "Standard Ground",
+          "Express 2-Day",
+          "Overnight",
+          "Freight / LTL",
+          "Oversized",
+          "Hazmat",
+          "White Glove"
+        ]
+      },
+      "Warranty_Type__c": {
+        "label": "Warranty Type",
+        "values": [
+          "No Warranty",
+          "30-Day Limited",
+          "90-Day Limited",
+          "1-Year Limited",
+          "2-Year Limited",
+          "Lifetime Limited",
+          "Manufacturer Warranty"
+        ]
+      },
+      "Currency_Code__c": {
+        "label": "Currency",
+        "values": [
+          "USD",
+          "EUR",
+          "GBP",
+          "CAD",
+          "AUD",
+          "JPY",
+          "INR"
+        ]
+      }
+    },
+    "test_records": [
+      {
+        "scenario": "Create Engine Component",
+        "data": {
+          "Part Name": "Turbocharger Assembly - GT3582R",
+          "Part Number": "ENG-TURBO-3582R-001",
+          "Part Category": "Engine Components",
+          "Part Sub-Category": "Turbocharger",
+          "Manufacturer": "BorgWarner",
+          "Condition": "New",
+          "Unit Price": "2499.99",
+          "Stock Quantity": "25",
+          "Vehicle Make": "Toyota",
+          "Model Year Range": "2015-2019",
+          "Availability Status": "In Stock",
+          "Warehouse Location": "Warehouse A - North",
+          "Quality Grade": "OEM",
+          "Shipping Class": "Freight / LTL",
+          "Warranty Type": "2-Year Limited",
+          "Currency": "USD",
+          "Description": "High-performance turbocharger assembly for Toyota Supra MK5. Includes wastegate and blow-off valve."
+        }
+      },
+      {
+        "scenario": "Create Braking System Part",
+        "data": {
+          "Part Name": "Performance Brake Kit - Front Axle",
+          "Part Number": "BRK-PERF-FA-004",
+          "Part Category": "Braking System",
+          "Part Sub-Category": "Brake Pad",
+          "Manufacturer": "Brembo",
+          "Condition": "New",
+          "Unit Price": "349.99",
+          "Stock Quantity": "150",
+          "Vehicle Make": "BMW",
+          "Model Year Range": "2020-2026",
+          "Availability Status": "In Stock",
+          "Warehouse Location": "Warehouse B - South",
+          "Quality Grade": "Aftermarket Premium",
+          "Shipping Class": "Express 2-Day",
+          "Warranty Type": "Manufacturer Warranty"
+        }
+      },
+      {
+        "scenario": "Create Suspension Part",
+        "data": {
+          "Part Name": "Coilover Suspension Kit - Adjustable",
+          "Part Number": "SUS-COIL-ADJ-007",
+          "Part Category": "Suspension & Steering",
+          "Part Sub-Category": "Shock Absorber",
+          "Manufacturer": "KYB",
+          "Condition": "New",
+          "Unit Price": "899.50",
+          "Stock Quantity": "40",
+          "Vehicle Make": "Honda",
+          "Model Year Range": "2010-2014",
+          "Availability Status": "Low Stock",
+          "Warehouse Location": "Warehouse C - East",
+          "Quality Grade": "OES",
+          "Shipping Class": "Standard Ground",
+          "Warranty Type": "1-Year Limited"
+        }
+      },
+      {
+        "scenario": "Create Electrical Part",
+        "data": {
+          "Part Name": "LED Headlight Assembly - Projector",
+          "Part Number": "ELC-LED-PROJ-012",
+          "Part Category": "Electrical & Lighting",
+          "Part Sub-Category": "Headlight",
+          "Manufacturer": "Hella",
+          "Condition": "New",
+          "Unit Price": "574.00",
+          "Stock Quantity": "75",
+          "Vehicle Make": "Mercedes-Benz",
+          "Model Year Range": "2020-2026",
+          "Availability Status": "In Stock",
+          "Warehouse Location": "Warehouse E - Central",
+          "Quality Grade": "OEM",
+          "Shipping Class": "Oversized",
+          "Warranty Type": "Manufacturer Warranty"
+        }
+      },
+      {
+        "scenario": "Edit Car Part",
+        "data": {
+          "search_term": "Turbocharger Assembly",
+          "updates": {
+            "Condition": "Refurbished",
+            "Availability Status": "Low Stock",
+            "Warehouse Location": "Warehouse D - West",
+            "Quality Grade": "Aftermarket Premium",
+            "Unit Price": "1899.99",
+            "Stock Quantity": "10"
+          }
+        }
+      },
+      {
+        "scenario": "Delete Car Part",
+        "data": {
+          "search_term": "LED Headlight Assembly"
+        }
+      }
+    ]
+  },
+  "feature_dir": "features/car-parts/",
+  "selenium_config": {
+    "browser": "chrome",
+    "headless": true,
+    "base_url": "http://localhost:8080",
+    "implicit_wait": 10,
+    "explicit_wait": 10,
+    "page_load_timeout": 30,
+    "screenshot_on_failure": true,
+    "screenshot_dir": "screenshots",
+    "window_size": {
+      "width": 1920,
+      "height": 1080
+    },
+    "capabilities": {
+      "acceptInsecureCerts": true,
+      "unhandledPromptBehavior": "dismiss"
+    }
+  },
+  "data_files": []
+}
