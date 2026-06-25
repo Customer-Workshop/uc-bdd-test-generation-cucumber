@@ -77,25 +77,29 @@ pip install -r requirements.txt
 pip install flask werkzeug
 ```
 
-### 2. Start the Mock Salesforce App
+### 2. Start the Mock Salesforce App (React + Material UI)
 
 ```bash
-python sample-automation/mock_salesforce_app.py
+python sample-automation/react_salesforce_server.py
 ```
 
-This starts the Car Parts application at **http://localhost:5555**
+This starts the Car Parts React SPA at **http://localhost:5555**
 
 Login: `admin@carparts.demo` / `demo1234`
 
-### 3. Start the Configuration Portal
+Features: MUI DataGrid, 12 dropdown fields, dependent picklists, search/filter, CRUD operations.
+
+### 3. Start the Configuration Portal (React + Material UI)
 
 Open a second terminal:
 
 ```bash
-python sample-automation/config_portal.py
+python sample-automation/react_config_portal_server.py
 ```
 
 This starts the configuration portal at **http://localhost:5556**
+
+Features: 15 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, Jira, Selenium, GitHub, Copado, AI Model, App URL, Upload, SelectorsHub, MCP Servers, Flow Diagram.
 
 ### 4. Run the Selenium E2E Tests
 
