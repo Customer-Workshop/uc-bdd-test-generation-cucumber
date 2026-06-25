@@ -80,7 +80,7 @@ pip install flask werkzeug
 ### 2. Start the Mock Salesforce App (React + Material UI)
 
 ```bash
-python sample-automation/react_salesforce_server.py
+python salesforce-app/backend/app.py
 ```
 
 This starts the Car Parts React SPA at **http://localhost:5555**
@@ -94,7 +94,7 @@ Features: MUI DataGrid, 12 dropdown fields, dependent picklists, search/filter, 
 Open a second terminal:
 
 ```bash
-python sample-automation/react_config_portal_server.py
+python config-portal/backend/app.py
 ```
 
 This starts the configuration portal at **http://localhost:5556**
@@ -381,9 +381,28 @@ jira-selenium-agent/
   requirements.txt            # Python dependencies
   .env.example                # Environment variable template
   AGENTIC_AI_FLOW.md          # Detailed agent pipeline documentation
+
+  salesforce-app/             # Mock Salesforce Lightning UI (port 5555)
+    backend/
+      app.py                  # Flask REST API server
+    frontend/
+      src/                    # React + TypeScript source
+      public/                 # Static assets
+      build/                  # Production build (served by Flask)
+      package.json            # Node.js dependencies
+      tsconfig.json           # TypeScript config
+
+  config-portal/              # Automation Configuration Portal (port 5556)
+    backend/
+      app.py                  # Flask REST API server
+    frontend/
+      src/                    # React + TypeScript source (15 pages)
+      public/                 # Static assets
+      build/                  # Production build (served by Flask)
+      package.json            # Node.js dependencies
+      tsconfig.json           # TypeScript config
+
   sample-automation/
-    mock_salesforce_app.py    # Mock SF Lightning UI (port 5555)
-    config_portal.py          # Config portal (port 5556)
     car_parts_runner.py       # E2E test runner
     car_parts_page_objects.py # Car Parts POM classes
     car_parts_e2e.feature     # Gherkin feature file (11 scenarios)

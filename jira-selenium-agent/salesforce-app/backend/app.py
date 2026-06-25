@@ -12,8 +12,8 @@ from flask import Flask, jsonify, request, send_from_directory
 
 # Paths
 BASE_DIR = Path(__file__).parent
-REACT_BUILD_DIR = BASE_DIR.parent / "react-salesforce-ui" / "build"
-DATA_DIR = BASE_DIR
+REACT_BUILD_DIR = BASE_DIR.parent / "frontend" / "build"
+DATA_DIR = BASE_DIR.parent.parent / "sample-automation"
 
 # Initialize Flask to serve React build
 app = Flask(__name__, static_folder=str(REACT_BUILD_DIR / "static"))

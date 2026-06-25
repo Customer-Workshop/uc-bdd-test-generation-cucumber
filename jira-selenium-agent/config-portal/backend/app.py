@@ -10,8 +10,8 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 BASE_DIR = Path(__file__).parent
-REACT_BUILD_DIR = BASE_DIR.parent / "react-config-portal" / "build"
-CONFIG_FILE = BASE_DIR / "automation_config.json"
+REACT_BUILD_DIR = BASE_DIR.parent / "frontend" / "build"
+CONFIG_FILE = BASE_DIR.parent.parent / "sample-automation" / "automation_config.json"
 
 app = Flask(__name__, static_folder=str(REACT_BUILD_DIR / "static"))
 
@@ -101,7 +101,7 @@ def execute_pipeline():
 
 @app.route('/api/test-data', methods=['GET'])
 def get_test_data():
-    td_path = BASE_DIR / "car_parts_test_data.json"
+    td_path = BASE_DIR.parent.parent / "sample-automation" / "car_parts_test_data.json"
     if td_path.exists():
         with open(td_path) as f:
             return jsonify(json.load(f))
@@ -111,7 +111,7 @@ def get_test_data():
 @app.route('/api/test-data', methods=['POST'])
 def upload_test_data():
     data = request.get_json()
-    td_path = BASE_DIR / "car_parts_test_data.json"
+    td_path = BASE_DIR.parent.parent / "sample-automation" / "car_parts_test_data.json"
     with open(td_path, 'w') as f:
         json.dump(data, f, indent=2)
     return jsonify({"message": "Test data uploaded", "records": len(data)})
