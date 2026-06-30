@@ -639,7 +639,86 @@ class ExecutionAgent(BaseAgent):
 
 
 # ---------------------------------------------------------------------------
-# Agent 7: Reporting Agent
+# Agent 7: API Testing Agent
+# ---------------------------------------------------------------------------
+
+class APITestingAgent(BaseAgent):
+    """Executes REST API tests against the target application endpoints.
+
+    Decision Points:
+    - Is the target app reachable via API? -> Run API tests / Skip
+    - Are API endpoints available? -> Test CRUD / Test read-only
+    - Did API tests fail? -> Include in report with UI results
+    """
+
+    def __init__(self, config: AgentConfig):
+        super().__init__("APITesting", config)
+
+    def execute(self, context: PipelineContext) -> PipelineContext:
+        self._log_start()
+
+        app_url = self.config.selenium.base_url or "http://localhost:5555"
+
+        try:
+            import requests as req
+            resp = req.get(f"{app_url}/api/car-parts", timeout=5)
+            if resp.status_code != 200:
+                self.decide(context, f"API not reachable at {app_url} — skipping API tests")
+                self._log_complete("Skipped — API not reachable")
+                return context
+        except Exception:
+            self.decide(context, "API not reachable — skipping API tests")
+            self._log_complete("Skipped — API not reachable")
+            return context
+
+        self.decide(context, f"API reachable at {app_url} — executing API test scenarios")
+
+        from runners.api_test_runner import APITestRunner
+        runner = APITestRunner(base_url=app_url)
+        api_report = runner.run()
+
+        context.metadata["api_test_report"] = {
+            "run_id": api_report.run_id,
+            "total_scenarios": api_report.total_scenarios,
+            "passed_scenarios": api_report.passed_scenarios,
+            "failed_scenarios": api_report.failed_scenarios,
+            "total_steps": api_report.total_steps,
+            "passed_steps": api_report.passed_steps,
+            "duration_seconds": api_report.duration_seconds,
+        }
+
+        # Add API test results to context.test_results for reporting
+        for scenario in api_report.scenarios:
+            api_scenario = ScenarioResult(
+                name=f"[API] {scenario.scenario_name}",
+                status="passed" if scenario.passed else "failed",
+                tags=scenario.tags,
+            )
+            for step in scenario.steps:
+                api_scenario.steps.append(StepResult(
+                    step_type="API",
+                    step_text=step.step,
+                    status="passed" if step.passed else "failed",
+                    duration_ms=step.duration_ms,
+                    error=step.error,
+                ))
+                api_scenario.duration_ms += step.duration_ms
+            context.test_results[scenario.jira_id] = api_scenario
+
+        self.send_message(context, "ReportingAgent", "api_tests_complete", {
+            "scenarios": api_report.total_scenarios,
+            "passed": api_report.passed_scenarios,
+        })
+
+        self._log_complete(
+            f"API: {api_report.passed_scenarios}/{api_report.total_scenarios} passed, "
+            f"{api_report.total_steps} steps"
+        )
+        return context
+
+
+# ---------------------------------------------------------------------------
+# Agent 8: Reporting Agent
 # ---------------------------------------------------------------------------
 
 class ReportingAgent(BaseAgent):
@@ -802,6 +881,7 @@ class OrchestratorAgent:
             TestDataPreparationAgent(self.config),
             PageObjectAgent(self.config),
             ExecutionAgent(self.config),
+            APITestingAgent(self.config),
             ReportingAgent(self.config),
             DeploymentAgent(self.config),
             FeedbackAgent(self.config),

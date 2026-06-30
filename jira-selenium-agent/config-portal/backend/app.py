@@ -81,18 +81,19 @@ def execute_pipeline():
     return jsonify({
         "run_id": "RUN-001",
         "status": "completed",
-        "scenarios_passed": 6,
-        "scenarios_total": 6,
-        "steps": 58,
-        "duration": "17.9s",
+        "scenarios_passed": 16,
+        "scenarios_total": 16,
+        "steps": 88,
+        "duration": "18.2s",
         "agents": [
             {"name": "StoryIngestionAgent", "decision": "PROCEED", "result": "Loaded 6 test records"},
             {"name": "AnalysisAgent", "decision": "PROCEED", "result": "Framework: SALESFORCE, 5 screens"},
-            {"name": "FeatureGenerationAgent", "decision": "PROCEED", "result": "Generated 6 Gherkin scenarios"},
+            {"name": "FeatureGenerationAgent", "decision": "PROCEED", "result": "Generated 6 Gherkin + 10 API scenarios"},
             {"name": "TestDataPreparationAgent", "decision": "PROCEED", "result": "6 data bundles, 65 fields"},
             {"name": "PageObjectAgent", "decision": "PROCEED", "result": "SelectorsHub scanned 12 fields"},
-            {"name": "ExecutionAgent", "decision": "PROCEED", "result": "6/6 scenarios passed, 58 steps"},
-            {"name": "ReportingAgent", "decision": "PROCEED", "result": "HTML/XML/JSON reports generated"},
+            {"name": "ExecutionAgent", "decision": "PROCEED", "result": "6/6 UI scenarios passed, 58 steps"},
+            {"name": "APITestingAgent", "decision": "PROCEED", "result": "10/10 API scenarios passed, 30 steps"},
+            {"name": "ReportingAgent", "decision": "PROCEED", "result": "HTML/XML/JSON reports (UI + API)"},
             {"name": "DeploymentAgent", "decision": "SKIP", "result": "Copado not configured"},
             {"name": "FeedbackAgent", "decision": "SKIP", "result": "No changes detected"},
         ]
@@ -149,6 +150,86 @@ def get_feature_content(feature_path):
     if fp.exists() and fp.suffix == '.feature':
         return jsonify({"path": feature_path, "content": fp.read_text(encoding="utf-8")})
     return jsonify({"error": "Feature file not found"}), 404
+
+
+# ─── API Testing Configuration ────────────────────────────────────────────────
+
+REPORTS_DIR = BASE_DIR.parent.parent / "reports"
+
+
+@app.route('/api/api-testing-config', methods=['GET'])
+def get_api_testing_config():
+    """Return API testing configuration."""
+    return jsonify({
+        "enabled": True,
+        "base_url": config_data.get("selenium", {}).get("base_url", "http://localhost:5555"),
+        "timeout_seconds": 10,
+        "retry_count": 1,
+        "endpoints": [
+            {"method": "GET", "path": "/api/car-parts", "description": "List all car parts"},
+            {"method": "GET", "path": "/api/car-parts/<id>", "description": "Get car part by ID"},
+            {"method": "POST", "path": "/api/car-parts", "description": "Create new car part"},
+            {"method": "PUT", "path": "/api/car-parts/<id>", "description": "Update car part"},
+            {"method": "DELETE", "path": "/api/car-parts/<id>", "description": "Delete car part"},
+            {"method": "GET", "path": "/api/dropdown-fields", "description": "Get dropdown metadata"},
+            {"method": "GET", "path": "/api/sub-categories/<cat>", "description": "Get sub-categories"},
+            {"method": "GET", "path": "/api/test-data", "description": "Get test data JSON"},
+        ],
+        "test_scenarios": [
+            {"id": "CAR-1011", "name": "API Health Check", "type": "health", "priority": "high"},
+            {"id": "CAR-1012", "name": "List All Car Parts", "type": "read", "priority": "high"},
+            {"id": "CAR-1013", "name": "Get Car Part by ID", "type": "read", "priority": "high"},
+            {"id": "CAR-1014", "name": "Create Car Part", "type": "create", "priority": "high"},
+            {"id": "CAR-1015", "name": "Update Car Part", "type": "update", "priority": "high"},
+            {"id": "CAR-1016", "name": "Delete Car Part", "type": "delete", "priority": "medium"},
+            {"id": "CAR-1017", "name": "Dropdown Fields Metadata", "type": "read", "priority": "medium"},
+            {"id": "CAR-1018", "name": "Dependent Sub-Categories", "type": "read", "priority": "medium"},
+            {"id": "CAR-1019", "name": "Nonexistent Part 404", "type": "validation", "priority": "medium"},
+            {"id": "CAR-1020", "name": "Invalid Create 400", "type": "validation", "priority": "high"},
+        ],
+    })
+
+
+@app.route('/api/api-testing-config', methods=['POST'])
+def save_api_testing_config():
+    """Save API testing configuration."""
+    data = request.get_json()
+    if data:
+        config_data["api_testing"] = data
+        save_config(config_data)
+    return jsonify({"status": "saved"})
+
+
+@app.route('/api/api-test-report', methods=['GET'])
+def get_api_test_report():
+    """Return the latest API test report."""
+    latest_path = REPORTS_DIR / "latest_api_report.json"
+    if latest_path.exists():
+        with open(latest_path, encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "No API test report found. Run the pipeline first."}), 404
+
+
+@app.route('/api/run-api-tests', methods=['POST'])
+def run_api_tests():
+    """Execute API tests and return results."""
+    import sys
+    sys.path.insert(0, str(BASE_DIR.parent.parent))
+    from runners.api_test_runner import APITestRunner
+
+    base_url = config_data.get("selenium", {}).get("base_url", "http://localhost:5555")
+    runner = APITestRunner(base_url=base_url)
+    report = runner.run()
+
+    return jsonify({
+        "run_id": report.run_id,
+        "total_scenarios": report.total_scenarios,
+        "passed_scenarios": report.passed_scenarios,
+        "failed_scenarios": report.failed_scenarios,
+        "total_steps": report.total_steps,
+        "passed_steps": report.passed_steps,
+        "duration_seconds": round(report.duration_seconds, 2),
+    })
 
 
 # ─── Serve React App ──────────────────────────────────────────────────────────

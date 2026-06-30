@@ -16,6 +16,7 @@ import Traceability from './pages/Traceability';
 import SelectorsHub from './pages/SelectorsHub';
 import MCPServers from './pages/MCPServers';
 import FlowDiagram from './pages/FlowDiagram';
+import APITesting from './pages/APITesting';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/selectorshub-config" element={<SelectorsHub />} />
         <Route path="/mcp-servers" element={<MCPServers />} />
         <Route path="/flow-diagram" element={<FlowDiagram />} />
+        <Route path="/api-testing" element={<APITesting />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

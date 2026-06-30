@@ -14,13 +14,14 @@ const statusItems = [
   { tool: 'Reports', status: 'HTML + Charts', color: 'success' as const, path: '/report-config' },
   { tool: 'SelectorsHub', status: 'Enabled', color: 'success' as const, path: '/selectorshub-config' },
   { tool: 'MCP Servers', status: 'Disabled', color: 'warning' as const, path: '/mcp-servers' },
+  { tool: 'API Testing', status: 'Enabled (10 scenarios)', color: 'success' as const, path: '/api-testing' },
 ];
 
 const stats = [
-  { label: 'Test Cases', value: '6', color: '#1565c0' },
-  { label: 'Execution Steps', value: '58', color: '#2e7d32' },
+  { label: 'UI + API Tests', value: '16', color: '#1565c0' },
+  { label: 'Total Steps', value: '88', color: '#2e7d32' },
   { label: 'Pass Rate', value: '100%', color: '#ed6c02' },
-  { label: 'Agents', value: '9', color: '#7b1fa2' },
+  { label: 'Agents', value: '10', color: '#7b1fa2' },
 ];
 
 export default function Dashboard() {
@@ -29,7 +30,7 @@ export default function Dashboard() {
     <Box>
       <Typography variant="h5" fontWeight={600} gutterBottom>Dashboard</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Automation Configuration Portal — manage all settings for the 9-agent BDD test pipeline.
+        Automation Configuration Portal — manage all settings for the 10-agent BDD test pipeline (UI + API testing).
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>

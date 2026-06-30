@@ -13,7 +13,8 @@ import {
   Upload as UploadIcon, TableChart as TraceIcon,
   FindInPage as SelectorIcon, Dns as McpIcon,
   Schema as FlowIcon, Menu as MenuIcon,
-  Settings as SettingsIcon, ExpandLess, ExpandMore
+  Settings as SettingsIcon, ExpandLess, ExpandMore,
+  Api as ApiIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 250;
@@ -44,6 +45,7 @@ const navSections = [
   {
     title: 'Tools',
     items: [
+      { text: 'API Testing', path: '/api-testing', icon: <ApiIcon /> },
       { text: 'SelectorsHub', path: '/selectorshub-config', icon: <SelectorIcon /> },
       { text: 'MCP Servers', path: '/mcp-servers', icon: <McpIcon /> },
       { text: 'Flow Diagram', path: '/flow-diagram', icon: <FlowIcon /> },

@@ -1,24 +1,28 @@
 # Jira-Selenium Agentic AI Framework
 
-BDD test automation framework powered by 9 autonomous AI agents. Connects to Jira, generates Gherkin feature files, executes Selenium tests against any UI (Salesforce LWC, React, Angular), and deploys results to Copado CI/CD.
+BDD test automation framework powered by 10 autonomous AI agents. Connects to Jira, generates Gherkin feature files, executes Selenium UI tests and REST API tests against any application (Salesforce LWC, React, Angular), and deploys results to Copado CI/CD.
 
 ## Architecture
 
 ```
-                         Agentic AI Pipeline (9 Agents)
+                         Agentic AI Pipeline (10 Agents)
   +------------------+------------------+------------------+
   | 1. StoryIngest   | 2. Analysis      | 3. FeatureGen    |
   | Jira API fetch   | Framework detect | Gherkin .feature |
   | parse criteria   | complexity class | Given/When/Then  |
   +------------------+------------------+------------------+
-  | 4. TestDataPrep  | 5. PageObject    | 6. Execution     |
+  | 4. TestDataPrep  | 5. PageObject    | 6. UI Execution  |
   | Bundle per story | POM generation   | Selenium WebDrvr |
   | dropdown values  | LWC/React/Ng     | step mapping     |
   +------------------+------------------+------------------+
-  | 7. Reporting     | 8. Deployment    | 9. Feedback      |
-  | Chart.js + Jira  | Copado CI/CD     | Git diff + LLM   |
-  | HTML/XML/JSON    | Test_Run records | auto-update tests|
+  | 7. API Testing   | 8. Reporting     | 9. Deployment    |
+  | REST CRUD tests  | Chart.js + Jira  | Copado CI/CD     |
+  | endpoint valid.  | HTML/XML/JSON    | Test_Run records |
   +------------------+------------------+------------------+
+  | 10. Feedback     |
+  | Git diff + LLM   |
+  | auto-update tests|
+  +------------------+
 ```
 
 Each agent follows the `decide() -> act() -> report()` lifecycle defined in `BaseAgent`.
@@ -44,9 +48,10 @@ Each agent follows the `decide() -> act() -> report()` lifecycle defined in `Bas
 | Page | Route | Description |
 |------|-------|-------------|
 | Dashboard | `/` | Integration status, quick actions, full config summary |
-| Workflow | `/workflow` | Visual 9-step agent pipeline with Copado CI/CD stages |
+| Workflow | `/workflow` | Visual 10-step agent pipeline with Copado CI/CD stages |
 | Traceability | `/traceability` | Jira Story → Test Case → Steps → Test Data matrix |
-| Execute | `/execute` | Scan app for changes, run full 9-agent pipeline live |
+| Execute | `/execute` | Scan app for changes, run full 10-agent pipeline live (UI + API) |
+| API Testing | `/api-testing` | REST API test config, 8 endpoints, 10 scenarios, run API tests |
 | AI Model | `/ai-model` | LLM provider, model, API key, 6 auto-detection toggles |
 | Upload | `/upload` | Upload JSON test data, shows file path on disk |
 | App URL | `/app-config` | Target application URL + UI framework selector |
@@ -99,9 +104,9 @@ python config-portal/backend/app.py
 
 This starts the configuration portal at **http://localhost:5556**
 
-Features: 15 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, Jira, Selenium, GitHub, Copado, AI Model, App URL, Upload, SelectorsHub, MCP Servers, Flow Diagram.
+Features: 16 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, API Testing, Jira, Selenium, GitHub, Copado, AI Model, App URL, Upload, SelectorsHub, MCP Servers, Flow Diagram.
 
-### 4. Run the Selenium E2E Tests
+### 4. Run the Selenium UI E2E Tests
 
 Open a third terminal:
 
@@ -109,15 +114,36 @@ Open a third terminal:
 python runners/car_parts_runner.py
 ```
 
-Runs 10 BDD scenarios against the mock Salesforce app. Feature files from `features/car-parts/`, test data from `test-data/`, reports output to `reports/`.
+Runs 10 UI BDD scenarios against the mock Salesforce app. Feature files from `features/car-parts/`, test data from `test-data/`, reports output to `reports/`.
 
-### 5. Run the Agentic Orchestrator
+### 5. Run the REST API Tests
+
+```bash
+python runners/api_test_runner.py
+```
+
+Runs 10 API test scenarios (30 steps) against the Car Parts REST API:
+
+| Jira ID | Scenario | Type | Steps |
+|---------|----------|------|-------|
+| CAR-1011 | API Health Check | Health | 2 |
+| CAR-1012 | List All Car Parts | Read | 3 |
+| CAR-1013 | Get Car Part by ID | Read | 3 |
+| CAR-1014 | Create Car Part | Create | 3 |
+| CAR-1015 | Update Car Part | Update | 3 |
+| CAR-1016 | Delete Car Part | Delete | 3 |
+| CAR-1017 | Dropdown Fields Metadata | Read | 7 |
+| CAR-1018 | Dependent Sub-Categories | Read | 3 |
+| CAR-1019 | Nonexistent Part 404 | Validation | 2 |
+| CAR-1020 | Invalid Create 400 | Validation | 1 |
+
+### 6. Run the Agentic Orchestrator
 
 ```bash
 python agentic_orchestrator.py --mode car-parts --ui-framework salesforce
 ```
 
-Runs the full 9-agent pipeline: ingest stories -> analyze -> generate features -> prepare data -> select POM -> execute tests -> generate reports -> deploy to Copado -> feedback loop.
+Runs the full 10-agent pipeline: ingest stories -> analyze -> generate features -> prepare data -> select POM -> execute UI tests -> **run API tests** -> generate reports -> deploy to Copado -> feedback loop.
 
 ## Agent Modes
 
@@ -365,7 +391,7 @@ Visual architecture diagram available at `/flow-diagram` showing:
 ```
 jira-selenium-agent/
   agent.py                    # CLI orchestrator (6 modes)
-  agentic_orchestrator.py     # 9-agent pipeline with BaseAgent
+  agentic_orchestrator.py     # 10-agent pipeline with BaseAgent
   jira_client.py              # Jira REST API client
   gherkin_generator.py        # User story -> Gherkin .feature
   selenium_runner.py          # Selenium WebDriver wrapper
@@ -419,9 +445,21 @@ jira-selenium-agent/
         CAR-1009_delete_car_part.feature
       validation/             # Validation scenarios
         CAR-1010_validate_required_fields.feature
+      api/                    # REST API test scenarios
+        CAR-1011_api_health_check.feature
+        CAR-1012_list_car_parts_api.feature
+        CAR-1013_get_car_part_by_id_api.feature
+        CAR-1014_create_car_part_api.feature
+        CAR-1015_update_car_part_api.feature
+        CAR-1016_delete_car_part_api.feature
+        CAR-1017_dropdown_fields_api.feature
+        CAR-1018_sub_categories_api.feature
+        CAR-1019_nonexistent_part_api.feature
+        CAR-1020_invalid_create_api.feature
 
   runners/                    # Test execution code
-    car_parts_runner.py       # E2E test runner
+    car_parts_runner.py       # UI E2E test runner (Selenium)
+    api_test_runner.py        # REST API test runner (requests)
     car_parts_page_objects.py # Car Parts POM classes
     selenium_e2e_runner.py    # Selenium execution engine
 
@@ -432,7 +470,8 @@ jira-selenium-agent/
     automation_config.json    # Portal config (auto-generated)
 
   reports/                    # Generated test reports
-    latest_execution_report.json  # Latest pipeline run report
+    latest_execution_report.json  # Latest UI pipeline run report
+    latest_api_report.json    # Latest API test report
     report-*.html             # HTML reports with Chart.js
     report-*.xml              # JUnit XML reports
     report-*.json             # JSON reports
@@ -445,7 +484,8 @@ GitHub Actions workflow at `.github/workflows/bdd-test-agent.yml`:
 - Triggers on push to `main` or PR
 - Installs Python dependencies + Chrome
 - Runs the agentic orchestrator in `car-parts` mode
-- Uploads test reports as artifacts
+- Runs REST API tests against application endpoints
+- Uploads test reports (UI + API) as artifacts
 - Deploys to Copado if configured
 
 ## License

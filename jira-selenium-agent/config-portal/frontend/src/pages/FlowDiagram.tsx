@@ -7,8 +7,9 @@ const agentFlow = [
   { agent: 'FeatureGenerationAgent', receives: 'Stories + Framework', produces: '.feature files', sends: 'TestDataPrepAgent', external: 'LLM' },
   { agent: 'TestDataPreparationAgent', receives: '.feature + Test Data', produces: 'Data Bundles[]', sends: 'PageObjectAgent', external: '-' },
   { agent: 'PageObjectAgent', receives: 'Framework + Features', produces: 'POM Classes', sends: 'ExecutionAgent', external: 'SelectorsHub' },
-  { agent: 'ExecutionAgent', receives: 'POM + Data + URL', produces: 'Results[]', sends: 'ReportingAgent', external: 'Selenium' },
-  { agent: 'ReportingAgent', receives: 'Results + Jira IDs', produces: 'HTML/XML/JSON', sends: 'DeploymentAgent', external: '-' },
+  { agent: 'ExecutionAgent', receives: 'POM + Data + URL', produces: 'UI Results[]', sends: 'APITestingAgent', external: 'Selenium' },
+  { agent: 'APITestingAgent', receives: 'App URL + Test Data', produces: 'API Results[]', sends: 'ReportingAgent', external: 'REST API' },
+  { agent: 'ReportingAgent', receives: 'UI + API Results', produces: 'HTML/XML/JSON', sends: 'DeploymentAgent', external: '-' },
   { agent: 'DeploymentAgent', receives: 'Reports + Config', produces: 'Deploy Status', sends: 'FeedbackAgent', external: 'Copado' },
   { agent: 'FeedbackAgent', receives: 'Git Diff + Features', produces: 'Updated Features', sends: 'Orchestrator', external: 'GitHub' },
 ];
@@ -52,7 +53,7 @@ export default function FlowDiagram() {
       </Paper>
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>9-Agent Pipeline Flow</Typography>
+        <Typography variant="h6" fontWeight={600} gutterBottom>10-Agent Pipeline Flow</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
           {agentFlow.map((a, i) => (
             <React.Fragment key={a.agent}>
