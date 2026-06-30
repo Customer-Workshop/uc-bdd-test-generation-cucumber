@@ -162,7 +162,7 @@ def get_api_testing_config():
     """Return API testing configuration."""
     return jsonify({
         "enabled": True,
-        "base_url": config_data.get("selenium", {}).get("base_url", "http://localhost:5555"),
+        "base_url": load_config().get("app_url", "http://localhost:5555"),
         "timeout_seconds": 10,
         "retry_count": 1,
         "endpoints": [
@@ -195,8 +195,9 @@ def save_api_testing_config():
     """Save API testing configuration."""
     data = request.get_json()
     if data:
-        config_data["api_testing"] = data
-        save_config(config_data)
+        config = load_config()
+        config["api_testing"] = data
+        save_config(config)
     return jsonify({"status": "saved"})
 
 
@@ -217,7 +218,7 @@ def run_api_tests():
     sys.path.insert(0, str(BASE_DIR.parent.parent))
     from runners.api_test_runner import APITestRunner
 
-    base_url = config_data.get("selenium", {}).get("base_url", "http://localhost:5555")
+    base_url = load_config().get("app_url", "http://localhost:5555")
     runner = APITestRunner(base_url=base_url)
     report = runner.run()
 
