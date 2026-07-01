@@ -32,12 +32,19 @@ const navSections = [
     ]
   },
   {
+    title: 'Testing',
+    items: [
+      { text: 'API Testing', path: '/api-testing', icon: <ApiIcon /> },
+      { text: 'Selenium', path: '/selenium-config', icon: <SeleniumIcon /> },
+      { text: 'Relationships', path: '/relationships', icon: <RelIcon /> },
+    ]
+  },
+  {
     title: 'Configuration',
     items: [
       { text: 'App URL', path: '/app-configure', icon: <AppIcon /> },
       { text: 'Upload Test Data', path: '/upload-test-data', icon: <UploadIcon /> },
       { text: 'Jira', path: '/jira-config', icon: <JiraIcon /> },
-      { text: 'Selenium', path: '/selenium-config', icon: <SeleniumIcon /> },
       { text: 'GitHub', path: '/github-config', icon: <GitHubIcon /> },
       { text: 'Copado', path: '/copado-config', icon: <CopadoIcon /> },
       { text: 'AI Model', path: '/ai-model', icon: <AIIcon /> },
@@ -46,10 +53,13 @@ const navSections = [
   {
     title: 'Tools',
     items: [
-      { text: 'API Testing', path: '/api-testing', icon: <ApiIcon /> },
-      { text: 'Relationships', path: '/relationships', icon: <RelIcon /> },
       { text: 'SelectorsHub', path: '/selectorshub-config', icon: <SelectorIcon /> },
       { text: 'MCP Servers', path: '/mcp-servers', icon: <McpIcon /> },
+    ]
+  },
+  {
+    title: 'Reference',
+    items: [
       { text: 'Flow Diagram', path: '/flow-diagram', icon: <FlowIcon /> },
     ]
   }
@@ -64,7 +74,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    Main: true, Configuration: true, Tools: true
+    Main: true, Testing: true, Configuration: true, Tools: true, Reference: true
   });
 
   const toggleSection = (title: string) => {
