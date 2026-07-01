@@ -1,129 +1,307 @@
-import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, LinearProgress, Card, CardContent, Grid, Alert } from '@mui/material';
-import { PlayArrow, Refresh, CheckCircle } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, LinearProgress, Card, CardContent, Grid, Alert, TextField } from '@mui/material';
+import { PlayArrow, CheckCircle, Error as ErrorIcon, Search } from '@mui/icons-material';
 
-const preflightChecks = [
-  { name: 'Application URL', status: 'pass', detail: 'http://localhost:5555' },
-  { name: 'Test Data File', status: 'pass', detail: '6 records loaded' },
-  { name: 'Selenium Config', status: 'pass', detail: 'Chrome CDP on :29229' },
-  { name: 'AI Model', status: 'pass', detail: 'GPT-4o configured' },
-  { name: 'Report Output', status: 'pass', detail: 'HTML + JUnit + JSON' },
-];
+interface ScanResult {
+  url: string;
+  reachable: boolean;
+  status_code: number | null;
+  screens: { path: string; label: string; status: number; state: string }[];
+  api_endpoints: { path: string; method: string; description: string; status: number; available: boolean }[];
+  fields: { api_name: string; label: string; type: string; required: boolean; values_count: number }[];
+  field_count: number;
+  framework_detected: string;
+  errors: string[];
+  timestamp: string;
+}
 
-const pipelineResults = [
-  { agent: 'StoryIngestionAgent', decision: 'PROCEED', result: 'Loaded 6 test records', duration: '0.2s' },
-  { agent: 'AnalysisAgent', decision: 'PROCEED', result: 'Framework: SALESFORCE, 5 screens', duration: '1.1s' },
-  { agent: 'FeatureGenerationAgent', decision: 'PROCEED', result: 'Generated 6 Gherkin scenarios', duration: '0.8s' },
-  { agent: 'TestDataPreparationAgent', decision: 'PROCEED', result: '6 data bundles, 65 fields', duration: '0.3s' },
-  { agent: 'PageObjectAgent', decision: 'PROCEED', result: 'SelectorsHub scanned 12 fields → LWC POM', duration: '2.4s' },
-  { agent: 'ExecutionAgent', decision: 'PROCEED', result: '6/6 UI scenarios passed, 58 steps', duration: '12.5s' },
-  { agent: 'APITestingAgent', decision: 'PROCEED', result: '18/18 API scenarios passed (10 CRUD + 8 relationship), 69 steps', duration: '0.5s' },
-  { agent: 'ReportingAgent', decision: 'PROCEED', result: 'HTML/XML/JSON reports (UI + API)', duration: '0.6s' },
-  { agent: 'DeploymentAgent', decision: 'SKIP', result: 'Copado not configured', duration: '0.0s' },
-  { agent: 'FeedbackAgent', decision: 'SKIP', result: 'No changes detected', duration: '0.0s' },
-];
+interface PipelineResult {
+  run_id: string;
+  status: string;
+  app_url?: string;
+  app_reachable?: boolean;
+  fields_discovered?: number;
+  scenarios_passed: number;
+  scenarios_total: number;
+  steps?: number;
+  duration?: string;
+  error?: string;
+  agents?: { name: string; decision: string; result: string }[];
+}
 
 export default function Execute() {
+  const [appUrl, setAppUrl] = useState('http://localhost:5555');
+  const [scanning, setScanning] = useState(false);
   const [running, setRunning] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null);
+  const [error, setError] = useState('');
 
-  const runPipeline = () => {
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(data => { if (data.app_url) setAppUrl(data.app_url); })
+      .catch(() => {});
+    // Load last scan if available
+    fetch('/api/scan/last')
+      .then(r => { if (r.ok) return r.json(); return null; })
+      .then(data => { if (data) setScanResult(data); })
+      .catch(() => {});
+  }, []);
+
+  const handleScan = () => {
+    setScanning(true);
+    setScanResult(null);
+    setError('');
+    // Also save the URL to config
+    fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app_url: appUrl }),
+    }).catch(() => {});
+
+    fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: appUrl }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        setScanning(false);
+        setScanResult(data);
+        if (data.errors && data.errors.length > 0 && !data.reachable) {
+          setError(data.errors[0]);
+        }
+      })
+      .catch(err => { setScanning(false); setError(String(err)); });
+  };
+
+  const handleExecute = () => {
     setRunning(true);
-    setCompleted(false);
-    setTimeout(() => { setRunning(false); setCompleted(true); }, 3000);
+    setPipelineResult(null);
+    setError('');
+    // Save URL first
+    fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app_url: appUrl }),
+    }).catch(() => {});
+
+    fetch('/api/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: appUrl }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        setRunning(false);
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setPipelineResult(data);
+        }
+      })
+      .catch(err => { setRunning(false); setError(String(err)); });
   };
 
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} gutterBottom>Execute Pipeline</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Scan the application for changes and run the full 10-agent end-to-end pipeline (UI + API testing).
+        Enter any application URL, scan it for screens/fields/APIs, then run the full 10-agent pipeline.
       </Typography>
 
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>Pre-flight Checks</Typography>
-        <Table size="small">
-          <TableBody>
-            {preflightChecks.map(c => (
-              <TableRow key={c.name}>
-                <TableCell sx={{ width: 200 }}>{c.name}</TableCell>
-                <TableCell><Chip label={c.status === 'pass' ? 'Ready' : 'Missing'} size="small" color={c.status === 'pass' ? 'success' : 'error'} /></TableCell>
-                <TableCell>{c.detail}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <Typography variant="subtitle2" fontWeight={600} gutterBottom>Target Application</Typography>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField fullWidth size="small" label="Application URL" value={appUrl}
+            onChange={e => setAppUrl(e.target.value)} placeholder="https://your-app.com" />
+          <Button variant="outlined" startIcon={<Search />} onClick={handleScan} disabled={scanning || running}>
+            {scanning ? 'Scanning...' : 'Scan'}
+          </Button>
+          <Button variant="contained" startIcon={<PlayArrow />} onClick={handleExecute} disabled={scanning || running}>
+            {running ? 'Running...' : 'Execute'}
+          </Button>
+        </Box>
       </Paper>
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-        <Button variant="contained" size="large" startIcon={<PlayArrow />} onClick={runPipeline} disabled={running}>
-          {running ? 'Running...' : 'Scan & Execute Pipeline'}
-        </Button>
-        <Button variant="outlined" startIcon={<Refresh />} disabled={running}>Scan Only</Button>
-      </Box>
+      {(scanning || running) && <LinearProgress sx={{ mb: 2 }} />}
 
-      {running && <LinearProgress sx={{ mb: 2 }} />}
+      {/* Scan Results */}
+      {scanResult && (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            Scan Results — {scanResult.url}
+            <Chip label={scanResult.reachable ? 'Reachable' : 'Unreachable'} size="small"
+              color={scanResult.reachable ? 'success' : 'error'} sx={{ ml: 1 }} />
+            {scanResult.framework_detected !== 'unknown' && (
+              <Chip label={scanResult.framework_detected} size="small" color="info" sx={{ ml: 1 }} />
+            )}
+            <Chip label={`${scanResult.field_count} fields`} size="small" color="primary" sx={{ ml: 1 }} />
+          </Typography>
 
-      {completed && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={6} sm={3}>
+              <Card variant="outlined"><CardContent sx={{ textAlign: 'center', py: 1 }}>
+                <Typography variant="h6" color="success.main">{scanResult.screens.filter(s => s.state === 'active').length}</Typography>
+                <Typography variant="caption">Active Screens</Typography>
+              </CardContent></Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card variant="outlined"><CardContent sx={{ textAlign: 'center', py: 1 }}>
+                <Typography variant="h6" color="primary">{scanResult.api_endpoints.filter(e => e.available).length}</Typography>
+                <Typography variant="caption">API Endpoints</Typography>
+              </CardContent></Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card variant="outlined"><CardContent sx={{ textAlign: 'center', py: 1 }}>
+                <Typography variant="h6" color="secondary">{scanResult.field_count}</Typography>
+                <Typography variant="caption">Fields Found</Typography>
+              </CardContent></Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card variant="outlined"><CardContent sx={{ textAlign: 'center', py: 1 }}>
+                <Typography variant="h6">{scanResult.framework_detected}</Typography>
+                <Typography variant="caption">Framework</Typography>
+              </CardContent></Card>
+            </Grid>
+          </Grid>
+
+          {scanResult.screens.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>Screens</Typography>
+              <Table size="small">
+                <TableBody>
+                  {scanResult.screens.map(s => (
+                    <TableRow key={s.path}>
+                      <TableCell sx={{ width: 160 }}><code>{s.path}</code></TableCell>
+                      <TableCell>{s.label}</TableCell>
+                      <TableCell>
+                        <Chip label={s.state} size="small"
+                          color={s.state === 'active' ? 'success' : s.state === 'missing' ? 'warning' : 'error'} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          )}
+
+          {scanResult.api_endpoints.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>API Endpoints</Typography>
+              <Table size="small">
+                <TableBody>
+                  {scanResult.api_endpoints.map(ep => (
+                    <TableRow key={ep.path}>
+                      <TableCell sx={{ width: 80 }}>
+                        <Chip label={ep.method} size="small" color={ep.method === 'GET' ? 'success' : 'primary'} />
+                      </TableCell>
+                      <TableCell><code>{ep.path}</code></TableCell>
+                      <TableCell>{ep.description}</TableCell>
+                      <TableCell>
+                        <Chip label={ep.available ? 'OK' : String(ep.status)} size="small"
+                          color={ep.available ? 'success' : 'error'} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          )}
+
+          {scanResult.fields.length > 0 && (
+            <Box>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>Fields ({scanResult.field_count})</Typography>
+              <Table size="small">
+                <TableBody>
+                  {scanResult.fields.map((f, i) => (
+                    <TableRow key={i}>
+                      <TableCell><code>{f.api_name}</code></TableCell>
+                      <TableCell>{f.label}</TableCell>
+                      <TableCell>{f.type}</TableCell>
+                      <TableCell>{f.required && <Chip label="Required" size="small" color="error" />}</TableCell>
+                      <TableCell>{f.values_count} values</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          )}
+        </Paper>
+      )}
+
+      {/* Pipeline Results */}
+      {pipelineResult && (
         <>
-          <Alert severity="success" sx={{ mb: 2 }} icon={<CheckCircle />}>
-            Pipeline completed — 24/24 scenarios passed (6 UI + 10 API + 8 Relationship), 127 steps executed in 18.5s
+          <Alert severity={pipelineResult.status === 'completed' ? 'success' : 'error'} sx={{ mb: 2 }}
+            icon={pipelineResult.status === 'completed' ? <CheckCircle /> : <ErrorIcon />}>
+            Pipeline {pipelineResult.status} — {pipelineResult.scenarios_passed}/{pipelineResult.scenarios_total} scenarios passed
+            {pipelineResult.fields_discovered !== undefined && ` | ${pipelineResult.fields_discovered} fields scanned`}
+            {pipelineResult.duration && ` | ${pipelineResult.duration}`}
           </Alert>
+
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="success.main" fontWeight={700}>24/24</Typography>
-                <Typography variant="caption">Scenarios (6 UI + 10 API + 8 Rel)</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>{pipelineResult.scenarios_passed}/{pipelineResult.scenarios_total}</Typography>
+                <Typography variant="caption">Scenarios Passed</Typography>
               </CardContent></Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="primary" fontWeight={700}>127</Typography>
-                <Typography variant="caption">Steps (58 UI + 30 API + 39 Rel)</Typography>
+                <Typography variant="h5" color="primary" fontWeight={700}>{pipelineResult.steps || 0}</Typography>
+                <Typography variant="caption">Steps</Typography>
               </CardContent></Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="success.main" fontWeight={700}>100%</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>
+                  {pipelineResult.scenarios_total > 0 ? Math.round(pipelineResult.scenarios_passed / pipelineResult.scenarios_total * 100) : 0}%
+                </Typography>
                 <Typography variant="caption">Pass Rate</Typography>
               </CardContent></Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="secondary" fontWeight={700}>18.2s</Typography>
-                <Typography variant="caption">Duration</Typography>
+                <Typography variant="h5" color="secondary" fontWeight={700}>{pipelineResult.fields_discovered || 0}</Typography>
+                <Typography variant="caption">Fields Scanned</Typography>
               </CardContent></Card>
             </Grid>
           </Grid>
 
-          <Typography variant="h6" fontWeight={600} gutterBottom>Agent Pipeline Results</Typography>
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'primary.main' }}>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>#</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Agent</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Decision</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Result</TableCell>
-                  <TableCell sx={{ color: 'white', fontWeight: 600 }}>Duration</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pipelineResults.map((r, i) => (
-                  <TableRow key={r.agent}>
-                    <TableCell>{i + 1}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{r.agent}</TableCell>
-                    <TableCell>
-                      <Chip label={r.decision} size="small"
-                        color={r.decision === 'PROCEED' ? 'success' : r.decision === 'SKIP' ? 'default' : 'error'} />
-                    </TableCell>
-                    <TableCell>{r.result}</TableCell>
-                    <TableCell>{r.duration}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {pipelineResult.agents && (
+            <>
+              <Typography variant="h6" fontWeight={600} gutterBottom>Agent Pipeline Results</Typography>
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'primary.main' }}>
+                      <TableCell sx={{ color: 'white', fontWeight: 600 }}>#</TableCell>
+                      <TableCell sx={{ color: 'white', fontWeight: 600 }}>Agent</TableCell>
+                      <TableCell sx={{ color: 'white', fontWeight: 600 }}>Decision</TableCell>
+                      <TableCell sx={{ color: 'white', fontWeight: 600 }}>Result</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pipelineResult.agents.map((r, i) => (
+                      <TableRow key={r.name}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>{r.name}</TableCell>
+                        <TableCell>
+                          <Chip label={r.decision} size="small"
+                            color={r.decision === 'PROCEED' ? 'success' : r.decision === 'SKIP' ? 'default' : 'error'} />
+                        </TableCell>
+                        <TableCell>{r.result}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
         </>
       )}
     </Box>
