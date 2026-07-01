@@ -1,0 +1,13 @@
+{
+  "story": "Custom Object __c Suffix and API Identity verification",
+  "jira_id": "CAR-1025",
+  "type": "relationship",
+  "expected_objects": [
+    {"api_name": "Car_Part__c", "key_prefix": "CP"},
+    {"api_name": "Manufacturer__c", "key_prefix": "MFR"},
+    {"api_name": "Warehouse__c", "key_prefix": "WH"},
+    {"api_name": "Supplier__c", "key_prefix": "SUP"},
+    {"api_name": "Order__c", "key_prefix": "ORD"},
+    {"api_name": "Warranty_Claim__c", "key_prefix": "WC"}
+  ]
+}

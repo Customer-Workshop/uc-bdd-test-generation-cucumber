@@ -3,6 +3,82 @@
   "application": "Salesforce Lightning - Car Parts Management",
   "framework": "Lightning Web Components (LWC)",
 
+  "relationship_model": {
+    "description": "Salesforce multi-relationship data model with Lookup and Master-Detail fields",
+    "api_identity_rules": {
+      "__c_suffix": "Stores the Record ID (foreign key) - e.g. Manufacturer__c = 'MFR-001'",
+      "__r_suffix": "Resolves to the full parent/child object - e.g. Manufacturer__r.Name = 'BorgWarner'"
+    },
+    "objects": {
+      "Car_Part__c": {
+        "api_name": "Car_Part__c",
+        "label": "Car Part",
+        "key_prefix": "CP",
+        "description": "Central data hub connected to multiple objects via relationships",
+        "parent_relationships": [
+          {"field_api_name": "Manufacturer__c", "relationship_name": "Manufacturer__r", "type": "Lookup", "related_to": "Manufacturer__c"},
+          {"field_api_name": "Warehouse__c", "relationship_name": "Warehouse__r", "type": "Lookup", "related_to": "Warehouse__c"}
+        ],
+        "child_relationships": [
+          {"relationship_name": "Orders__r", "child_object": "Order__c", "field": "Car_Part__c", "type": "Master-Detail"},
+          {"relationship_name": "Warranty_Claims__r", "child_object": "Warranty_Claim__c", "field": "Car_Part__c", "type": "Lookup"}
+        ]
+      },
+      "Manufacturer__c": {
+        "api_name": "Manufacturer__c",
+        "label": "Manufacturer",
+        "key_prefix": "MFR",
+        "parent_relationships": [
+          {"field_api_name": "Primary_Supplier__c", "relationship_name": "Primary_Supplier__r", "type": "Lookup", "related_to": "Supplier__c"}
+        ],
+        "child_relationships": [
+          {"relationship_name": "Car_Parts__r", "child_object": "Car_Part__c", "field": "Manufacturer__c", "type": "Lookup"}
+        ]
+      },
+      "Warehouse__c": {
+        "api_name": "Warehouse__c",
+        "label": "Warehouse",
+        "key_prefix": "WH",
+        "parent_relationships": [],
+        "child_relationships": [
+          {"relationship_name": "Car_Parts__r", "child_object": "Car_Part__c", "field": "Warehouse__c", "type": "Lookup"},
+          {"relationship_name": "Orders__r", "child_object": "Order__c", "field": "Ship_From_Warehouse__c", "type": "Lookup"}
+        ]
+      },
+      "Supplier__c": {
+        "api_name": "Supplier__c",
+        "label": "Supplier",
+        "key_prefix": "SUP",
+        "parent_relationships": [],
+        "child_relationships": [
+          {"relationship_name": "Manufacturers__r", "child_object": "Manufacturer__c", "field": "Primary_Supplier__c", "type": "Lookup"}
+        ]
+      },
+      "Order__c": {
+        "api_name": "Order__c",
+        "label": "Order",
+        "key_prefix": "ORD",
+        "parent_relationships": [
+          {"field_api_name": "Car_Part__c", "relationship_name": "Car_Part__r", "type": "Master-Detail", "related_to": "Car_Part__c"},
+          {"field_api_name": "Ship_From_Warehouse__c", "relationship_name": "Ship_From_Warehouse__r", "type": "Lookup", "related_to": "Warehouse__c"}
+        ],
+        "child_relationships": [
+          {"relationship_name": "Warranty_Claims__r", "child_object": "Warranty_Claim__c", "field": "Order__c", "type": "Lookup"}
+        ]
+      },
+      "Warranty_Claim__c": {
+        "api_name": "Warranty_Claim__c",
+        "label": "Warranty Claim",
+        "key_prefix": "WC",
+        "parent_relationships": [
+          {"field_api_name": "Car_Part__c", "relationship_name": "Car_Part__r", "type": "Lookup", "related_to": "Car_Part__c"},
+          {"field_api_name": "Order__c", "relationship_name": "Order__r", "type": "Lookup", "related_to": "Order__c"}
+        ],
+        "child_relationships": []
+      }
+    }
+  },
+
   "dropdown_fields": {
     "Part_Category__c": {
       "label": "Part Category",
@@ -37,6 +113,8 @@
     "Manufacturer__c": {
       "label": "Manufacturer",
       "is_required": true,
+      "type": "Lookup",
+      "related_to": "Manufacturer__c",
       "values": [
         "Bosch", "Denso", "Continental", "Delphi", "Valeo",
         "ZF Friedrichshafen", "Aisin", "Magna International",
@@ -70,6 +148,9 @@
     },
     "Warehouse_Location__c": {
       "label": "Warehouse Location",
+      "is_required": false,
+      "type": "Lookup",
+      "related_to": "Warehouse__c",
       "values": ["Warehouse A - North", "Warehouse B - South", "Warehouse C - East", "Warehouse D - West", "Warehouse E - Central", "Distributor Hub", "Transit / In Shipment"]
     },
     "Quality_Grade__c": {
@@ -88,6 +169,42 @@
       "label": "Currency",
       "values": ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]
     }
+  },
+
+  "relationship_data": {
+    "manufacturers": [
+      {"id": "MFR-001", "Name": "BorgWarner", "Country__c": "USA", "Certification__c": "ISO 9001", "Founded_Year__c": 1928, "Website__c": "https://borgwarner.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-001"},
+      {"id": "MFR-002", "Name": "Brembo", "Country__c": "Italy", "Certification__c": "ISO 14001", "Founded_Year__c": 1961, "Website__c": "https://brembo.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-002"},
+      {"id": "MFR-003", "Name": "KYB", "Country__c": "Japan", "Certification__c": "IATF 16949", "Founded_Year__c": 1919, "Website__c": "https://kyb.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-003"},
+      {"id": "MFR-004", "Name": "Hella", "Country__c": "Germany", "Certification__c": "ISO 9001", "Founded_Year__c": 1899, "Website__c": "https://hella.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-001"},
+      {"id": "MFR-005", "Name": "Denso", "Country__c": "Japan", "Certification__c": "IATF 16949", "Founded_Year__c": 1949, "Website__c": "https://denso.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-003"},
+      {"id": "MFR-006", "Name": "Bosch", "Country__c": "Germany", "Certification__c": "ISO 9001", "Founded_Year__c": 1886, "Website__c": "https://bosch.com", "Is_Active__c": true, "Primary_Supplier__c": "SUP-002"}
+    ],
+    "warehouses": [
+      {"id": "WH-001", "Name": "Main Warehouse - A1", "Location__c": "Detroit, MI", "Capacity__c": 5000, "Region__c": "North America", "Is_Active__c": true},
+      {"id": "WH-002", "Name": "Main Warehouse - B2", "Location__c": "Detroit, MI", "Capacity__c": 3000, "Region__c": "North America", "Is_Active__c": true},
+      {"id": "WH-003", "Name": "Main Warehouse - C3", "Location__c": "Detroit, MI", "Capacity__c": 4000, "Region__c": "North America", "Is_Active__c": true},
+      {"id": "WH-004", "Name": "Secondary Warehouse - D1", "Location__c": "Chicago, IL", "Capacity__c": 2000, "Region__c": "North America", "Is_Active__c": true},
+      {"id": "WH-005", "Name": "Distribution Center - West", "Location__c": "Los Angeles, CA", "Capacity__c": 6000, "Region__c": "West Coast", "Is_Active__c": true},
+      {"id": "WH-006", "Name": "Distribution Center - East", "Location__c": "Newark, NJ", "Capacity__c": 4500, "Region__c": "East Coast", "Is_Active__c": true}
+    ],
+    "suppliers": [
+      {"id": "SUP-001", "Name": "Global Steel Corp", "Country__c": "USA", "Contact_Email__c": "orders@globalsteel.com", "Rating__c": 4.5, "Lead_Time_Days__c": 14},
+      {"id": "SUP-002", "Name": "Euro Materials GmbH", "Country__c": "Germany", "Contact_Email__c": "supply@euromaterials.de", "Rating__c": 4.8, "Lead_Time_Days__c": 21},
+      {"id": "SUP-003", "Name": "Asia Pacific Components", "Country__c": "Japan", "Contact_Email__c": "procurement@apc.co.jp", "Rating__c": 4.6, "Lead_Time_Days__c": 28}
+    ],
+    "orders": [
+      {"id": "ORD-001", "Name": "ORD-2024-0001", "Car_Part__c": "CP-001", "Ship_From_Warehouse__c": "WH-001", "Quantity__c": 5, "Order_Date__c": "2024-11-15", "Status__c": "Shipped", "Total_Amount__c": 6250.00, "Customer_Name__c": "AutoTech Solutions"},
+      {"id": "ORD-002", "Name": "ORD-2024-0002", "Car_Part__c": "CP-002", "Ship_From_Warehouse__c": "WH-002", "Quantity__c": 10, "Order_Date__c": "2024-11-20", "Status__c": "Processing", "Total_Amount__c": 8900.00, "Customer_Name__c": "Premium Auto Works"},
+      {"id": "ORD-003", "Name": "ORD-2024-0003", "Car_Part__c": "CP-001", "Ship_From_Warehouse__c": "WH-005", "Quantity__c": 3, "Order_Date__c": "2024-12-01", "Status__c": "Pending", "Total_Amount__c": 3750.00, "Customer_Name__c": "West Coast Motors"},
+      {"id": "ORD-004", "Name": "ORD-2024-0004", "Car_Part__c": "CP-003", "Ship_From_Warehouse__c": "WH-004", "Quantity__c": 8, "Order_Date__c": "2024-12-05", "Status__c": "Shipped", "Total_Amount__c": 5400.00, "Customer_Name__c": "Civic Performance LLC"},
+      {"id": "ORD-005", "Name": "ORD-2024-0005", "Car_Part__c": "CP-004", "Ship_From_Warehouse__c": "WH-003", "Quantity__c": 20, "Order_Date__c": "2024-12-10", "Status__c": "Delivered", "Total_Amount__c": 9000.00, "Customer_Name__c": "Tesla Parts Direct"}
+    ],
+    "warranty_claims": [
+      {"id": "WC-001", "Name": "WC-2024-0001", "Car_Part__c": "CP-001", "Order__c": "ORD-001", "Claim_Date__c": "2025-01-10", "Reason__c": "Turbocharger seal failure under warranty period", "Status__c": "Approved", "Resolution__c": "Replacement", "Refund_Amount__c": 1250.00},
+      {"id": "WC-002", "Name": "WC-2024-0002", "Car_Part__c": "CP-002", "Order__c": "ORD-002", "Claim_Date__c": "2025-02-15", "Reason__c": "Brake rotor premature wear", "Status__c": "Under Review", "Resolution__c": "Pending", "Refund_Amount__c": 0},
+      {"id": "WC-003", "Name": "WC-2024-0003", "Car_Part__c": "CP-001", "Order__c": "ORD-003", "Claim_Date__c": "2025-03-01", "Reason__c": "Oil leak from turbo housing", "Status__c": "Approved", "Resolution__c": "Refund", "Refund_Amount__c": 1250.00}
+    ]
   },
 
   "test_records": [
@@ -117,18 +234,24 @@
         "Part Category": "Engine Components",
         "Part Sub-Category": "Turbocharger",
         "Manufacturer": "BorgWarner",
+        "Manufacturer__c": "MFR-001",
+        "Warehouse__c": "WH-001",
         "Condition": "New",
         "Unit Price": "2499.99",
         "Stock Quantity": "25",
         "Vehicle Make": "Toyota",
         "Model Year Range": "2015-2019",
         "Availability Status": "In Stock",
-        "Warehouse Location": "Warehouse A - North",
+        "Warehouse Location": "Main Warehouse - A1",
         "Quality Grade": "OEM",
         "Shipping Class": "Freight / LTL",
         "Warranty Type": "2-Year Limited",
         "Currency": "USD",
         "Description": "High-performance turbocharger assembly for Toyota Supra MK5. Includes wastegate and blow-off valve."
+      },
+      "relationship_context": {
+        "Manufacturer__r": {"Name": "BorgWarner", "Country__c": "USA", "Certification__c": "ISO 9001"},
+        "Warehouse__r": {"Name": "Main Warehouse - A1", "Location__c": "Detroit, MI", "Region__c": "North America"}
       }
     },
     {
@@ -156,16 +279,22 @@
         "Part Category": "Braking System",
         "Part Sub-Category": "Brake Pad",
         "Manufacturer": "Brembo",
+        "Manufacturer__c": "MFR-002",
+        "Warehouse__c": "WH-002",
         "Condition": "New",
         "Unit Price": "349.99",
         "Stock Quantity": "150",
         "Vehicle Make": "BMW",
         "Model Year Range": "2020-2026",
         "Availability Status": "In Stock",
-        "Warehouse Location": "Warehouse B - South",
+        "Warehouse Location": "Main Warehouse - B2",
         "Quality Grade": "Aftermarket Premium",
         "Shipping Class": "Express 2-Day",
         "Warranty Type": "Manufacturer Warranty"
+      },
+      "relationship_context": {
+        "Manufacturer__r": {"Name": "Brembo", "Country__c": "Italy", "Certification__c": "ISO 14001"},
+        "Warehouse__r": {"Name": "Main Warehouse - B2", "Location__c": "Detroit, MI", "Region__c": "North America"}
       }
     },
     {
@@ -193,16 +322,22 @@
         "Part Category": "Suspension & Steering",
         "Part Sub-Category": "Shock Absorber",
         "Manufacturer": "KYB",
+        "Manufacturer__c": "MFR-003",
+        "Warehouse__c": "WH-004",
         "Condition": "New",
         "Unit Price": "899.50",
         "Stock Quantity": "40",
         "Vehicle Make": "Honda",
         "Model Year Range": "2010-2014",
         "Availability Status": "Low Stock",
-        "Warehouse Location": "Warehouse C - East",
+        "Warehouse Location": "Secondary Warehouse - D1",
         "Quality Grade": "OES",
         "Shipping Class": "Standard Ground",
         "Warranty Type": "1-Year Limited"
+      },
+      "relationship_context": {
+        "Manufacturer__r": {"Name": "KYB", "Country__c": "Japan", "Certification__c": "IATF 16949"},
+        "Warehouse__r": {"Name": "Secondary Warehouse - D1", "Location__c": "Chicago, IL", "Region__c": "North America"}
       }
     },
     {
@@ -231,16 +366,22 @@
         "Part Category": "Electrical & Lighting",
         "Part Sub-Category": "Headlight",
         "Manufacturer": "Hella",
+        "Manufacturer__c": "MFR-004",
+        "Warehouse__c": "WH-003",
         "Condition": "New",
         "Unit Price": "574.00",
         "Stock Quantity": "75",
         "Vehicle Make": "Mercedes-Benz",
         "Model Year Range": "2020-2026",
         "Availability Status": "In Stock",
-        "Warehouse Location": "Warehouse E - Central",
+        "Warehouse Location": "Main Warehouse - C3",
         "Quality Grade": "OEM",
         "Shipping Class": "Oversized",
         "Warranty Type": "Manufacturer Warranty"
+      },
+      "relationship_context": {
+        "Manufacturer__r": {"Name": "Hella", "Country__c": "Germany", "Certification__c": "ISO 9001"},
+        "Warehouse__r": {"Name": "Main Warehouse - C3", "Location__c": "Detroit, MI", "Region__c": "North America"}
       }
     },
     {
@@ -257,21 +398,29 @@
         "Click Edit button",
         "Change Condition to Refurbished",
         "Change Availability to Low Stock",
-        "Change Warehouse Location",
+        "Change Warehouse Location (updates Warehouse__c relationship)",
         "Change Quality Grade",
         "Update Unit Price and Stock Quantity",
         "Click Save and verify success toast"
       ],
       "data": {
         "search_term": "Turbocharger Assembly",
+        "record_id": "CP-001",
+        "Manufacturer__c": "MFR-001",
         "updates": {
           "Condition": "Refurbished",
           "Availability Status": "Low Stock",
-          "Warehouse Location": "Warehouse D - West",
+          "Warehouse Location": "Distribution Center - West",
+          "Warehouse__c": "WH-005",
           "Quality Grade": "Aftermarket Premium",
           "Unit Price": "1899.99",
           "Stock Quantity": "10"
         }
+      },
+      "relationship_context": {
+        "Manufacturer__r": {"Name": "BorgWarner", "Country__c": "USA"},
+        "Warehouse__r_before": {"Name": "Main Warehouse - A1", "id": "WH-001"},
+        "Warehouse__r_after": {"Name": "Distribution Center - West", "id": "WH-005"}
       }
     },
     {
@@ -287,10 +436,261 @@
         "Open the matching record",
         "Click Delete from record actions",
         "Confirm deletion in modal",
-        "Verify success toast and redirect to list view"
+        "Verify success toast and redirect to list view",
+        "Verify child Orders__r (Master-Detail) are cascade-deleted",
+        "Verify child Warranty_Claims__r (Lookup) retain their records (null out Car_Part__c)"
       ],
       "data": {
-        "search_term": "LED Headlight Assembly"
+        "search_term": "LED Headlight Assembly",
+        "record_id": "CP-004",
+        "Manufacturer__c": "MFR-004",
+        "Warehouse__c": "WH-003"
+      },
+      "relationship_context": {
+        "note": "Deleting a car part cascade-deletes Master-Detail children (Orders__r) but Lookup children (Warranty_Claims__r) are retained with Car_Part__c set to null",
+        "affected_orders": ["ORD-005"],
+        "affected_warranty_claims": []
+      }
+    }
+  ],
+
+  "relationship_test_records": [
+    {
+      "jira_story_id": "CAR-1021",
+      "test_case_id": "TC-021",
+      "test_case_name": "Parent-to-Child Relationship Traversal",
+      "scenario": "Retrieve Car Part with child Orders via Orders__r",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1021", "@api", "@relationship", "@parent_child", "@priority_high"],
+      "data": {
+        "parent_object": "Car_Part__c",
+        "parent_id": "CP-001",
+        "child_relationships": [
+          {
+            "relationship_name": "Orders__r",
+            "child_object": "Order__c",
+            "type": "Master-Detail",
+            "expected_count": 2,
+            "expected_records": ["ORD-001", "ORD-003"],
+            "foreign_key": "Car_Part__c"
+          },
+          {
+            "relationship_name": "Warranty_Claims__r",
+            "child_object": "Warranty_Claim__c",
+            "type": "Lookup",
+            "expected_count": 2,
+            "expected_records": ["WC-001", "WC-003"],
+            "foreign_key": "Car_Part__c"
+          }
+        ],
+        "api_endpoint": "GET /api/car-parts/CP-001/related",
+        "expected_response_keys": ["Orders__r", "Warranty_Claims__r", "Manufacturer__r", "Warehouse__r"]
+      }
+    },
+    {
+      "jira_story_id": "CAR-1022",
+      "test_case_id": "TC-022",
+      "test_case_name": "Child-to-Parent Relationship Traversal",
+      "scenario": "Retrieve Order with parent Car_Part__r and Ship_From_Warehouse__r",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1022", "@api", "@relationship", "@child_parent", "@priority_high"],
+      "data": {
+        "child_object": "Order__c",
+        "child_id": "ORD-001",
+        "parent_relationships": [
+          {
+            "field_api_name": "Car_Part__c",
+            "relationship_name": "Car_Part__r",
+            "type": "Master-Detail",
+            "expected_parent_id": "CP-001",
+            "expected_parent_fields": {"part_name": "Turbocharger Assembly"}
+          },
+          {
+            "field_api_name": "Ship_From_Warehouse__c",
+            "relationship_name": "Ship_From_Warehouse__r",
+            "type": "Lookup",
+            "expected_parent_id": "WH-001",
+            "expected_parent_fields": {"Name": "Main Warehouse - A1", "Location__c": "Detroit, MI"}
+          }
+        ],
+        "api_endpoint": "GET /api/orders/ORD-001",
+        "expected_response_keys": ["Car_Part__r", "Ship_From_Warehouse__r"]
+      }
+    },
+    {
+      "jira_story_id": "CAR-1023",
+      "test_case_id": "TC-023",
+      "test_case_name": "Lookup Relationship Field Handling",
+      "scenario": "Verify distinct __c (ID) vs __r (object) for each Lookup field",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1023", "@api", "@relationship", "@lookup", "@priority_high"],
+      "data": {
+        "object": "Car_Part__c",
+        "record_id": "CP-001",
+        "lookup_fields": [
+          {
+            "field_api_name": "Manufacturer__c",
+            "expected_value": "MFR-001",
+            "relationship_name": "Manufacturer__r",
+            "expected_resolved": {"Name": "BorgWarner", "Country__c": "USA"},
+            "note": "__c stores ID, __r resolves to full object"
+          },
+          {
+            "field_api_name": "Warehouse__c",
+            "expected_value": "WH-001",
+            "relationship_name": "Warehouse__r",
+            "expected_resolved": {"Name": "Main Warehouse - A1", "Location__c": "Detroit, MI"},
+            "note": "__c stores ID, __r resolves to full object"
+          }
+        ],
+        "api_endpoint": "GET /api/car-parts/CP-001/related"
+      }
+    },
+    {
+      "jira_story_id": "CAR-1024",
+      "test_case_id": "TC-024",
+      "test_case_name": "Master-Detail Relationship Handling",
+      "scenario": "Verify Master-Detail enforces required parent and cascade delete",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1024", "@api", "@relationship", "@master_detail", "@priority_high"],
+      "data": {
+        "master_detail_relationships": [
+          {
+            "parent_object": "Car_Part__c",
+            "child_object": "Order__c",
+            "relationship_name": "Orders__r",
+            "field_on_child": "Car_Part__c",
+            "is_required": true,
+            "cascade_delete": true,
+            "note": "If Car_Part__c is deleted, all related Order__c records are cascade-deleted"
+          }
+        ],
+        "test_parent_id": "CP-001",
+        "expected_children_via_orders_r": 2,
+        "api_endpoint": "GET /api/relationship-schema",
+        "schema_assertion": "Order__c.Car_Part__c relationship type == Master-Detail"
+      }
+    },
+    {
+      "jira_story_id": "CAR-1025",
+      "test_case_id": "TC-025",
+      "test_case_name": "Custom Object __c Suffix and API Identity",
+      "scenario": "Verify all custom objects use __c suffix and have unique key prefixes",
+      "priority": "Medium",
+      "type": "relationship",
+      "tags": ["@CAR-1025", "@api", "@relationship", "@custom_object", "@priority_medium"],
+      "data": {
+        "expected_objects": [
+          {"api_name": "Car_Part__c", "key_prefix": "CP"},
+          {"api_name": "Manufacturer__c", "key_prefix": "MFR"},
+          {"api_name": "Warehouse__c", "key_prefix": "WH"},
+          {"api_name": "Supplier__c", "key_prefix": "SUP"},
+          {"api_name": "Order__c", "key_prefix": "ORD"},
+          {"api_name": "Warranty_Claim__c", "key_prefix": "WC"}
+        ],
+        "naming_rules": {
+          "custom_object": "Must end with __c suffix",
+          "custom_field": "Must end with __c suffix (e.g. Manufacturer__c)",
+          "relationship_reference": "Must end with __r suffix (e.g. Manufacturer__r)",
+          "key_prefix": "Must be unique per object (2-3 uppercase letters)"
+        },
+        "api_endpoint": "GET /api/relationship-schema"
+      }
+    },
+    {
+      "jira_story_id": "CAR-1026",
+      "test_case_id": "TC-026",
+      "test_case_name": "Cross-Object SOQL Query Traversal",
+      "scenario": "Execute SOQL queries that traverse across multiple relationship paths",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1026", "@api", "@relationship", "@soql", "@priority_high"],
+      "data": {
+        "soql_queries": [
+          {
+            "query": "SELECT Name, Manufacturer__r.Name FROM Car_Part__c",
+            "traversal_type": "child-to-parent",
+            "description": "Dot notation to resolve parent manufacturer",
+            "expected_min_results": 4
+          },
+          {
+            "query": "SELECT Name, (SELECT Name FROM Orders__r) FROM Car_Part__c",
+            "traversal_type": "parent-to-child",
+            "description": "Subquery to resolve child orders",
+            "expected_min_results": 4
+          },
+          {
+            "query": "SELECT Name, Car_Part__r.Name, Order__r.Name FROM Warranty_Claim__c",
+            "traversal_type": "multi-parent",
+            "description": "Multiple parent traversals from a single child object",
+            "expected_min_results": 3,
+            "expected_resolved_fields": ["Car_Part__r", "Order__r"]
+          }
+        ],
+        "api_endpoint": "POST /api/soql"
+      }
+    },
+    {
+      "jira_story_id": "CAR-1027",
+      "test_case_id": "TC-027",
+      "test_case_name": "Data Isolation Between Relationship Paths",
+      "scenario": "Verify Manufacturer__r and Warehouse__r paths do not blend data",
+      "priority": "High",
+      "type": "relationship",
+      "tags": ["@CAR-1027", "@api", "@relationship", "@data_isolation", "@priority_high"],
+      "data": {
+        "test_record_id": "CP-001",
+        "isolation_assertions": [
+          {
+            "path_a": "Manufacturer__r",
+            "path_b": "Warehouse__r",
+            "assertion": "Manufacturer__r and Warehouse__r resolve to completely different objects with different schemas",
+            "path_a_expected_fields": ["Name", "Country__c", "Certification__c", "Founded_Year__c"],
+            "path_b_expected_fields": ["Name", "Location__c", "Capacity__c", "Region__c"],
+            "no_shared_data": true
+          },
+          {
+            "path_a": "Orders__r",
+            "path_b": "Warranty_Claims__r",
+            "assertion": "Child relationships do not share records — each has its own foreign key path",
+            "path_a_foreign_key": "Car_Part__c",
+            "path_b_foreign_key": "Car_Part__c",
+            "records_are_disjoint": true
+          }
+        ],
+        "api_endpoint": "GET /api/car-parts/CP-001/related"
+      }
+    },
+    {
+      "jira_story_id": "CAR-1028",
+      "test_case_id": "TC-028",
+      "test_case_name": "Multi-Relationship Central Data Hub",
+      "scenario": "Verify Car_Part__c acts as central hub with 4 relationship paths",
+      "priority": "Medium",
+      "type": "relationship",
+      "tags": ["@CAR-1028", "@api", "@relationship", "@multi_hub", "@priority_medium"],
+      "data": {
+        "hub_object": "Car_Part__c",
+        "hub_record_id": "CP-001",
+        "expected_relationship_paths": [
+          {"direction": "parent", "relationship_name": "Manufacturer__r", "type": "Lookup", "target_object": "Manufacturer__c"},
+          {"direction": "parent", "relationship_name": "Warehouse__r", "type": "Lookup", "target_object": "Warehouse__c"},
+          {"direction": "child", "relationship_name": "Orders__r", "type": "Master-Detail", "target_object": "Order__c"},
+          {"direction": "child", "relationship_name": "Warranty_Claims__r", "type": "Lookup", "target_object": "Warranty_Claim__c"}
+        ],
+        "hub_characteristics": {
+          "total_relationship_paths": 4,
+          "parent_paths": 2,
+          "child_paths": 2,
+          "lookup_count": 3,
+          "master_detail_count": 1,
+          "description": "Car_Part__c is the central data hub in the Salesforce schema — connected to manufacturers (who makes it), warehouses (where it's stored), orders (who bought it), and warranty claims (issues reported)"
+        },
+        "api_endpoint": "GET /api/car-parts/CP-001/related"
       }
     }
   ]

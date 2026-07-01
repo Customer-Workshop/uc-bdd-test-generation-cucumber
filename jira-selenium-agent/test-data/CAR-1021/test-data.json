@@ -1,0 +1,11 @@
+{
+  "story": "Parent-to-Child Relationship Traversal via __r",
+  "jira_id": "CAR-1021",
+  "type": "relationship",
+  "parent_object": "Car_Part__c",
+  "parent_id": "CP-001",
+  "child_relationships": [
+    {"relationship_name": "Orders__r", "type": "Master-Detail", "expected_count": 2},
+    {"relationship_name": "Warranty_Claims__r", "type": "Lookup", "expected_count": 2}
+  ]
+}

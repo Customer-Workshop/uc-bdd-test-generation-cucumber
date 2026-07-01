@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1026",
+  "test_case_id": "TC-026",
+  "scenario": "Cross-Object SOQL Query Traversal",
+  "tags": ["@relationship", "@soql", "@priority_high"],
+  "api_endpoint": "POST /api/soql",
+  "feature_file": "features/car-parts/relationships/CAR-1026_cross_object_query.feature"
+}

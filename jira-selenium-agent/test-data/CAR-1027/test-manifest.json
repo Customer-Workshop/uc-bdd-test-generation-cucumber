@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1027",
+  "test_case_id": "TC-027",
+  "scenario": "Data Isolation Between Relationship Paths",
+  "tags": ["@relationship", "@data_isolation", "@priority_high"],
+  "api_endpoint": "GET /api/car-parts/CP-001/related",
+  "feature_file": "features/car-parts/relationships/CAR-1027_relationship_data_isolation.feature"
+}

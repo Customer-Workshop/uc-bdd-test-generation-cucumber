@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1022",
+  "test_case_id": "TC-022",
+  "scenario": "Child-to-Parent Relationship Traversal",
+  "tags": ["@relationship", "@child_parent", "@priority_high"],
+  "api_endpoint": "GET /api/orders/ORD-001",
+  "feature_file": "features/car-parts/relationships/CAR-1022_child_parent_traversal.feature"
+}

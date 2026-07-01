@@ -1,0 +1,11 @@
+{
+  "story": "Child-to-Parent Relationship Traversal via __r",
+  "jira_id": "CAR-1022",
+  "type": "relationship",
+  "child_object": "Order__c",
+  "child_id": "ORD-001",
+  "parent_relationships": [
+    {"field_api_name": "Car_Part__c", "relationship_name": "Car_Part__r", "type": "Master-Detail", "expected_parent_id": "CP-001"},
+    {"field_api_name": "Ship_From_Warehouse__c", "relationship_name": "Ship_From_Warehouse__r", "type": "Lookup", "expected_parent_id": "WH-001"}
+  ]
+}

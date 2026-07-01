@@ -1,0 +1,11 @@
+{
+  "story": "Lookup Relationship Field Handling - __c vs __r identity",
+  "jira_id": "CAR-1023",
+  "type": "relationship",
+  "object": "Car_Part__c",
+  "record_id": "CP-001",
+  "lookup_fields": [
+    {"field_api_name": "Manufacturer__c", "value": "MFR-001", "relationship_name": "Manufacturer__r", "resolved_name": "BorgWarner"},
+    {"field_api_name": "Warehouse__c", "value": "WH-001", "relationship_name": "Warehouse__r", "resolved_name": "Main Warehouse - A1"}
+  ]
+}

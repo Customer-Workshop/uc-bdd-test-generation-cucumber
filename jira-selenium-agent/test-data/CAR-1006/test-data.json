@@ -1,0 +1,10 @@
+{
+  "story": "Delete Car Part Record with Confirmation",
+  "jira_id": "CAR-1006",
+  "criteria_count": 1,
+  "relationship_fields": {
+    "Manufacturer__c": "MFR-004",
+    "Warehouse__c": "WH-003",
+    "cascade_delete_note": "Master-Detail children (Orders__r) cascade-deleted; Lookup children (Warranty_Claims__r) retained with Car_Part__c = null"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "story": "Data Isolation Between Relationship Paths",
+  "jira_id": "CAR-1027",
+  "type": "relationship",
+  "test_record_id": "CP-001",
+  "isolation_paths": [
+    {"path_a": "Manufacturer__r", "path_b": "Warehouse__r", "must_be_disjoint": true},
+    {"path_a": "Orders__r", "path_b": "Warranty_Claims__r", "must_be_disjoint": true}
+  ]
+}

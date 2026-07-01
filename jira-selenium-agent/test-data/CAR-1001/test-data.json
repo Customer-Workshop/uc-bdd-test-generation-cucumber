@@ -1,0 +1,11 @@
+{
+  "story": "Create Engine Component Car Part in Salesforce LWC",
+  "jira_id": "CAR-1001",
+  "criteria_count": 1,
+  "relationship_fields": {
+    "Manufacturer__c": "MFR-001",
+    "Manufacturer__r": {"Name": "BorgWarner", "Country__c": "USA"},
+    "Warehouse__c": "WH-001",
+    "Warehouse__r": {"Name": "Main Warehouse - A1", "Location__c": "Detroit, MI"}
+  }
+}

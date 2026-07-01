@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1025",
+  "test_case_id": "TC-025",
+  "scenario": "Custom Object __c API Names",
+  "tags": ["@relationship", "@custom_object", "@priority_medium"],
+  "api_endpoint": "GET /api/relationship-schema",
+  "feature_file": "features/car-parts/relationships/CAR-1025_custom_object_api_names.feature"
+}

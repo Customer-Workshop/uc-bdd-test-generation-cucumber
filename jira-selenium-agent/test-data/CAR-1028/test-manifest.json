@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1028",
+  "test_case_id": "TC-028",
+  "scenario": "Multi-Relationship Central Data Hub",
+  "tags": ["@relationship", "@multi_hub", "@priority_medium"],
+  "api_endpoint": "GET /api/car-parts/CP-001/related",
+  "feature_file": "features/car-parts/relationships/CAR-1028_multi_relationship_hub.feature"
+}

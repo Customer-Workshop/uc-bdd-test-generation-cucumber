@@ -1,0 +1,15 @@
+{
+  "story": "Master-Detail Relationship Handling - required parent, cascade delete",
+  "jira_id": "CAR-1024",
+  "type": "relationship",
+  "master_detail": {
+    "parent_object": "Car_Part__c",
+    "child_object": "Order__c",
+    "relationship_name": "Orders__r",
+    "field_on_child": "Car_Part__c",
+    "is_required": true,
+    "cascade_delete": true
+  },
+  "test_parent_id": "CP-001",
+  "expected_children": 2
+}

@@ -1,0 +1,16 @@
+{
+  "story": "Multi-Relationship Central Data Hub verification",
+  "jira_id": "CAR-1028",
+  "type": "relationship",
+  "hub_object": "Car_Part__c",
+  "hub_record_id": "CP-001",
+  "expected_paths": [
+    {"direction": "parent", "relationship_name": "Manufacturer__r", "type": "Lookup", "target": "Manufacturer__c"},
+    {"direction": "parent", "relationship_name": "Warehouse__r", "type": "Lookup", "target": "Warehouse__c"},
+    {"direction": "child", "relationship_name": "Orders__r", "type": "Master-Detail", "target": "Order__c"},
+    {"direction": "child", "relationship_name": "Warranty_Claims__r", "type": "Lookup", "target": "Warranty_Claim__c"}
+  ],
+  "total_relationship_paths": 4,
+  "parent_paths": 2,
+  "child_paths": 2
+}

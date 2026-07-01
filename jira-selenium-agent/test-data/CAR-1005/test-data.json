@@ -1,0 +1,12 @@
+{
+  "story": "Edit Existing Car Part - Update Multiple Fields",
+  "jira_id": "CAR-1005",
+  "criteria_count": 1,
+  "relationship_fields": {
+    "Manufacturer__c": "MFR-001",
+    "Manufacturer__r": {"Name": "BorgWarner", "Country__c": "USA"},
+    "Warehouse__c_before": "WH-001",
+    "Warehouse__c_after": "WH-005",
+    "Warehouse__r_after": {"Name": "Distribution Center - West", "Location__c": "Los Angeles, CA"}
+  }
+}

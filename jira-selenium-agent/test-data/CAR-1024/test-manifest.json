@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1024",
+  "test_case_id": "TC-024",
+  "scenario": "Master-Detail Relationship Handling",
+  "tags": ["@relationship", "@master_detail", "@priority_high"],
+  "api_endpoint": "GET /api/relationship-schema",
+  "feature_file": "features/car-parts/relationships/CAR-1024_master_detail_relationship.feature"
+}

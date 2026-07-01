@@ -1,0 +1,8 @@
+{
+  "story_key": "CAR-1023",
+  "test_case_id": "TC-023",
+  "scenario": "Lookup Relationship Field Handling",
+  "tags": ["@relationship", "@lookup", "@priority_high"],
+  "api_endpoint": "GET /api/car-parts/CP-001/related",
+  "feature_file": "features/car-parts/relationships/CAR-1023_lookup_relationship.feature"
+}

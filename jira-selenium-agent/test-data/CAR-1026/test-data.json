@@ -1,0 +1,10 @@
+{
+  "story": "Cross-Object SOQL Query Traversal",
+  "jira_id": "CAR-1026",
+  "type": "relationship",
+  "soql_queries": [
+    {"query": "SELECT Name, Manufacturer__r.Name FROM Car_Part__c", "traversal_type": "child-to-parent", "expected_min_results": 4},
+    {"query": "SELECT Name, (SELECT Name FROM Orders__r) FROM Car_Part__c", "traversal_type": "parent-to-child", "expected_min_results": 4},
+    {"query": "SELECT Name, Car_Part__r.Name, Order__r.Name FROM Warranty_Claim__c", "traversal_type": "multi-parent", "expected_min_results": 3}
+  ]
+}
