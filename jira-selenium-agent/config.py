@@ -1,10 +1,14 @@
 """Configuration module for Jira-Selenium-Gherkin Agent."""
 
 import os
+from pathlib import Path
 from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Framework root directory
+FRAMEWORK_DIR = Path(__file__).parent
 
 
 @dataclass
@@ -27,6 +31,42 @@ class SeleniumConfig:
     base_url: str = os.getenv("APP_BASE_URL", "http://localhost:8080")
     implicit_wait: int = int(os.getenv("SELENIUM_IMPLICIT_WAIT", "10"))
     screenshot_dir: str = os.getenv("SCREENSHOT_DIR", "screenshots")
+
+
+@dataclass
+class SampleConfig:
+    """Sample application configuration — paths to sample app, test data, features.
+
+    Override via env vars or pass a different sample_dir to point at any app.
+    Default: samples/salesforce-car-parts/
+    """
+    sample_dir: str = os.getenv(
+        "SAMPLE_DIR",
+        str(FRAMEWORK_DIR / "samples" / "salesforce-car-parts")
+    )
+    app_dir: str = os.getenv("SAMPLE_APP_DIR", "")
+    test_data_dir: str = os.getenv("SAMPLE_TEST_DATA_DIR", "")
+    features_dir: str = os.getenv("SAMPLE_FEATURES_DIR", "")
+    test_data_file: str = os.getenv(
+        "SAMPLE_TEST_DATA_FILE", "car_parts_test_data.json"
+    )
+
+    def __post_init__(self) -> None:
+        base = Path(self.sample_dir)
+        if not self.app_dir:
+            self.app_dir = str(base / "app")
+        if not self.test_data_dir:
+            self.test_data_dir = str(base / "test-data")
+        if not self.features_dir:
+            self.features_dir = str(base / "features")
+
+    @property
+    def test_data_path(self) -> Path:
+        return Path(self.test_data_dir) / self.test_data_file
+
+    @property
+    def app_backend(self) -> Path:
+        return Path(self.app_dir) / "backend" / "app.py"
 
 
 @dataclass
@@ -69,3 +109,4 @@ class AgentConfig:
     output: OutputConfig = field(default_factory=OutputConfig)
     llm: LLMConfig = field(default_factory=LLMConfig)
     watcher: WatcherConfig = field(default_factory=WatcherConfig)
+    sample: SampleConfig = field(default_factory=SampleConfig)

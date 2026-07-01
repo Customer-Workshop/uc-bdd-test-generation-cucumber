@@ -51,7 +51,7 @@ class CarPartsTestRunner:
         self.copado_deployer = CopadoDeployer(self.config)
         self.test_data_agent = TestDataAgent(self.config)
         self.test_data = self._load_test_data()
-        self.features_dir = Path(__file__).parent.parent / "features"
+        self.features_dir = Path(self.config.sample.features_dir)
         self.feature_path = self._discover_features()
         self.scenarios: list[ScenarioResult] = []
 
@@ -65,8 +65,8 @@ class CarPartsTestRunner:
         return self.features_dir
 
     def _load_test_data(self) -> dict:
-        """Load test data from JSON file."""
-        data_path = Path(__file__).parent.parent / "test-data" / "car_parts_test_data.json"
+        """Load test data from configurable path."""
+        data_path = self.config.sample.test_data_path
         with open(data_path, encoding="utf-8") as f:
             return json.load(f)
 

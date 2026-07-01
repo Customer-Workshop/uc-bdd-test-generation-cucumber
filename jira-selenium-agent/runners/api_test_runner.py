@@ -62,15 +62,27 @@ class APITestReport:
 class APITestRunner:
     """Executes REST API tests against the target application."""
 
-    def __init__(self, base_url: str = "http://localhost:5555"):
+    def __init__(self, base_url: str = "http://localhost:5555",
+                 test_data_path: str | Path | None = None):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
+        self._test_data_path = test_data_path
         self.test_data = self._load_test_data()
 
     def _load_test_data(self) -> dict:
-        """Load test data from JSON file."""
-        data_path = Path(__file__).parent.parent / "test-data" / "car_parts_test_data.json"
+        """Load test data from configurable path."""
+        if self._test_data_path:
+            data_path = Path(self._test_data_path)
+        else:
+            # Try SampleConfig, fall back to legacy path
+            try:
+                from config import SampleConfig
+                data_path = SampleConfig().test_data_path
+            except Exception:
+                data_path = (Path(__file__).parent.parent
+                             / "samples" / "salesforce-car-parts"
+                             / "test-data" / "car_parts_test_data.json")
         if data_path.exists():
             with open(data_path, encoding="utf-8") as f:
                 return json.load(f)

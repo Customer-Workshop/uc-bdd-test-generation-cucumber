@@ -9,9 +9,23 @@ import os
 from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
+import sys
 BASE_DIR = Path(__file__).parent
+FRAMEWORK_DIR = BASE_DIR.parent.parent  # jira-selenium-agent/
+sys.path.insert(0, str(FRAMEWORK_DIR))
+
 REACT_BUILD_DIR = BASE_DIR.parent / "frontend" / "build"
-CONFIG_FILE = BASE_DIR.parent.parent / "config" / "automation_config.json"
+CONFIG_FILE = FRAMEWORK_DIR / "config" / "automation_config.json"
+
+# Resolve sample paths from SampleConfig
+try:
+    from config import SampleConfig
+    _sample = SampleConfig()
+    SAMPLE_TEST_DATA = Path(_sample.test_data_dir)
+    SAMPLE_FEATURES = Path(_sample.features_dir)
+except Exception:
+    SAMPLE_TEST_DATA = FRAMEWORK_DIR / "samples" / "salesforce-car-parts" / "test-data"
+    SAMPLE_FEATURES = FRAMEWORK_DIR / "samples" / "salesforce-car-parts" / "features"
 
 app = Flask(__name__, static_folder=str(REACT_BUILD_DIR / "static"))
 
@@ -102,7 +116,7 @@ def execute_pipeline():
 
 @app.route('/api/test-data', methods=['GET'])
 def get_test_data():
-    td_path = BASE_DIR.parent.parent / "test-data" / "car_parts_test_data.json"
+    td_path = SAMPLE_TEST_DATA / "car_parts_test_data.json"
     if td_path.exists():
         with open(td_path) as f:
             return jsonify(json.load(f))
@@ -112,7 +126,8 @@ def get_test_data():
 @app.route('/api/test-data', methods=['POST'])
 def upload_test_data():
     data = request.get_json()
-    td_path = BASE_DIR.parent.parent / "test-data" / "car_parts_test_data.json"
+    td_path = SAMPLE_TEST_DATA / "car_parts_test_data.json"
+    td_path.parent.mkdir(parents=True, exist_ok=True)
     with open(td_path, 'w') as f:
         json.dump(data, f, indent=2)
     return jsonify({"message": "Test data uploaded", "records": len(data)})
@@ -120,7 +135,7 @@ def upload_test_data():
 
 # ─── Features API ─────────────────────────────────────────────────────────────
 
-FEATURES_DIR = BASE_DIR.parent.parent / "features"
+FEATURES_DIR = SAMPLE_FEATURES
 
 
 @app.route('/api/features', methods=['GET'])
@@ -154,7 +169,7 @@ def get_feature_content(feature_path):
 
 # ─── API Testing Configuration ────────────────────────────────────────────────
 
-REPORTS_DIR = BASE_DIR.parent.parent / "reports"
+REPORTS_DIR = FRAMEWORK_DIR / "reports"
 
 
 @app.route('/api/api-testing-config', methods=['GET'])

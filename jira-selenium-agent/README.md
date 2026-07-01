@@ -86,7 +86,7 @@ pip install flask werkzeug
 ### 2. Start the Mock Salesforce App (React + Material UI)
 
 ```bash
-python salesforce-app/backend/app.py
+python samples/salesforce-car-parts/app/backend/app.py
 ```
 
 This starts the Car Parts React SPA at **http://localhost:5555**
@@ -115,7 +115,7 @@ Open a third terminal:
 python runners/car_parts_runner.py
 ```
 
-Runs 10 UI BDD scenarios against the mock Salesforce app. Feature files from `features/car-parts/`, test data from `test-data/`, reports output to `reports/`.
+Runs 10 UI BDD scenarios against the mock Salesforce app. Feature files from `samples/salesforce-car-parts/features/`, test data from `samples/salesforce-car-parts/test-data/`, reports output to `reports/`.
 
 ### 5. Run the REST API Tests
 
@@ -225,7 +225,7 @@ Detection is automatic via `UIAgent` which checks for `$A` (Aura), `lightning-ap
 
 ### Default Test Data
 
-6 test scenarios pre-loaded in `test-data/car_parts_test_data.json`:
+6 test scenarios pre-loaded in `samples/salesforce-car-parts/test-data/car_parts_test_data.json`:
 
 | Scenario | Jira ID | Fields |
 |----------|---------|--------|
@@ -245,8 +245,10 @@ Part Category (12), Part Sub-Category (42 dependent), Manufacturer (23), Conditi
 Upload your own JSON via the portal at `http://localhost:5556/upload` or place a file at:
 
 ```
-jira-selenium-agent/test-data/car_parts_test_data.json
+jira-selenium-agent/samples/salesforce-car-parts/test-data/car_parts_test_data.json
 ```
+
+Or point `SAMPLE_DIR` env var to a different sample app directory — all paths (app, test-data, features) are resolved from there.
 
 Expected format:
 
@@ -417,16 +419,6 @@ jira-selenium-agent/
   .env.example                # Environment variable template
   AGENTIC_AI_FLOW.md          # Detailed agent pipeline documentation
 
-  salesforce-app/             # Mock Salesforce Lightning UI (port 5555)
-    backend/
-      app.py                  # Flask REST API server
-    frontend/
-      src/                    # React + TypeScript source
-      public/                 # Static assets
-      build/                  # Production build (served by Flask)
-      package.json            # Node.js dependencies
-      tsconfig.json           # TypeScript config
-
   config-portal/              # Automation Configuration Portal (port 5556)
     backend/
       app.py                  # Flask REST API server
@@ -437,52 +429,29 @@ jira-selenium-agent/
       package.json            # Node.js dependencies
       tsconfig.json           # TypeScript config
 
-  features/                   # Generated Gherkin feature files
-    car-parts/
-      create/                 # Create (CRUD) scenarios
-        CAR-1001_create_engine_component.feature
-        CAR-1002_create_braking_system.feature
-        CAR-1003_create_suspension_part.feature
-        CAR-1004_create_electrical_part.feature
-      read/                   # Read / query scenarios
-        CAR-1005_traverse_dropdown_fields.feature
-        CAR-1007_search_and_filter.feature
-        CAR-1008_dependent_picklist_verification.feature
-      update/                 # Update scenarios
-        CAR-1006_edit_car_part.feature
-      delete/                 # Delete scenarios
-        CAR-1009_delete_car_part.feature
-      validation/             # Validation scenarios
-        CAR-1010_validate_required_fields.feature
-      api/                    # REST API test scenarios
-        CAR-1011_api_health_check.feature
-        CAR-1012_list_car_parts_api.feature
-        CAR-1013_get_car_part_by_id_api.feature
-        CAR-1014_create_car_part_api.feature
-        CAR-1015_update_car_part_api.feature
-        CAR-1016_delete_car_part_api.feature
-        CAR-1017_dropdown_fields_api.feature
-        CAR-1018_sub_categories_api.feature
-        CAR-1019_nonexistent_part_api.feature
-        CAR-1020_invalid_create_api.feature
-      relationships/          # Multi-relationship test scenarios
-        CAR-1021_parent_child_traversal.feature
-        CAR-1022_child_parent_traversal.feature
-        CAR-1023_lookup_relationship.feature
-        CAR-1024_master_detail_relationship.feature
-        CAR-1025_custom_object_api_names.feature
-        CAR-1026_cross_object_query.feature
-        CAR-1027_relationship_data_isolation.feature
-        CAR-1028_multi_relationship_hub.feature
-
-  runners/                    # Test execution code
+  runners/                    # Test execution code (generic)
     car_parts_runner.py       # UI E2E test runner (Selenium)
     api_test_runner.py        # REST API test runner (requests)
     car_parts_page_objects.py # Car Parts POM classes
     selenium_e2e_runner.py    # Selenium execution engine
 
-  test-data/                  # Test data files
-    car_parts_test_data.json  # Test data (6 scenarios, 12 dropdowns)
+  samples/                    # Sample apps (outside core framework)
+    salesforce-car-parts/     # Salesforce Car Parts sample
+      app/                    # Mock Salesforce Lightning UI (port 5555)
+        backend/app.py        # Flask REST API server
+        frontend/             # React + MUI frontend
+      test-data/              # Test data files
+        car_parts_test_data.json  # Test data + relationship model
+        CAR-1001/ to CAR-1028/    # Per-story test bundles
+      features/               # Generated Gherkin feature files
+        car-parts/
+          create/             # CAR-1001 to CAR-1004
+          read/               # CAR-1005, CAR-1007, CAR-1008
+          update/             # CAR-1006
+          delete/             # CAR-1009
+          validation/         # CAR-1010
+          api/                # CAR-1011 to CAR-1020
+          relationships/      # CAR-1021 to CAR-1028
 
   config/                     # Configuration files
     automation_config.json    # Portal config (auto-generated)

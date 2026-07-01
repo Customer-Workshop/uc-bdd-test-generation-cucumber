@@ -144,7 +144,7 @@ Feature: Create Engine Component Car Part in Salesforce LWC
 
 **Test Data Bundle (per story):**
 ```
-test-data/CAR-1001/
+samples/salesforce-car-parts/test-data/CAR-1001/
 ├── test-data.json          # Field values, dropdown options
 ├── test-manifest.json      # Story metadata, feature path, app URL
 └── selenium-config.json    # Browser config, timeouts, base URL
@@ -152,7 +152,7 @@ test-data/CAR-1001/
 
 **Outputs:**
 - `context.test_data`: Dict of story_key → TestDataSet
-- Files written to `test-data/{story_key}/`
+- Files written to `samples/{app}/test-data/{story_key}/`
 - Message to PageObjectAgent: `test_data_ready`
 
 **Code:** `agentic_orchestrator.py → TestDataPreparationAgent`, `test_data_agent.py`
@@ -465,21 +465,20 @@ jira-selenium-agent/
 ├── requirements.txt                  # Python dependencies
 ├── .env.example                      # Environment variable template
 │
-├── features/                         # Generated Gherkin feature files (dynamic)
-│   └── car-parts/                   # Auto-created per scanned app
-│       ├── create/                  # CAR-1001 to CAR-1004
-│       ├── read/                    # CAR-1005, CAR-1007, CAR-1008
-│       ├── update/                  # CAR-1006
-│       ├── delete/                  # CAR-1009
-│       └── validation/              # CAR-1010
-│
 ├── runners/                         # Test execution code
 │   ├── car_parts_runner.py          # Standalone runner with reports
 │   ├── car_parts_page_objects.py    # LWC page objects (12 dropdowns)
 │   └── selenium_e2e_runner.py       # Selenium execution engine
 │
-├── test-data/                       # Test data files
-│   └── car_parts_test_data.json     # Test data + dropdown dependency map
+├── samples/                         # Sample applications (outside core)
+│   └── salesforce-car-parts/
+│       ├── app/                      # Mock Salesforce UI (port 5555)
+│       │   ├── backend/app.py
+│       │   └── frontend/
+│       ├── test-data/                # Test data files
+│       │   └── car_parts_test_data.json
+│       └── features/                 # Generated feature files
+│           └── car-parts/
 │
 ├── config/                          # Configuration files
 │   └── automation_config.json       # Portal config (auto-generated)

@@ -39,18 +39,19 @@ class TestDataAgent:
     - Provide test data to the execution pipeline
     """
 
-    TEST_DATA_DIR = "test-data"
     SELENIUM_CONFIG_DIR = "selenium-configs"
     FEATURE_ARCHIVE_DIR = "feature-archive"
 
     def __init__(self, config: AgentConfig):
         self.config = config
         self.base_dir = Path(config.output.output_dir).parent
+        self.TEST_DATA_DIR = config.sample.test_data_dir
         self._ensure_directories()
 
     def _ensure_directories(self):
         """Create required directories."""
-        for d in [self.TEST_DATA_DIR, self.SELENIUM_CONFIG_DIR, self.FEATURE_ARCHIVE_DIR]:
+        Path(self.TEST_DATA_DIR).mkdir(parents=True, exist_ok=True)
+        for d in [self.SELENIUM_CONFIG_DIR, self.FEATURE_ARCHIVE_DIR]:
             (self.base_dir / d).mkdir(parents=True, exist_ok=True)
 
     def upload_test_data(self, dataset: TestDataSet) -> Path:
@@ -65,7 +66,7 @@ class TestDataAgent:
         Returns:
             Path to the created test data file.
         """
-        test_data_dir = self.base_dir / self.TEST_DATA_DIR / dataset.story_key
+        test_data_dir = Path(self.TEST_DATA_DIR) / dataset.story_key
         test_data_dir.mkdir(parents=True, exist_ok=True)
 
         manifest = {
@@ -147,7 +148,7 @@ class TestDataAgent:
             The test data manifest dict, or None if not found.
         """
         manifest_path = (
-            self.base_dir / self.TEST_DATA_DIR / story_key / "test-manifest.json"
+            Path(self.TEST_DATA_DIR) / story_key / "test-manifest.json"
         )
         if not manifest_path.exists():
             logger.warning("No test data found for %s", story_key)
@@ -194,7 +195,7 @@ class TestDataAgent:
         Returns:
             List of story keys.
         """
-        test_data_dir = self.base_dir / self.TEST_DATA_DIR
+        test_data_dir = Path(self.TEST_DATA_DIR)
         if not test_data_dir.exists():
             return []
         return [

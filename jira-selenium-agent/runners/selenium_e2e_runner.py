@@ -15,9 +15,16 @@ from playwright.sync_api import sync_playwright
 BASE_URL = "http://localhost:5555"
 CDP_URL = "http://localhost:29229"
 
-# Load test data
-TEST_DATA_PATH = Path(__file__).parent / "car_parts_test_data.json"
-with open(TEST_DATA_PATH) as f:
+# Load test data from configurable path
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from config import SampleConfig
+    _td_path = SampleConfig().test_data_path
+except Exception:
+    _td_path = (Path(__file__).parent.parent / "samples"
+                / "salesforce-car-parts" / "test-data"
+                / "car_parts_test_data.json")
+with open(_td_path) as f:
     TEST_CONFIG = json.load(f)
 
 
