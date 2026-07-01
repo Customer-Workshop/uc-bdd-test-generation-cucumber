@@ -19,6 +19,12 @@ const apiEndpoints = [
   { method: 'GET', path: '/api/dropdown-fields', description: 'Get dropdown field metadata', category: 'Metadata' },
   { method: 'GET', path: '/api/sub-categories/<cat>', description: 'Get dependent sub-categories', category: 'Metadata' },
   { method: 'GET', path: '/api/test-data', description: 'Get test data JSON', category: 'Data' },
+  { method: 'GET', path: '/api/relationship-schema', description: 'Full Salesforce sObject relationship schema', category: 'Relationship' },
+  { method: 'GET', path: '/api/car-parts/<id>/related', description: 'Car part with all __r relationships expanded', category: 'Relationship' },
+  { method: 'GET', path: '/api/manufacturers', description: 'List manufacturers (Manufacturer__c)', category: 'Relationship' },
+  { method: 'GET', path: '/api/orders', description: 'List orders with parent __r traversals', category: 'Relationship' },
+  { method: 'GET', path: '/api/warranty-claims', description: 'Warranty claims with Car_Part__r + Order__r', category: 'Relationship' },
+  { method: 'POST', path: '/api/soql', description: 'SOQL-style cross-object query', category: 'Relationship' },
 ];
 
 const testScenarios = [
@@ -32,14 +38,22 @@ const testScenarios = [
   { id: 'CAR-1018', tc: 'TC-018', name: 'Dependent Sub-Categories', type: 'read', priority: 'medium', steps: 3 },
   { id: 'CAR-1019', tc: 'TC-019', name: 'Nonexistent Part 404', type: 'validation', priority: 'medium', steps: 2 },
   { id: 'CAR-1020', tc: 'TC-020', name: 'Invalid Create 400', type: 'validation', priority: 'high', steps: 1 },
+  { id: 'CAR-1021', tc: 'TC-021', name: 'Parent-to-Child Traversal', type: 'relationship', priority: 'high', steps: 4 },
+  { id: 'CAR-1022', tc: 'TC-022', name: 'Child-to-Parent Traversal', type: 'relationship', priority: 'high', steps: 5 },
+  { id: 'CAR-1023', tc: 'TC-023', name: 'Lookup Relationship Fields', type: 'relationship', priority: 'high', steps: 6 },
+  { id: 'CAR-1024', tc: 'TC-024', name: 'Master-Detail Relationship', type: 'relationship', priority: 'high', steps: 5 },
+  { id: 'CAR-1025', tc: 'TC-025', name: 'Custom Object __c API Names', type: 'relationship', priority: 'medium', steps: 4 },
+  { id: 'CAR-1026', tc: 'TC-026', name: 'Cross-Object SOQL Query', type: 'relationship', priority: 'high', steps: 5 },
+  { id: 'CAR-1027', tc: 'TC-027', name: 'Data Isolation Between Paths', type: 'relationship', priority: 'high', steps: 4 },
+  { id: 'CAR-1028', tc: 'TC-028', name: 'Multi-Relationship Hub', type: 'relationship', priority: 'medium', steps: 6 },
 ];
 
 const methodColors: Record<string, string> = {
   GET: '#2e7d32', POST: '#1565c0', PUT: '#e65100', DELETE: '#c62828',
 };
 
-const typeColors: Record<string, 'success' | 'primary' | 'warning' | 'error' | 'info' | 'default'> = {
-  health: 'success', read: 'primary', create: 'info', update: 'warning', delete: 'error', validation: 'default',
+const typeColors: Record<string, 'success' | 'primary' | 'warning' | 'error' | 'info' | 'default' | 'secondary'> = {
+  health: 'success', read: 'primary', create: 'info', update: 'warning', delete: 'error', validation: 'default', relationship: 'secondary',
 };
 
 export default function APITesting() {
@@ -132,7 +146,7 @@ export default function APITesting() {
       {/* Test Scenarios */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">Test Scenarios (10)</Typography>
+          <Typography variant="h6">Test Scenarios (18)</Typography>
           <Button variant="contained" startIcon={<PlayArrow />} onClick={handleRun}
             disabled={running || !enabled} color="success">
             {running ? 'Running...' : 'Run API Tests'}
@@ -265,6 +279,7 @@ export default function APITesting() {
               { type: 'Update (PUT)', count: 1, desc: 'Partial field update' },
               { type: 'Delete (DELETE)', count: 1, desc: 'Create-then-delete lifecycle' },
               { type: 'Validation', count: 2, desc: '404 for missing, 400 for invalid body' },
+              { type: 'Relationship', count: 8, desc: 'Lookup/Master-Detail traversal, SOQL, data isolation' },
             ].map((t, i) => (
               <Grid item xs={12} sm={6} md={4} key={i}>
                 <Card variant="outlined" sx={{ p: 1.5 }}>

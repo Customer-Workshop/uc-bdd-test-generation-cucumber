@@ -61,6 +61,7 @@ Each agent follows the `decide() -> act() -> report()` lifecycle defined in `Bas
 | Copado | `/copado-config` | Instance URL, API token, pipeline ID, environment |
 | Reports | `/report-config` | Inline HTML report with Chart.js charts + Copado deploy status |
 | SelectorsHub | `/selectorshub-config` | Auto-scan settings, shadow DOM, XPath, selector priority |
+| Relationships | `/relationships` | Salesforce multi-relationship model (6 objects, __c/__r API identities, SOQL) |
 | MCP Servers | `/mcp-servers` | Enable/configure 5 MCP servers (Jira, Selenium, Copado, GitHub, SelectorsHub) |
 | Flow Diagram | `/flow-diagram` | SVG architecture diagram with agent pipeline, data flow, MCP comparison |
 | API | `/api/config` | JSON endpoint for current config (tokens masked) |
@@ -104,7 +105,7 @@ python config-portal/backend/app.py
 
 This starts the configuration portal at **http://localhost:5556**
 
-Features: 16 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, API Testing, Jira, Selenium, GitHub, Copado, AI Model, App URL, Upload, SelectorsHub, MCP Servers, Flow Diagram.
+Features: 17 MUI pages — Dashboard, Workflow, Execute, Reports, Traceability, API Testing, Relationships, Jira, Selenium, GitHub, Copado, AI Model, App URL, Upload, SelectorsHub, MCP Servers, Flow Diagram.
 
 ### 4. Run the Selenium UI E2E Tests
 
@@ -122,7 +123,7 @@ Runs 10 UI BDD scenarios against the mock Salesforce app. Feature files from `fe
 python runners/api_test_runner.py
 ```
 
-Runs 10 API test scenarios (30 steps) against the Car Parts REST API:
+Runs 18 API test scenarios (69 steps) against the Car Parts REST API:
 
 | Jira ID | Scenario | Type | Steps |
 |---------|----------|------|-------|
@@ -136,6 +137,14 @@ Runs 10 API test scenarios (30 steps) against the Car Parts REST API:
 | CAR-1018 | Dependent Sub-Categories | Read | 3 |
 | CAR-1019 | Nonexistent Part 404 | Validation | 2 |
 | CAR-1020 | Invalid Create 400 | Validation | 1 |
+| CAR-1021 | Parent-to-Child Traversal | Relationship | 4 |
+| CAR-1022 | Child-to-Parent Traversal | Relationship | 5 |
+| CAR-1023 | Lookup Relationship Fields | Relationship | 6 |
+| CAR-1024 | Master-Detail Relationship | Relationship | 5 |
+| CAR-1025 | Custom Object __c API Names | Relationship | 4 |
+| CAR-1026 | Cross-Object SOQL Query | Relationship | 5 |
+| CAR-1027 | Data Isolation Between Paths | Relationship | 4 |
+| CAR-1028 | Multi-Relationship Hub | Relationship | 6 |
 
 ### 6. Run the Agentic Orchestrator
 
@@ -456,6 +465,15 @@ jira-selenium-agent/
         CAR-1018_sub_categories_api.feature
         CAR-1019_nonexistent_part_api.feature
         CAR-1020_invalid_create_api.feature
+      relationships/          # Multi-relationship test scenarios
+        CAR-1021_parent_child_traversal.feature
+        CAR-1022_child_parent_traversal.feature
+        CAR-1023_lookup_relationship.feature
+        CAR-1024_master_detail_relationship.feature
+        CAR-1025_custom_object_api_names.feature
+        CAR-1026_cross_object_query.feature
+        CAR-1027_relationship_data_isolation.feature
+        CAR-1028_multi_relationship_hub.feature
 
   runners/                    # Test execution code
     car_parts_runner.py       # UI E2E test runner (Selenium)
@@ -476,6 +494,76 @@ jira-selenium-agent/
     report-*.xml              # JUnit XML reports
     report-*.json             # JSON reports
 ```
+
+## Salesforce Multi-Relationship Support
+
+The framework models Salesforce's multi-relationship data patterns with Lookup and Master-Detail fields, custom objects (`__c`), and relationship traversal (`__r`).
+
+### Custom Object Data Model (6 Objects)
+
+| Object | Prefix | Parent Relationships | Child Relationships |
+|--------|--------|---------------------|---------------------|
+| `Car_Part__c` | CP | `Manufacturer__r` (Lookup), `Warehouse__r` (Lookup) | `Orders__r` (Master-Detail), `Warranty_Claims__r` (Lookup) |
+| `Manufacturer__c` | MFR | `Primary_Supplier__r` (Lookup) | `Car_Parts__r` (Lookup) |
+| `Warehouse__c` | WH | — | `Car_Parts__r` (Lookup), `Orders__r` (Lookup) |
+| `Supplier__c` | SUP | — | `Manufacturers__r` (Lookup) |
+| `Order__c` | ORD | `Car_Part__r` (Master-Detail), `Ship_From_Warehouse__r` (Lookup) | `Warranty_Claims__r` (Lookup) |
+| `Warranty_Claim__c` | WC | `Car_Part__r` (Lookup), `Order__r` (Lookup) | — |
+
+### API Identity Rules
+
+Salesforce assigns **two distinct API identities** to every relationship field to prevent data blending:
+
+| Suffix | Stores | Example |
+|--------|--------|---------|
+| `__c` (field) | Record ID (foreign key) | `Manufacturer__c = "MFR-001"` |
+| `__r` (relationship) | Full parent/child object | `Manufacturer__r.Name = "BorgWarner"` |
+
+### Relationship API Endpoints
+
+```bash
+GET /api/relationship-schema           # Full sObject schema (6 objects)
+GET /api/relationships/<object>        # Relationships for one object
+GET /api/car-parts/<id>/related        # Car part with all __r expanded
+GET /api/manufacturers                 # List manufacturers
+GET /api/manufacturers/<id>            # Manufacturer + Car_Parts__r children
+GET /api/warehouses                    # List warehouses
+GET /api/warehouses/<id>               # Warehouse + Car_Parts__r + Orders__r
+GET /api/suppliers                     # List suppliers
+GET /api/suppliers/<id>                # Supplier + Manufacturers__r
+GET /api/orders                        # Orders with Car_Part__r + Warehouse__r
+GET /api/orders/<id>                   # Order + parents + Warranty_Claims__r
+GET /api/warranty-claims               # Claims with Car_Part__r + Order__r
+POST /api/soql                         # SOQL-style cross-object query
+```
+
+### SOQL Cross-Object Query Examples
+
+```bash
+# Child-to-parent traversal (dot notation)
+POST /api/soql -d '{"query": "SELECT Name, Manufacturer__r.Name FROM Car_Part__c"}'
+
+# Parent-to-child traversal (subquery)
+POST /api/soql -d '{"query": "SELECT Name, (SELECT Name FROM Orders__r) FROM Car_Part__c"}'
+
+# Multi-parent traversal
+POST /api/soql -d '{"query": "SELECT Name, Car_Part__r.Name, Order__r.Name FROM Warranty_Claim__c"}'
+```
+
+### Relationship Test Scenarios (CAR-1021 to CAR-1028)
+
+| Jira ID | Scenario | Tests |
+|---------|----------|-------|
+| CAR-1021 | Parent-to-Child Traversal | Orders__r, Warranty_Claims__r from Car_Part__c |
+| CAR-1022 | Child-to-Parent Traversal | Car_Part__r, Ship_From_Warehouse__r from Order__c |
+| CAR-1023 | Lookup Relationship Fields | Distinct __c (ID) vs __r (object) per field |
+| CAR-1024 | Master-Detail Relationship | Cascade behavior, schema type validation |
+| CAR-1025 | Custom Object __c API Names | All objects end with __c, unique key prefixes |
+| CAR-1026 | Cross-Object SOQL Query | Multi-object traversal via POST /api/soql |
+| CAR-1027 | Data Isolation Between Paths | Manufacturer__r and Warehouse__r are independent |
+| CAR-1028 | Multi-Relationship Hub | Car Part connected to 4 relationship paths |
+
+Feature files: `features/car-parts/relationships/`
 
 ## CI/CD
 

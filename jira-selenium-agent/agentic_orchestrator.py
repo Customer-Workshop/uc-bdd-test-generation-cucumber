@@ -417,12 +417,27 @@ class AnalysisAgent(BaseAgent):
             context.ui_framework = "salesforce-lwc"
             self.decide(context, "Default UI framework: Salesforce LWC")
 
+        # Detect Salesforce multi-relationship schema from target app
+        relationship_objects = 0
+        try:
+            import requests as req
+            app_url = self.config.selenium.base_url or "http://localhost:5555"
+            resp = req.get(f"{app_url}/api/relationship-schema", timeout=5)
+            if resp.status_code == 200:
+                schema = resp.json()
+                relationship_objects = len(schema.get("objects", {}))
+                context.metadata["relationship_schema"] = schema
+                self.decide(context, f"Detected {relationship_objects} Salesforce custom objects with __c/__r relationships")
+        except Exception:
+            pass
+
         self.send_message(context, "FeatureGenerationAgent", "analysis_complete", {
             "ui_framework": context.ui_framework,
             "story_count": len(context.stories),
+            "relationship_objects": relationship_objects,
         })
 
-        self._log_complete(f"Framework: {context.ui_framework}, Stories: {len(context.stories)}")
+        self._log_complete(f"Framework: {context.ui_framework}, Stories: {len(context.stories)}, Relationship Objects: {relationship_objects}")
         return context
 
     def _analyze_story(self, story: UserStory) -> dict:

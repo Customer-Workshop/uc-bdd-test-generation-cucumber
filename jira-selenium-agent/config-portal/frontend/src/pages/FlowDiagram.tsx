@@ -8,7 +8,7 @@ const agentFlow = [
   { agent: 'TestDataPreparationAgent', receives: '.feature + Test Data', produces: 'Data Bundles[]', sends: 'PageObjectAgent', external: '-' },
   { agent: 'PageObjectAgent', receives: 'Framework + Features', produces: 'POM Classes', sends: 'ExecutionAgent', external: 'SelectorsHub' },
   { agent: 'ExecutionAgent', receives: 'POM + Data + URL', produces: 'UI Results[]', sends: 'APITestingAgent', external: 'Selenium' },
-  { agent: 'APITestingAgent', receives: 'App URL + Test Data', produces: 'API Results[]', sends: 'ReportingAgent', external: 'REST API' },
+  { agent: 'APITestingAgent', receives: 'App URL + Test Data + Relationship Schema', produces: 'API Results[] (10 CRUD + 8 Relationship)', sends: 'ReportingAgent', external: 'REST API + SOQL' },
   { agent: 'ReportingAgent', receives: 'UI + API Results', produces: 'HTML/XML/JSON', sends: 'DeploymentAgent', external: '-' },
   { agent: 'DeploymentAgent', receives: 'Reports + Config', produces: 'Deploy Status', sends: 'FeedbackAgent', external: 'Copado' },
   { agent: 'FeedbackAgent', receives: 'Git Diff + Features', produces: 'Updated Features', sends: 'Orchestrator', external: 'GitHub' },

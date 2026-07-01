@@ -233,6 +233,75 @@ def run_api_tests():
     })
 
 
+# ─── Relationships API ────────────────────────────────────────────────────────
+
+@app.route('/api/relationships-config', methods=['GET'])
+def get_relationships_config():
+    """Return Salesforce multi-relationship configuration and schema summary."""
+    return jsonify({
+        "enabled": True,
+        "objects": [
+            {"api_name": "Car_Part__c", "label": "Car Part", "prefix": "CP", "fields": 13,
+             "parent_rels": [
+                 {"field": "Manufacturer__c", "ref": "Manufacturer__r", "type": "Lookup", "target": "Manufacturer__c"},
+                 {"field": "Warehouse__c", "ref": "Warehouse__r", "type": "Lookup", "target": "Warehouse__c"},
+             ],
+             "child_rels": [
+                 {"name": "Orders__r", "object": "Order__c", "type": "Master-Detail"},
+                 {"name": "Warranty_Claims__r", "object": "Warranty_Claim__c", "type": "Lookup"},
+             ]},
+            {"api_name": "Manufacturer__c", "label": "Manufacturer", "prefix": "MFR", "fields": 7,
+             "parent_rels": [
+                 {"field": "Primary_Supplier__c", "ref": "Primary_Supplier__r", "type": "Lookup", "target": "Supplier__c"},
+             ],
+             "child_rels": [
+                 {"name": "Car_Parts__r", "object": "Car_Part__c", "type": "Lookup"},
+             ]},
+            {"api_name": "Warehouse__c", "label": "Warehouse", "prefix": "WH", "fields": 6,
+             "parent_rels": [],
+             "child_rels": [
+                 {"name": "Car_Parts__r", "object": "Car_Part__c", "type": "Lookup"},
+                 {"name": "Orders__r", "object": "Order__c", "type": "Lookup"},
+             ]},
+            {"api_name": "Supplier__c", "label": "Supplier", "prefix": "SUP", "fields": 6,
+             "parent_rels": [],
+             "child_rels": [
+                 {"name": "Manufacturers__r", "object": "Manufacturer__c", "type": "Lookup"},
+             ]},
+            {"api_name": "Order__c", "label": "Order", "prefix": "ORD", "fields": 7,
+             "parent_rels": [
+                 {"field": "Car_Part__c", "ref": "Car_Part__r", "type": "Master-Detail", "target": "Car_Part__c"},
+                 {"field": "Ship_From_Warehouse__c", "ref": "Ship_From_Warehouse__r", "type": "Lookup", "target": "Warehouse__c"},
+             ],
+             "child_rels": [
+                 {"name": "Warranty_Claims__r", "object": "Warranty_Claim__c", "type": "Lookup"},
+             ]},
+            {"api_name": "Warranty_Claim__c", "label": "Warranty Claim", "prefix": "WC", "fields": 7,
+             "parent_rels": [
+                 {"field": "Car_Part__c", "ref": "Car_Part__r", "type": "Lookup", "target": "Car_Part__c"},
+                 {"field": "Order__c", "ref": "Order__r", "type": "Lookup", "target": "Order__c"},
+             ],
+             "child_rels": []},
+        ],
+        "test_scenarios": [
+            {"id": "CAR-1021", "name": "Parent-to-Child Traversal", "type": "relationship", "priority": "high", "steps": 4},
+            {"id": "CAR-1022", "name": "Child-to-Parent Traversal", "type": "relationship", "priority": "high", "steps": 5},
+            {"id": "CAR-1023", "name": "Lookup Relationship Fields", "type": "relationship", "priority": "high", "steps": 6},
+            {"id": "CAR-1024", "name": "Master-Detail Relationship", "type": "relationship", "priority": "high", "steps": 5},
+            {"id": "CAR-1025", "name": "Custom Object __c API Names", "type": "relationship", "priority": "medium", "steps": 4},
+            {"id": "CAR-1026", "name": "Cross-Object SOQL Query", "type": "relationship", "priority": "high", "steps": 5},
+            {"id": "CAR-1027", "name": "Data Isolation Between Paths", "type": "relationship", "priority": "high", "steps": 4},
+            {"id": "CAR-1028", "name": "Multi-Relationship Hub", "type": "relationship", "priority": "medium", "steps": 6},
+        ],
+        "api_identity_rules": [
+            {"rule": "Field API Name", "suffix": "__c", "stores": "Record ID (foreign key)", "example": "Manufacturer__c = 'MFR-001'"},
+            {"rule": "Relationship Name", "suffix": "__r", "stores": "Full parent/child object", "example": "Manufacturer__r.Name = 'BorgWarner'"},
+            {"rule": "Custom Object", "suffix": "__c", "stores": "Object definition", "example": "Car_Part__c, Order__c"},
+            {"rule": "Custom Field", "suffix": "__c", "stores": "Field value", "example": "Unit_Price__c, Stock_Quantity__c"},
+        ],
+    })
+
+
 # ─── Serve React App ──────────────────────────────────────────────────────────
 
 @app.route('/static/<path:filename>')

@@ -14,12 +14,13 @@ const statusItems = [
   { tool: 'Reports', status: 'HTML + Charts', color: 'success' as const, path: '/report-config' },
   { tool: 'SelectorsHub', status: 'Enabled', color: 'success' as const, path: '/selectorshub-config' },
   { tool: 'MCP Servers', status: 'Disabled', color: 'warning' as const, path: '/mcp-servers' },
-  { tool: 'API Testing', status: 'Enabled (10 scenarios)', color: 'success' as const, path: '/api-testing' },
+  { tool: 'API Testing', status: 'Enabled (18 scenarios)', color: 'success' as const, path: '/api-testing' },
+  { tool: 'Relationships', status: '6 objects, 8 tests', color: 'success' as const, path: '/relationships' },
 ];
 
 const stats = [
-  { label: 'UI + API Tests', value: '16', color: '#1565c0' },
-  { label: 'Total Steps', value: '88', color: '#2e7d32' },
+  { label: 'UI + API Tests', value: '24', color: '#1565c0' },
+  { label: 'Total Steps', value: '127', color: '#2e7d32' },
   { label: 'Pass Rate', value: '100%', color: '#ed6c02' },
   { label: 'Agents', value: '10', color: '#7b1fa2' },
 ];

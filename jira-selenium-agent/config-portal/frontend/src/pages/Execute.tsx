@@ -17,7 +17,7 @@ const pipelineResults = [
   { agent: 'TestDataPreparationAgent', decision: 'PROCEED', result: '6 data bundles, 65 fields', duration: '0.3s' },
   { agent: 'PageObjectAgent', decision: 'PROCEED', result: 'SelectorsHub scanned 12 fields → LWC POM', duration: '2.4s' },
   { agent: 'ExecutionAgent', decision: 'PROCEED', result: '6/6 UI scenarios passed, 58 steps', duration: '12.5s' },
-  { agent: 'APITestingAgent', decision: 'PROCEED', result: '10/10 API scenarios passed, 30 steps', duration: '0.3s' },
+  { agent: 'APITestingAgent', decision: 'PROCEED', result: '18/18 API scenarios passed (10 CRUD + 8 relationship), 69 steps', duration: '0.5s' },
   { agent: 'ReportingAgent', decision: 'PROCEED', result: 'HTML/XML/JSON reports (UI + API)', duration: '0.6s' },
   { agent: 'DeploymentAgent', decision: 'SKIP', result: 'Copado not configured', duration: '0.0s' },
   { agent: 'FeedbackAgent', decision: 'SKIP', result: 'No changes detected', duration: '0.0s' },
@@ -67,19 +67,19 @@ export default function Execute() {
       {completed && (
         <>
           <Alert severity="success" sx={{ mb: 2 }} icon={<CheckCircle />}>
-            Pipeline completed — 16/16 scenarios passed (6 UI + 10 API), 88 steps executed in 18.2s
+            Pipeline completed — 24/24 scenarios passed (6 UI + 10 API + 8 Relationship), 127 steps executed in 18.5s
           </Alert>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="success.main" fontWeight={700}>16/16</Typography>
-                <Typography variant="caption">Scenarios (6 UI + 10 API)</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>24/24</Typography>
+                <Typography variant="caption">Scenarios (6 UI + 10 API + 8 Rel)</Typography>
               </CardContent></Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card><CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h5" color="primary" fontWeight={700}>88</Typography>
-                <Typography variant="caption">Steps (58 UI + 30 API)</Typography>
+                <Typography variant="h5" color="primary" fontWeight={700}>127</Typography>
+                <Typography variant="caption">Steps (58 UI + 30 API + 39 Rel)</Typography>
               </CardContent></Card>
             </Grid>
             <Grid item xs={6} sm={3}>
