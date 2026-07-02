@@ -13,13 +13,17 @@ import wiremock.org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.Comparator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 public final class UserController {
+
+    private static final int MAX_NAME_LENGTH = 100;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final UserDetailService userDetailService;
 
@@ -30,13 +34,62 @@ public final class UserController {
     public static List<UserDTO> users = new ArrayList<>();
 
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<?> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "sort", required = false) String sort) {
+
+        List<UserDTO> result = users;
+
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            result = result.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            String[] sortParts = sort.split(",");
+            String sortField = sortParts[0];
+            boolean ascending = sortParts.length < 2 || "asc".equalsIgnoreCase(sortParts[1]);
+
+            Comparator<UserDTO> comparator = getUserComparator(sortField);
+            if (comparator != null) {
+                if (!ascending) {
+                    comparator = comparator.reversed();
+                }
+                result = result.stream().sorted(comparator).collect(Collectors.toList());
+            }
+        }
+
+        if (page != null && size != null) {
+            if (page < 0 || size <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(Collections.singletonMap("error", "Invalid pagination parameters"));
+            }
+            int fromIndex = page * size;
+            if (fromIndex >= result.size()) {
+                Map<String, Object> pageResponse = new LinkedHashMap<>();
+                pageResponse.put("content", Collections.emptyList());
+                pageResponse.put("page", page);
+                pageResponse.put("size", size);
+                pageResponse.put("totalElements", result.size());
+                pageResponse.put("totalPages", (int) Math.ceil((double) result.size() / size));
+                return ResponseEntity.ok(pageResponse);
+            }
+            int toIndex = Math.min(fromIndex + size, result.size());
+            List<UserDTO> pageContent = result.subList(fromIndex, toIndex);
+
+            Map<String, Object> pageResponse = new LinkedHashMap<>();
+            pageResponse.put("content", pageContent);
+            pageResponse.put("page", page);
+            pageResponse.put("size", size);
+            pageResponse.put("totalElements", result.size());
+            pageResponse.put("totalPages", (int) Math.ceil((double) result.size() / size));
+            return ResponseEntity.ok(pageResponse);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/users/{id}")
@@ -64,28 +117,33 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<?> addUser(@RequestBody UserDTO user) {
+
+        List<String> errors = validateUser(user);
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("errors", errors));
+        }
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
                 .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        if (currentUser != null) {
+            return ResponseEntity.status(409)
+                    .body(Collections.singletonMap("error", "User with id " + user.getId() + " already exists"));
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<UserDTO>> uploadFile(@RequestParam(name = "file") MultipartFile file) throws IOException {
 
         CsvToBean<UserCsvLine> csvBean = new CsvToBeanBuilder<UserCsvLine>(new InputStreamReader(file.getInputStream()))
-                .withType(UserCsvLine.class)  // Convert a csv string line to PaymentIdentityAuditImportCsvLine
-                .withIgnoreLeadingWhiteSpace(true) // White space in front of a quote in a field is ignored
+                .withType(UserCsvLine.class)
+                .withIgnoreLeadingWhiteSpace(true)
                 .withSeparator(';')
                 .build();
 
@@ -109,7 +167,7 @@ public final class UserController {
     }
 
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
+    public ResponseEntity<UserDTO> updateUser(@RequestBody UserDTO user, @PathVariable String id) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()
@@ -131,7 +189,7 @@ public final class UserController {
     }
 
     @PatchMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> patchUser(@RequestBody  PartialUserDTO user, @PathVariable String id) {
+    public ResponseEntity<UserDTO> patchUser(@RequestBody PartialUserDTO user, @PathVariable String id) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()
@@ -180,5 +238,45 @@ public final class UserController {
                     .build();
         }
         return ResponseEntity.status(401).build();
+    }
+
+    private List<String> validateUser(UserDTO user) {
+        List<String> errors = new ArrayList<>();
+
+        if (StringUtils.isBlank(user.getId())) {
+            errors.add("id is required");
+        }
+        if (StringUtils.isBlank(user.getFirstName())) {
+            errors.add("firstName is required");
+        }
+        if (StringUtils.isBlank(user.getLastName())) {
+            errors.add("lastName is required");
+        }
+        if (user.getFirstName() != null && user.getFirstName().length() > MAX_NAME_LENGTH) {
+            errors.add("firstName must not exceed " + MAX_NAME_LENGTH + " characters");
+        }
+        if (user.getLastName() != null && user.getLastName().length() > MAX_NAME_LENGTH) {
+            errors.add("lastName must not exceed " + MAX_NAME_LENGTH + " characters");
+        }
+        if (user.getEmail() != null && !EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
+            errors.add("email format is invalid");
+        }
+
+        return errors;
+    }
+
+    private Comparator<UserDTO> getUserComparator(String field) {
+        switch (field) {
+            case "firstName":
+                return Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER);
+            case "lastName":
+                return Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER);
+            case "age":
+                return Comparator.comparingInt(UserDTO::getAge);
+            case "id":
+                return Comparator.comparing(UserDTO::getId);
+            default:
+                return null;
+        }
     }
 }

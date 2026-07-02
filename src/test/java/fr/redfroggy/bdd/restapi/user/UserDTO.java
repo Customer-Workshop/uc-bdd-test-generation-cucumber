@@ -14,6 +14,8 @@ public final class UserDTO extends PartialUserDTO {
 
     private List<String> sessionIds;
 
+    private String email;
+
     private UserDetailsDTO details;
 
     public String getId() {
@@ -54,6 +56,14 @@ public final class UserDTO extends PartialUserDTO {
 
     public void setSessionIds(List<String> sessionIds) {
         this.sessionIds = sessionIds;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public UserDetailsDTO getDetails() {
