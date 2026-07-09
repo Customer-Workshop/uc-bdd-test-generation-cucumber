@@ -437,6 +437,12 @@ def _expand_car_part(part):
 
 # ─── API Routes ───────────────────────────────────────────────────────────────
 
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """Health check — used by the scanner to confirm the app is up."""
+    return jsonify({"status": "ok", "app": "salesforce-car-parts", "stack": "salesforce", "port": 5555})
+
+
 @app.route('/api/dropdown-fields', methods=['GET'])
 def api_dropdown_fields():
     """Return all dropdown field definitions."""
