@@ -49,59 +49,58 @@ export default function Execute() {
       .catch(() => {});
   }, []);
 
-  const handleScan = () => {
+  const postJson = async (url: string, body: object) => {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await resp.text();
+    let data: any;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(`Server returned an invalid response (HTTP ${resp.status}). The backend may be down or errored.`);
+    }
+    if (!resp.ok && !data.error && !data.errors) {
+      throw new Error(`Request failed (HTTP ${resp.status})`);
+    }
+    return data;
+  };
+
+  const handleScan = async () => {
     setScanning(true);
     setScanResult(null);
     setError('');
-    // Also save the URL to config
-    fetch('/api/config', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_url: appUrl }),
-    }).catch(() => {});
-
-    fetch('/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: appUrl }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        setScanning(false);
-        setScanResult(data);
-        if (data.errors && data.errors.length > 0 && !data.reachable) {
-          setError(data.errors[0]);
-        }
-      })
-      .catch(err => { setScanning(false); setError(String(err)); });
+    try {
+      const data = await postJson('/api/scan', { url: appUrl });
+      setScanResult(data);
+      if (data.errors && data.errors.length > 0 && !data.reachable) {
+        setError(data.errors[0]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const handleExecute = () => {
+  const handleExecute = async () => {
     setRunning(true);
     setPipelineResult(null);
     setError('');
-    // Save URL first
-    fetch('/api/config', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_url: appUrl }),
-    }).catch(() => {});
-
-    fetch('/api/execute', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: appUrl }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        setRunning(false);
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setPipelineResult(data);
-        }
-      })
-      .catch(err => { setRunning(false); setError(String(err)); });
+    try {
+      const data = await postJson('/api/execute', { url: appUrl });
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setPipelineResult(data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRunning(false);
+    }
   };
 
   return (

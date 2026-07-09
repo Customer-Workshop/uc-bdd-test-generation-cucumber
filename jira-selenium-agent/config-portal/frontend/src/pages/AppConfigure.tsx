@@ -39,25 +39,33 @@ export default function AppConfigure() {
       .catch(() => {});
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     setScanning(true);
     setScanResult(null);
     setScanError('');
-    fetch('/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: appUrl }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        setScanning(false);
-        if (data.errors && data.errors.length > 0 && !data.reachable) {
-          setScanError(data.errors[0]);
-        } else {
-          setScanResult(data);
-        }
-      })
-      .catch(err => { setScanning(false); setScanError(String(err)); });
+    try {
+      const resp = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: appUrl }),
+      });
+      const responseText = await resp.text();
+      let data: any;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        throw new Error(`Server returned an invalid response (HTTP ${resp.status}). The backend may be down or errored.`);
+      }
+      if (data.errors && data.errors.length > 0 && !data.reachable) {
+        setScanError(data.errors[0]);
+      } else {
+        setScanResult(data);
+      }
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setScanning(false);
+    }
   };
 
   return (

@@ -248,8 +248,12 @@ def get_last_scan():
 @app.route('/api/execute', methods=['POST'])
 def execute_pipeline():
     """Execute the pipeline — scan the app first, then run agents."""
+    data = request.get_json(silent=True) or {}
     config = load_config()
-    target_url = config.get('app_url', 'http://localhost:5555')
+    target_url = data.get('url') or config.get('app_url', 'http://localhost:5555')
+    if data.get('url'):
+        config['app_url'] = data['url']
+        save_config(config)
 
     # Run real scan first
     scan_result = {"reachable": False, "field_count": 0, "screens": [], "fields": []}
