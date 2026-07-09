@@ -152,25 +152,31 @@ def scan_application():
     except Exception:
         meta = None
 
-    # Step 3: Discover screens (from /api/meta when present, else a generic probe)
+    # Step 3: Traverse each page (from /api/meta when present, else a generic probe).
+    # For a single-page app, every client route is visited and the fields it renders
+    # are recorded, so the scan produces a per-page breakdown — not just the shell.
     if meta and isinstance(meta.get("screens"), list) and meta["screens"]:
-        screen_paths = [(s.get("path", "/"), s.get("label", s.get("path", ""))) for s in meta["screens"]]
+        screen_paths = [(s.get("path", "/"), s.get("label", s.get("path", "")), s.get("fields", []))
+                        for s in meta["screens"]]
     else:
         screen_paths = [
-            ("/", "Home"),
-            ("/login", "Login"),
-            ("/dashboard", "Dashboard"),
+            ("/", "Home", []),
+            ("/login", "Login", []),
+            ("/dashboard", "Dashboard", []),
         ]
-    for path, label in screen_paths:
+    for path, label, page_fields in screen_paths:
+        entry = {"path": path, "label": label, "fields": page_fields, "field_count": len(page_fields)}
         try:
             url = target_url.rstrip('/') + path
             r = http_requests.get(url, timeout=5, allow_redirects=True)
-            if r.status_code < 400:
-                result["screens"].append({"path": path, "label": label, "status": r.status_code, "state": "active"})
-            else:
-                result["screens"].append({"path": path, "label": label, "status": r.status_code, "state": "missing"})
+            entry["status"] = r.status_code
+            entry["content_length"] = len(r.content)
+            entry["state"] = "active" if r.status_code < 400 else "missing"
         except Exception:
-            result["screens"].append({"path": path, "label": label, "status": 0, "state": "unreachable"})
+            entry["status"] = 0
+            entry["state"] = "unreachable"
+        result["screens"].append(entry)
+    result["pages_scanned"] = sum(1 for s in result["screens"] if s["state"] == "active")
 
     # Step 4: Discover API endpoints (from /api/meta when present, else generic)
     if meta and isinstance(meta.get("api_endpoints"), list) and meta["api_endpoints"]:

@@ -142,10 +142,12 @@ def api_meta():
         "app": "vehicle-assembly-react",
         "stack": "react",
         "screens": [
-            {"path": "/", "label": "Home"},
-            {"path": "/vehicles", "label": "Vehicles List"},
-            {"path": "/work-orders", "label": "Work Orders"},
-            {"path": "/dropdown-fields", "label": "Fields"},
+            {"path": "/", "label": "Home", "fields": []},
+            {"path": "/vehicles", "label": "Vehicles List",
+             "fields": ["vehicle_model", "assembly_station", "production_status", "engine_type", "plant_location"]},
+            {"path": "/work-orders", "label": "Work Orders",
+             "fields": ["assembly_station", "shift", "production_status"]},
+            {"path": "/dropdown-fields", "label": "Fields", "fields": list(dropdown_fields.keys())},
         ],
         "api_endpoints": [
             {"path": "/api/health", "method": "GET", "description": "Health Check"},

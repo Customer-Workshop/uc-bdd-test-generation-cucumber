@@ -128,13 +128,18 @@ export default function AppConfigure() {
 
           {scanResult.screens && scanResult.screens.length > 0 && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Screens Discovered ({scanResult.screens.filter((s: any) => s.state === 'active').length} active)</Typography>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Pages Scanned ({scanResult.pages_scanned ?? scanResult.screens.filter((s: any) => s.state === 'active').length} of {scanResult.screens.length})</Typography>
               <Table size="small">
                 <TableBody>
                   {scanResult.screens.map((s: any) => (
                     <TableRow key={s.path}>
                       <TableCell sx={{ width: 160 }}><code>{s.path}</code></TableCell>
                       <TableCell>{s.label}</TableCell>
+                      <TableCell sx={{ width: 120 }}>
+                        {typeof s.field_count === 'number' && s.field_count > 0
+                          ? <Chip label={`${s.field_count} fields`} size="small" variant="outlined" color="info" />
+                          : ''}
+                      </TableCell>
                       <TableCell>
                         <Chip label={s.state} size="small"
                           color={s.state === 'active' ? 'success' : s.state === 'missing' ? 'warning' : 'error'} />

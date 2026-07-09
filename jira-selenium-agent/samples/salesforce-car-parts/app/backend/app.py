@@ -451,10 +451,11 @@ def api_meta():
         "app": "salesforce-car-parts",
         "stack": "salesforce",
         "screens": [
-            {"path": "/", "label": "Login / Home"},
-            {"path": "/car-parts", "label": "List View"},
-            {"path": "/car-parts/new", "label": "Create Form"},
-            {"path": "/dropdown-fields", "label": "Fields"},
+            {"path": "/", "label": "Login / Home", "fields": []},
+            {"path": "/car-parts", "label": "List View",
+             "fields": ["part_category", "manufacturer", "condition", "availability", "warehouse_location"]},
+            {"path": "/car-parts/new", "label": "Create Form", "fields": list(dropdown_fields.keys())},
+            {"path": "/dropdown-fields", "label": "Fields", "fields": list(dropdown_fields.keys())},
         ],
         "api_endpoints": [
             {"path": "/api/health", "method": "GET", "description": "Health Check"},

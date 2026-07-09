@@ -141,10 +141,12 @@ def api_meta():
         "app": "vehicle-inspection-angular",
         "stack": "angular",
         "screens": [
-            {"path": "/", "label": "Home"},
-            {"path": "/inspections", "label": "Inspections List"},
-            {"path": "/defects", "label": "Defects"},
-            {"path": "/dropdown-fields", "label": "Fields"},
+            {"path": "/", "label": "Home", "fields": []},
+            {"path": "/inspections", "label": "Inspections List",
+             "fields": ["vehicle_model", "inspection_type", "defect_category", "severity", "disposition"]},
+            {"path": "/defects", "label": "Defects",
+             "fields": ["component", "severity", "disposition", "line_number"]},
+            {"path": "/dropdown-fields", "label": "Fields", "fields": list(dropdown_fields.keys())},
         ],
         "api_endpoints": [
             {"path": "/api/health", "method": "GET", "description": "Health Check"},
