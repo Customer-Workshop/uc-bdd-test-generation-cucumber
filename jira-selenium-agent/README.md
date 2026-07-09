@@ -83,15 +83,32 @@ pip install -r requirements.txt
 pip install flask werkzeug
 ```
 
-### 2. Start the Mock Salesforce App (React + Material UI)
+### 2. Start a Sample App (vehicle-manufacturing domain, 3 tech stacks)
+
+The samples share one domain (vehicle manufacturing) but ship on **different tech
+stacks** so you can scan each independently and see the framework auto-detected:
 
 ```bash
-python samples/salesforce-car-parts/app/backend/app.py
+# Salesforce stack — Mock Salesforce Car Parts (React + MUI Lightning UI)
+python samples/salesforce-car-parts/app/backend/app.py        # → http://localhost:5555
+
+# React stack — Vehicle Assembly Line
+python samples/vehicle-assembly-react/app/backend/app.py       # → http://localhost:5557
+
+# Angular stack — Vehicle Quality Inspection
+python samples/vehicle-inspection-angular/app/backend/app.py   # → http://localhost:5558
 ```
 
-This starts the Car Parts React SPA at **http://localhost:5555**
+Each app exposes the same scan contract (`/api/dropdown-fields`, screen routes,
+CRUD endpoints), so in the Config Portal → **App URL** you can pick any of them
+and the scanner reports the detected framework (`salesforce` / `react` / `angular`)
+and its picklist fields separately.
 
-Login: `admin@carparts.demo` / `demo1234`
+Salesforce app login: `admin@carparts.demo` / `demo1234`
+
+> The Salesforce sample serves a pre-built React bundle. To run its frontend in
+> dev mode instead: `cd samples/salesforce-car-parts/app/frontend && npm install && npm start`
+> (a `proxy` to `localhost:5555` is configured so API calls reach the backend).
 
 Features: MUI DataGrid, 12 dropdown fields, dependent picklists, search/filter, CRUD operations.
 

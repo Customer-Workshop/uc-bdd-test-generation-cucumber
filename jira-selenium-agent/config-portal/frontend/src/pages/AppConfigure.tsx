@@ -3,11 +3,11 @@ import { Box, Typography, Paper, TextField, Button, Grid, Select, MenuItem, Form
 import { Save, OpenInNew, Search } from '@mui/icons-material';
 
 const quickUrls = [
-  { label: 'Mock Salesforce', url: 'http://localhost:5555' },
+  { label: 'Salesforce — Car Parts', url: 'http://localhost:5555' },
+  { label: 'React — Vehicle Assembly', url: 'http://localhost:5557' },
+  { label: 'Angular — Vehicle Inspection', url: 'http://localhost:5558' },
   { label: 'Salesforce Production', url: 'https://login.salesforce.com' },
   { label: 'Salesforce Sandbox', url: 'https://test.salesforce.com' },
-  { label: 'React App', url: 'http://localhost:3000' },
-  { label: 'Angular App', url: 'http://localhost:4200' },
 ];
 
 export default function AppConfigure() {
