@@ -39,7 +39,11 @@ default_config = {
     "jira": {"server_url": "", "username": "", "project_key": "CAR", "auto_fetch": False},
     "github": {"repo_url": "", "branch": "main", "workflow_file": ".github/workflows/bdd-test-agent.yml"},
     "copado": {"enabled": False, "instance_url": "", "pipeline_id": "", "target_env": "UAT"},
-    "ai_model": {"provider": "OpenAI", "model": "GPT-4o", "temperature": 0.3, "max_tokens": 4096},
+    "ai_model": {
+        "provider": "OpenAI", "model": "GPT-4o", "temperature": 0.3, "max_tokens": 4096,
+        "api_key": "", "base_url": "", "azure_endpoint": "", "azure_deployment": "",
+        "azure_api_version": "2024-08-01-preview",
+    },
     "selectorshub": {"enabled": True, "auto_scan": True, "shadow_dom": True, "scan_depth": 5},
     "mcp_servers": {"enabled": False, "transport": "stdio"},
     "reports": {"format": "html", "output_dir": "./reports"}
@@ -341,16 +345,182 @@ def upload_test_data():
     return jsonify({"message": "Test data uploaded", "records": len(data)})
 
 
+# ─── LLM providers for AI test-data generation ─────────────────────────────
+# Maps the friendly model names shown in the AI Model config to provider API IDs.
+LLM_MODEL_IDS = {
+    "GPT-4o": "gpt-4o", "GPT-4o Mini": "gpt-4o-mini", "GPT-4 Turbo": "gpt-4-turbo",
+    "GPT-3.5 Turbo": "gpt-3.5-turbo", "GPT-4o (Azure)": "gpt-4o", "GPT-4 (Azure)": "gpt-4",
+    "Claude 3.5 Sonnet": "claude-3-5-sonnet-latest", "Claude 3 Opus": "claude-3-opus-latest",
+    "Claude 3 Haiku": "claude-3-haiku-20240307",
+    "Gemini 1.5 Pro": "gemini-1.5-pro", "Gemini 1.5 Flash": "gemini-1.5-flash",
+    "Ollama (Llama 3)": "llama3", "Ollama (Mistral)": "mistral",
+}
+
+
+def _resolve_api_key(ai):
+    """Use the config key if provided, otherwise fall back to a provider env var."""
+    if ai.get("api_key"):
+        return ai["api_key"]
+    env_by_provider = {
+        "OpenAI": "OPENAI_API_KEY",
+        "Azure OpenAI": "AZURE_OPENAI_API_KEY",
+        "Anthropic": "ANTHROPIC_API_KEY",
+        "Google": "GOOGLE_API_KEY",
+    }
+    return os.environ.get(env_by_provider.get(ai.get("provider", ""), ""), "")
+
+
+def _build_llm_prompt(fields, count, project_key):
+    field_lines = "\n".join(f"- {name}: one of {values}" for name, values in fields.items())
+    return (
+        f"You are a QA test-data generator. Produce exactly {count} realistic, DISTINCT "
+        f"test-data scenarios for a form with these fields (each value MUST come from the "
+        f"allowed list):\n{field_lines}\n\n"
+        f"Return ONLY a JSON array (no prose, no markdown). Each element must be an object:\n"
+        f'{{"jira_id": "{project_key}-2001", "test_case": "TC-AI-001", '
+        f'"name": "<short scenario name>", "fields": {{<field>: <chosen value>, ...}}}}\n'
+        f"Increment jira_id and test_case for each element."
+    )
+
+
+def _extract_json_array(text):
+    start = text.find("[")
+    end = text.rfind("]")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("No JSON array found in LLM response")
+    return json.loads(text[start:end + 1])
+
+
+def _call_llm(ai, prompt):
+    """Dispatch to the configured provider. Returns the raw text response.
+    Raises on any error so the caller can fall back to deterministic synthesis."""
+    provider = ai.get("provider", "OpenAI")
+    api_key = _resolve_api_key(ai)
+    model_id = LLM_MODEL_IDS.get(ai.get("model", ""), ai.get("model", ""))
+    temperature = float(ai.get("temperature", 0.3))
+    max_tokens = int(ai.get("max_tokens", 4096))
+
+    if provider == "Local":
+        base_url = ai.get("base_url") or "http://localhost:11434"
+        r = http_requests.post(
+            base_url.rstrip("/") + "/api/generate",
+            json={"model": model_id, "prompt": prompt, "stream": False},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json().get("response", "")
+
+    if not api_key:
+        raise ValueError("No API key configured")
+
+    if provider == "OpenAI":
+        base_url = (ai.get("base_url") or "https://api.openai.com/v1").rstrip("/")
+        r = http_requests.post(
+            base_url + "/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": model_id, "temperature": temperature, "max_tokens": max_tokens,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+
+    if provider == "Azure OpenAI":
+        endpoint = ai.get("azure_endpoint", "").rstrip("/")
+        deployment = ai.get("azure_deployment") or model_id
+        api_version = ai.get("azure_api_version") or "2024-08-01-preview"
+        if not endpoint or not deployment:
+            raise ValueError("Azure endpoint/deployment not configured")
+        url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
+        r = http_requests.post(
+            url,
+            headers={"api-key": api_key, "Content-Type": "application/json"},
+            json={"temperature": temperature, "max_tokens": max_tokens,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+
+    if provider == "Anthropic":
+        r = http_requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": api_key, "anthropic-version": "2023-06-01",
+                     "Content-Type": "application/json"},
+            json={"model": model_id, "max_tokens": max_tokens, "temperature": temperature,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return "".join(block.get("text", "") for block in r.json().get("content", []))
+
+    if provider == "Google":
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{model_id}:generateContent?key={api_key}")
+        r = http_requests.post(
+            url,
+            headers={"Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+    raise ValueError(f"Unsupported provider: {provider}")
+
+
+def _synthesize_records(fields, count, project_key, model_label):
+    """Deterministic fallback: cycle through discovered picklist values."""
+    records = []
+    field_names = list(fields.keys())
+    for i in range(count):
+        record_fields = {name: fields[name][i % len(fields[name])]
+                         for name in field_names if fields[name]}
+        records.append({
+            "jira_id": f"{project_key}-{2001 + i}",
+            "test_case": f"TC-AI-{i + 1:03d}",
+            "name": f"AI-generated scenario {i + 1}",
+            "generated_by": model_label,
+            "fields": record_fields,
+        })
+    return records
+
+
+def _normalize_llm_records(raw, fields, count, project_key, model_label):
+    """Validate/repair LLM output so every record is well-formed and values are allowed."""
+    field_names = list(fields.keys())
+    records = []
+    for i in range(count):
+        src = raw[i] if i < len(raw) and isinstance(raw[i], dict) else {}
+        src_fields = src.get("fields") if isinstance(src.get("fields"), dict) else {}
+        record_fields = {}
+        for name in field_names:
+            allowed = fields[name]
+            val = src_fields.get(name)
+            record_fields[name] = val if val in allowed else (allowed[i % len(allowed)] if allowed else "")
+        records.append({
+            "jira_id": src.get("jira_id") or f"{project_key}-{2001 + i}",
+            "test_case": src.get("test_case") or f"TC-AI-{i + 1:03d}",
+            "name": src.get("name") or f"AI-generated scenario {i + 1}",
+            "generated_by": model_label,
+            "fields": record_fields,
+        })
+    return records
+
+
 @app.route('/api/test-data/generate', methods=['POST'])
 def generate_test_data():
-    """AI-generate test data by scanning the target app's fields and
-    synthesizing scenarios from the discovered picklist values."""
+    """AI-generate test data by scanning the target app's fields and asking the
+    configured LLM to synthesize scenarios. Falls back to deterministic synthesis
+    when no API key is configured or the provider call fails."""
     body = request.get_json(silent=True) or {}
     config = load_config()
     target_url = body.get('url') or config.get('app_url', 'http://localhost:5555')
     count = int(body.get('count', 6))
     ai = config.get('ai_model', default_config['ai_model'])
     project_key = config.get('jira', {}).get('project_key') or 'CAR'
+    model_label = f"{ai.get('provider')} {ai.get('model')}"
 
     fields = {}
     try:
@@ -365,28 +535,27 @@ def generate_test_data():
     if not fields:
         return jsonify({"error": f"No picklist fields discovered at {target_url}/api/dropdown-fields"}), 422
 
-    records = []
     field_names = list(fields.keys())
-    for i in range(count):
-        record_fields = {}
-        for name in field_names:
-            values = fields[name]
-            if values:
-                record_fields[name] = values[i % len(values)]
-        records.append({
-            "jira_id": f"{project_key}-{2001 + i}",
-            "test_case": f"TC-AI-{i + 1:03d}",
-            "name": f"AI-generated scenario {i + 1}",
-            "generated_by": f"{ai.get('provider')} {ai.get('model')}",
-            "fields": record_fields,
-        })
+    generation_mode = "llm"
+    warning = None
+    try:
+        prompt = _build_llm_prompt(fields, count, project_key)
+        raw_text = _call_llm(ai, prompt)
+        raw_records = _extract_json_array(raw_text)
+        records = _normalize_llm_records(raw_records, fields, count, project_key, model_label)
+    except Exception as exc:  # noqa: BLE001 - any provider/parse failure falls back
+        generation_mode = "fallback"
+        warning = f"LLM call failed ({exc}); used deterministic synthesis instead."
+        records = _synthesize_records(fields, count, project_key, model_label)
 
     return jsonify({
         "message": "AI test data generated",
         "records": len(records),
         "source_url": target_url,
         "fields_used": field_names,
-        "model": f"{ai.get('provider')} {ai.get('model')}",
+        "model": model_label,
+        "generation_mode": generation_mode,
+        "warning": warning,
         "data": records,
     })
 

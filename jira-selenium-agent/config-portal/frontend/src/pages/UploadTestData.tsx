@@ -154,11 +154,17 @@ export default function UploadTestData() {
                   <Chip label={`${genResult.records} scenarios`} color="primary" size="small" />
                   <Chip label={`Model: ${genResult.model}`} size="small" />
                   <Chip label={`${genResult.fields_used?.length || 0} fields used`} size="small" />
+                  <Chip
+                    label={genResult.generation_mode === 'llm' ? 'Live LLM' : 'Synthesis (no key)'}
+                    color={genResult.generation_mode === 'llm' ? 'success' : 'default'}
+                    size="small"
+                  />
                   <Box sx={{ flex: 1 }} />
                   <Button variant="outlined" size="small" startIcon={<CheckCircle />} onClick={handleSaveGenerated}>
                     Save as Test Data
                   </Button>
                 </Box>
+                {genResult.warning && <Alert severity="warning" sx={{ mb: 2 }}>{genResult.warning}</Alert>}
                 <TableContainer sx={{ maxHeight: 260, mb: 2 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
