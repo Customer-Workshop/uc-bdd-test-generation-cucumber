@@ -1,0 +1,105 @@
+{
+  "test_suite": "Vehicle Quality Inspection (Angular) E2E Automation",
+  "application": "Vehicle Quality Inspection",
+  "framework": "Angular",
+  "base_url": "http://localhost:5558",
+  "project_key": "VQI",
+  "scenarios": [
+    {
+      "jira_id": "VQI-1001",
+      "test_case": "TC-VQI-001",
+      "name": "Final QA panel-gap rework on SUV",
+      "fields": {
+        "inspection_type": "Final QA",
+        "vehicle_model": "SUV R5",
+        "defect_category": "Panel Gap",
+        "severity": "Minor",
+        "component": "Body Panel",
+        "disposition": "Rework",
+        "line_number": "Line 2",
+        "inspector_shift": "Shift A (Morning)",
+        "plant_location": "Plant 1 - Detroit"
+      }
+    },
+    {
+      "jira_id": "VQI-1002",
+      "test_case": "TC-VQI-002",
+      "name": "Emissions pass on sedan",
+      "fields": {
+        "inspection_type": "Emissions",
+        "vehicle_model": "Sedan X1",
+        "defect_category": "None",
+        "severity": "Observation",
+        "component": "Engine",
+        "disposition": "Accept",
+        "line_number": "Line 1",
+        "inspector_shift": "Shift B (Afternoon)",
+        "plant_location": "Plant 2 - Stuttgart"
+      }
+    },
+    {
+      "jira_id": "VQI-1003",
+      "test_case": "TC-VQI-003",
+      "name": "Torque audit major repair on pickup chassis",
+      "fields": {
+        "inspection_type": "Torque Audit",
+        "vehicle_model": "Pickup T7",
+        "defect_category": "Torque Out-of-Spec",
+        "severity": "Major",
+        "component": "Chassis",
+        "disposition": "Repair",
+        "line_number": "Line 3",
+        "inspector_shift": "Shift C (Night)",
+        "plant_location": "Plant 4 - Pune"
+      }
+    },
+    {
+      "jira_id": "VQI-1004",
+      "test_case": "TC-VQI-004",
+      "name": "Critical battery electrical fault scrap",
+      "fields": {
+        "inspection_type": "Safety Systems",
+        "vehicle_model": "Electric E2",
+        "defect_category": "Electrical Fault",
+        "severity": "Critical",
+        "component": "Battery Pack",
+        "disposition": "Scrap",
+        "line_number": "Line 4",
+        "inspector_shift": "Shift A (Morning)",
+        "plant_location": "Plant 5 - Shanghai"
+      }
+    },
+    {
+      "jira_id": "VQI-1005",
+      "test_case": "TC-VQI-005",
+      "name": "Paint finish cosmetic use-as-is",
+      "fields": {
+        "inspection_type": "Paint Finish",
+        "vehicle_model": "Coupe Q9",
+        "defect_category": "Paint Blemish",
+        "severity": "Cosmetic",
+        "component": "Body Panel",
+        "disposition": "Use-As-Is",
+        "line_number": "Line 5",
+        "inspector_shift": "Shift B (Afternoon)",
+        "plant_location": "Plant 3 - Nagoya"
+      }
+    },
+    {
+      "jira_id": "VQI-1006",
+      "test_case": "TC-VQI-006",
+      "name": "In-process fluid leak return to supplier",
+      "fields": {
+        "inspection_type": "In-Process",
+        "vehicle_model": "Van V6",
+        "defect_category": "Fluid Leak",
+        "severity": "Major",
+        "component": "Transmission",
+        "disposition": "Return to Supplier",
+        "line_number": "Line 2",
+        "inspector_shift": "Shift C (Night)",
+        "plant_location": "Plant 1 - Detroit"
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "test_suite": "Vehicle Assembly Line (React) E2E Automation",
+  "application": "Vehicle Assembly Line",
+  "framework": "React",
+  "base_url": "http://localhost:5557",
+  "project_key": "VAS",
+  "scenarios": [
+    {
+      "jira_id": "VAS-1001",
+      "test_case": "TC-VAS-001",
+      "name": "Schedule electric SUV on trim line",
+      "fields": {
+        "vehicle_model": "SUV R5",
+        "assembly_station": "Trim & Final",
+        "production_status": "Scheduled",
+        "engine_type": "Full Electric",
+        "transmission_type": "Single-Speed EV",
+        "paint_color": "Pearl White",
+        "shift": "Shift A (Morning)",
+        "plant_location": "Plant 1 - Detroit",
+        "quality_grade": "A - Pass"
+      }
+    },
+    {
+      "jira_id": "VAS-1002",
+      "test_case": "TC-VAS-002",
+      "name": "Petrol sedan in paint shop",
+      "fields": {
+        "vehicle_model": "Sedan X1",
+        "assembly_station": "Paint Shop",
+        "production_status": "In Progress",
+        "engine_type": "2.0L Petrol",
+        "transmission_type": "8-Speed Auto",
+        "paint_color": "Metallic Black",
+        "shift": "Shift B (Afternoon)",
+        "plant_location": "Plant 2 - Stuttgart",
+        "quality_grade": "A - Pass"
+      }
+    },
+    {
+      "jira_id": "VAS-1003",
+      "test_case": "TC-VAS-003",
+      "name": "Diesel pickup quality hold at final inspection",
+      "fields": {
+        "vehicle_model": "Pickup T7",
+        "assembly_station": "Final Inspection",
+        "production_status": "Quality Hold",
+        "engine_type": "2.0L Diesel",
+        "transmission_type": "6-Speed Manual",
+        "paint_color": "Graphite Grey",
+        "shift": "Shift C (Night)",
+        "plant_location": "Plant 4 - Pune",
+        "quality_grade": "C - Major Rework"
+      }
+    },
+    {
+      "jira_id": "VAS-1004",
+      "test_case": "TC-VAS-004",
+      "name": "Hybrid crossover on chassis line",
+      "fields": {
+        "vehicle_model": "Crossover C4",
+        "assembly_station": "Chassis Line",
+        "production_status": "In Progress",
+        "engine_type": "Plug-in Hybrid",
+        "transmission_type": "CVT",
+        "paint_color": "Ocean Blue",
+        "shift": "Shift A (Morning)",
+        "plant_location": "Plant 3 - Nagoya",
+        "quality_grade": "A - Pass"
+      }
+    },
+    {
+      "jira_id": "VAS-1005",
+      "test_case": "TC-VAS-005",
+      "name": "EV battery install rework",
+      "fields": {
+        "vehicle_model": "Electric E2",
+        "assembly_station": "Battery Install",
+        "production_status": "Rework",
+        "engine_type": "Full Electric",
+        "transmission_type": "Single-Speed EV",
+        "paint_color": "Racing Red",
+        "shift": "Shift B (Afternoon)",
+        "plant_location": "Plant 5 - Shanghai",
+        "quality_grade": "B - Minor Rework"
+      }
+    },
+    {
+      "jira_id": "VAS-1006",
+      "test_case": "TC-VAS-006",
+      "name": "Completed van shipped",
+      "fields": {
+        "vehicle_model": "Van V6",
+        "assembly_station": "Final Inspection",
+        "production_status": "Shipped",
+        "engine_type": "1.6L Turbo",
+        "transmission_type": "Dual-Clutch",
+        "paint_color": "Silver",
+        "shift": "Shift C (Night)",
+        "plant_location": "Plant 1 - Detroit",
+        "quality_grade": "A - Pass"
+      }
+    }
+  ]
+}

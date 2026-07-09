@@ -265,7 +265,23 @@ Upload your own JSON via the portal at `http://localhost:5556/upload` or place a
 jira-selenium-agent/samples/salesforce-car-parts/test-data/car_parts_test_data.json
 ```
 
-Or point `SAMPLE_DIR` env var to a different sample app directory — all paths (app, test-data, features) are resolved from there.
+Each sample keeps its **own** `test-data/` folder, resolved from `SAMPLE_DIR`:
+
+| Sample | Test-data path | File (`SAMPLE_TEST_DATA_FILE`) |
+|--------|----------------|-------------------------------|
+| Salesforce — Car Parts | `samples/salesforce-car-parts/test-data/` | `car_parts_test_data.json` |
+| React — Vehicle Assembly | `samples/vehicle-assembly-react/test-data/` | `vehicle_assembly_test_data.json` |
+| Angular — Vehicle Inspection | `samples/vehicle-inspection-angular/test-data/` | `vehicle_inspection_test_data.json` |
+
+Point the framework at any sample's data via env vars, e.g. the React sample:
+
+```bash
+SAMPLE_DIR=samples/vehicle-assembly-react \
+SAMPLE_TEST_DATA_FILE=vehicle_assembly_test_data.json \
+python runners/api_test_runner.py
+```
+
+`SAMPLE_DIR` resolves all paths (app, test-data, features) from that sample directory.
 
 Expected format:
 
