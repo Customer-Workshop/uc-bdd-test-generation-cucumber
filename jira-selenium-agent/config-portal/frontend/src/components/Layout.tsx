@@ -43,7 +43,7 @@ const navSections = [
     title: 'Configuration',
     items: [
       { text: 'App URL', path: '/app-configure', icon: <AppIcon /> },
-      { text: 'Upload Test Data', path: '/upload-test-data', icon: <UploadIcon /> },
+      { text: 'Test Data', path: '/upload-test-data', icon: <UploadIcon /> },
       { text: 'Jira', path: '/jira-config', icon: <JiraIcon /> },
       { text: 'GitHub', path: '/github-config', icon: <GitHubIcon /> },
       { text: 'Copado', path: '/copado-config', icon: <CopadoIcon /> },

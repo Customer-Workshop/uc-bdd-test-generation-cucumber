@@ -341,6 +341,56 @@ def upload_test_data():
     return jsonify({"message": "Test data uploaded", "records": len(data)})
 
 
+@app.route('/api/test-data/generate', methods=['POST'])
+def generate_test_data():
+    """AI-generate test data by scanning the target app's fields and
+    synthesizing scenarios from the discovered picklist values."""
+    body = request.get_json(silent=True) or {}
+    config = load_config()
+    target_url = body.get('url') or config.get('app_url', 'http://localhost:5555')
+    count = int(body.get('count', 6))
+    ai = config.get('ai_model', default_config['ai_model'])
+    project_key = config.get('jira', {}).get('project_key') or 'CAR'
+
+    fields = {}
+    try:
+        resp = http_requests.get(target_url.rstrip('/') + '/api/dropdown-fields', timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            if isinstance(data, dict):
+                fields = {k: v for k, v in data.items() if isinstance(v, list)}
+    except http_requests.exceptions.RequestException as exc:
+        return jsonify({"error": f"Cannot reach {target_url} to scan fields: {exc}"}), 502
+
+    if not fields:
+        return jsonify({"error": f"No picklist fields discovered at {target_url}/api/dropdown-fields"}), 422
+
+    records = []
+    field_names = list(fields.keys())
+    for i in range(count):
+        record_fields = {}
+        for name in field_names:
+            values = fields[name]
+            if values:
+                record_fields[name] = values[i % len(values)]
+        records.append({
+            "jira_id": f"{project_key}-{2001 + i}",
+            "test_case": f"TC-AI-{i + 1:03d}",
+            "name": f"AI-generated scenario {i + 1}",
+            "generated_by": f"{ai.get('provider')} {ai.get('model')}",
+            "fields": record_fields,
+        })
+
+    return jsonify({
+        "message": "AI test data generated",
+        "records": len(records),
+        "source_url": target_url,
+        "fields_used": field_names,
+        "model": f"{ai.get('provider')} {ai.get('model')}",
+        "data": records,
+    })
+
+
 # ─── Features API ─────────────────────────────────────────────────────────────
 
 FEATURES_DIR = SAMPLE_FEATURES
