@@ -443,6 +443,34 @@ def api_health():
     return jsonify({"status": "ok", "app": "salesforce-car-parts", "stack": "salesforce", "port": 5555})
 
 
+@app.route('/api/meta', methods=['GET'])
+def api_meta():
+    """Advertise this app's real screens + API endpoints so the scanner reports
+    them accurately instead of probing a hardcoded path list."""
+    return jsonify({
+        "app": "salesforce-car-parts",
+        "stack": "salesforce",
+        "screens": [
+            {"path": "/", "label": "Login / Home"},
+            {"path": "/car-parts", "label": "List View"},
+            {"path": "/car-parts/new", "label": "Create Form"},
+            {"path": "/dropdown-fields", "label": "Fields"},
+        ],
+        "api_endpoints": [
+            {"path": "/api/health", "method": "GET", "description": "Health Check"},
+            {"path": "/api/dropdown-fields", "method": "GET", "description": "Field Metadata"},
+            {"path": "/api/car-parts", "method": "GET", "description": "Car Parts CRUD"},
+            {"path": "/api/relationship-schema", "method": "GET", "description": "Relationship Schema"},
+            {"path": "/api/manufacturers", "method": "GET", "description": "Manufacturers"},
+            {"path": "/api/warehouses", "method": "GET", "description": "Warehouses"},
+            {"path": "/api/suppliers", "method": "GET", "description": "Suppliers"},
+            {"path": "/api/orders", "method": "GET", "description": "Orders"},
+            {"path": "/api/warranty-claims", "method": "GET", "description": "Warranty Claims"},
+            {"path": "/api/soql", "method": "POST", "description": "SOQL Query"},
+        ],
+    })
+
+
 @app.route('/api/dropdown-fields', methods=['GET'])
 def api_dropdown_fields():
     """Return all dropdown field definitions."""

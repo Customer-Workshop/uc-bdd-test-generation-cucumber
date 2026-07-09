@@ -141,17 +141,26 @@ def scan_application():
     elif html:
         result["framework_detected"] = "html"
 
-    # Step 3: Discover screens by probing common paths
-    screen_paths = [
-        ("/", "Login / Home"),
-        ("/car-parts", "List View"),
-        ("/car-parts/new", "Create Form"),
-        ("/test-data", "Test Data"),
-        ("/dropdown-fields", "Dropdown Fields"),
-        ("/dashboard", "Dashboard"),
-        ("/login", "Login"),
-        ("/api/health", "Health API"),
-    ]
+    # Step 2b: Ask the app to describe itself (generic — no hardcoded routes).
+    # Apps that expose /api/meta advertise their real screens + API endpoints, so
+    # the scan reflects the actual app instead of a fixed Salesforce/car-parts list.
+    meta = None
+    try:
+        mr = http_requests.get(target_url.rstrip('/') + '/api/meta', timeout=5)
+        if mr.status_code == 200 and mr.headers.get('content-type', '').startswith('application/json'):
+            meta = mr.json()
+    except Exception:
+        meta = None
+
+    # Step 3: Discover screens (from /api/meta when present, else a generic probe)
+    if meta and isinstance(meta.get("screens"), list) and meta["screens"]:
+        screen_paths = [(s.get("path", "/"), s.get("label", s.get("path", ""))) for s in meta["screens"]]
+    else:
+        screen_paths = [
+            ("/", "Home"),
+            ("/login", "Login"),
+            ("/dashboard", "Dashboard"),
+        ]
     for path, label in screen_paths:
         try:
             url = target_url.rstrip('/') + path
@@ -163,19 +172,15 @@ def scan_application():
         except Exception:
             result["screens"].append({"path": path, "label": label, "status": 0, "state": "unreachable"})
 
-    # Step 4: Discover API endpoints
-    api_paths = [
-        ("/api/dropdown-fields", "GET", "Field Metadata"),
-        ("/api/car-parts", "GET", "Car Parts CRUD"),
-        ("/api/test-data", "GET", "Test Data"),
-        ("/api/relationship-schema", "GET", "Relationship Schema"),
-        ("/api/manufacturers", "GET", "Manufacturers"),
-        ("/api/warehouses", "GET", "Warehouses"),
-        ("/api/suppliers", "GET", "Suppliers"),
-        ("/api/orders", "GET", "Orders"),
-        ("/api/warranty-claims", "GET", "Warranty Claims"),
-        ("/api/soql", "POST", "SOQL Query"),
-    ]
+    # Step 4: Discover API endpoints (from /api/meta when present, else generic)
+    if meta and isinstance(meta.get("api_endpoints"), list) and meta["api_endpoints"]:
+        api_paths = [(e.get("path", ""), e.get("method", "GET"), e.get("description", e.get("path", "")))
+                     for e in meta["api_endpoints"]]
+    else:
+        api_paths = [
+            ("/api/health", "GET", "Health Check"),
+            ("/api/dropdown-fields", "GET", "Field Metadata"),
+        ]
     for path, method, desc in api_paths:
         try:
             url = target_url.rstrip('/') + path

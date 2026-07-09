@@ -134,6 +134,28 @@ def api_health():
     return jsonify({"status": "ok", "app": "vehicle-assembly-react", "stack": "react", "port": 5557})
 
 
+@app.route('/api/meta', methods=['GET'])
+def api_meta():
+    """Advertise this app's real screens + API endpoints so the scanner reports
+    them accurately instead of probing a hardcoded path list."""
+    return jsonify({
+        "app": "vehicle-assembly-react",
+        "stack": "react",
+        "screens": [
+            {"path": "/", "label": "Home"},
+            {"path": "/vehicles", "label": "Vehicles List"},
+            {"path": "/work-orders", "label": "Work Orders"},
+            {"path": "/dropdown-fields", "label": "Fields"},
+        ],
+        "api_endpoints": [
+            {"path": "/api/health", "method": "GET", "description": "Health Check"},
+            {"path": "/api/dropdown-fields", "method": "GET", "description": "Field Metadata"},
+            {"path": "/api/vehicles", "method": "GET", "description": "Vehicles CRUD"},
+            {"path": "/api/work-orders", "method": "GET", "description": "Work Orders CRUD"},
+        ],
+    })
+
+
 @app.route('/api/dropdown-fields', methods=['GET'])
 def api_dropdown_fields():
     return jsonify(dropdown_fields)
