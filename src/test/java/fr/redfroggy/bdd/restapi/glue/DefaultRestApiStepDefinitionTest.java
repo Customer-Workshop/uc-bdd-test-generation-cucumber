@@ -14,8 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
-        "marvel.api.host=http://localhost:18089",
-        "redfroggy.cucumber.restapi.wiremock.port=18089"
+        "marvel.api.host=http://localhost:${test.wiremock.port:8888}",
+        "redfroggy.cucumber.restapi.wiremock.port=${test.wiremock.port:8888}"
 })
 public class DefaultRestApiStepDefinitionTest implements BddRestTemplateAuthentication {
 

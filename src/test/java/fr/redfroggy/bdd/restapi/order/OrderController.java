@@ -77,7 +77,7 @@ public class OrderController {
             return ResponseEntity.notFound().build();
         }
         replacement.setId(id);
-        if (replacement.getStatus() == null || !allowed(current.getStatus(), replacement.getStatus())) {
+        if (!allowed(current.getStatus(), replacement.getStatus())) {
             return ResponseEntity.status(409).build();
         }
         orders.set(orders.indexOf(current), replacement);
@@ -129,9 +129,4 @@ public class OrderController {
         return Comparator.comparing(OrderDTO::getId);
     }
 
-    public static class OrderPatch {
-        private OrderStatus status;
-        public OrderStatus getStatus() { return status; }
-        public void setStatus(OrderStatus status) { this.status = status; }
-    }
 }
