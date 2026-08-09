@@ -2,6 +2,7 @@ package fr.redfroggy.bdd.restapi.glue;
 
 import fr.redfroggy.bdd.restapi.authentication.BddRestTemplateAuthentication;
 import fr.redfroggy.bdd.restapi.user.UserController;
+import fr.redfroggy.bdd.restapi.order.OrderController;
 import io.cucumber.java.After;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
-        "marvel.api.host=http://localhost:8888"
+        "marvel.api.host=http://localhost:18089",
+        "redfroggy.cucumber.restapi.wiremock.port=18089"
 })
 public class DefaultRestApiStepDefinitionTest implements BddRestTemplateAuthentication {
 
@@ -31,6 +33,16 @@ public class DefaultRestApiStepDefinitionTest implements BddRestTemplateAuthenti
     @After("@import")
     public void afterImport() {
         UserController.users.clear();
+    }
+
+    @After("@users-validation or @users-conflict or @users-pagination")
+    public void afterUsersEdgeCases() {
+        UserController.users.clear();
+    }
+
+    @After("@orders")
+    public void afterOrders() {
+        OrderController.orders.clear();
     }
 
 }

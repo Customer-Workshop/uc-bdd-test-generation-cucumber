@@ -1,12 +1,21 @@
 package fr.redfroggy.bdd.restapi.user;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 public final class UserDTO extends PartialUserDTO {
 
+    @NotBlank
     private String id;
 
+    @NotBlank
+    @Size(max = 50)
     private String firstName;
+
+    @Email
+    private String email;
 
     private int age;
 
@@ -30,6 +39,14 @@ public final class UserDTO extends PartialUserDTO {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public int getAge() {
