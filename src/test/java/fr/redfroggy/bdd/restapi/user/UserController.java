@@ -2,8 +2,11 @@ package fr.redfroggy.bdd.restapi.user;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import fr.redfroggy.bdd.restapi.error.ApiException;
+import fr.redfroggy.bdd.restapi.support.PageSupport;
 import org.junit.Assert;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,10 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 import wiremock.org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,14 +35,33 @@ public final class UserController {
 
     public static List<UserDTO> users = new ArrayList<>();
 
+    private static final Map<String, Comparator<UserDTO>> SORTS = Map.of(
+            "id", Comparator.comparing(UserDTO::getId),
+            "firstName", Comparator.comparing(UserDTO::getFirstName),
+            "lastName", Comparator.comparing(UserDTO::getLastName),
+            "age", Comparator.comparingInt(UserDTO::getAge));
+
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<List<UserDTO>> getAll(@RequestParam(value = "name", required = false) String name,
+                                                @RequestParam(value = "sort", required = false) String sort,
+                                                @RequestParam(value = "order", required = false) String order,
+                                                @RequestParam(value = "page", required = false) Integer page,
+                                                @RequestParam(value = "size", required = false) Integer size) {
+        List<UserDTO> matching = users;
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            matching = users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        matching = PageSupport.sort(matching, sort, order, SORTS);
+
+        int total = matching.size();
+        List<UserDTO> pageContent = PageSupport.paginate(matching, page, size);
+
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(total))
+                .body(pageContent);
     }
 
     @GetMapping("/users/{id}")
@@ -64,20 +89,18 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<UserDTO> addUser(@Valid @RequestBody  UserDTO user) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
                 .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        if (currentUser != null) {
+            throw new ApiException(HttpStatus.CONFLICT, "User already exists with id: " + user.getId());
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -109,7 +132,7 @@ public final class UserController {
     }
 
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
+    public ResponseEntity<UserDTO> updateUser(@Valid @RequestBody  UserDTO user, @PathVariable String id) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()
@@ -131,7 +154,7 @@ public final class UserController {
     }
 
     @PatchMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> patchUser(@RequestBody  PartialUserDTO user, @PathVariable String id) {
+    public ResponseEntity<UserDTO> patchUser(@Valid @RequestBody  PartialUserDTO user, @PathVariable String id) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()

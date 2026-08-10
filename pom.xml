@@ -156,6 +156,13 @@
             <version>${open-csv.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Bean validation for the sample controllers used by the BDD tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
