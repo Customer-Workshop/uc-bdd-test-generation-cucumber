@@ -60,9 +60,10 @@ Feature: Users api pagination and sorting tests
       | 0    | 100  | 3      |
 
     Examples: Pages out of range
-      | page | size | length |
-      | 2    | 2    | 0      |
-      | 10   | 3    | 0      |
+      | page     | size | length |
+      | 2        | 2    | 0      |
+      | 10       | 3    | 0      |
+      | 30000000 | 100  | 0      |
 
   Scenario: Should keep the requested page when filtering by name
     Given I set http query parameter name to a

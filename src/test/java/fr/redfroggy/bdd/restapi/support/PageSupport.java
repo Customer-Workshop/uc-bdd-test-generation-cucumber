@@ -59,7 +59,7 @@ public final class PageSupport {
             throw new ApiException(HttpStatus.BAD_REQUEST, "size has to be between 1 and " + MAX_PAGE_SIZE);
         }
 
-        int from = Math.min(pageNumber * pageSize, items.size());
+        int from = (int) Math.min((long) pageNumber * pageSize, items.size());
         int to = Math.min(from + pageSize, items.size());
 
         return new ArrayList<>(items.subList(from, to));
