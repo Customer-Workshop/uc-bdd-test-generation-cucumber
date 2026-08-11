@@ -1,6 +1,7 @@
 package fr.redfroggy.bdd.restapi.glue;
 
 import fr.redfroggy.bdd.restapi.authentication.BddRestTemplateAuthentication;
+import fr.redfroggy.bdd.restapi.order.OrderController;
 import fr.redfroggy.bdd.restapi.user.UserController;
 import io.cucumber.java.After;
 import io.cucumber.spring.CucumberContextConfiguration;
@@ -28,9 +29,14 @@ public class DefaultRestApiStepDefinitionTest implements BddRestTemplateAuthenti
         return this.template.withBasicAuth(login, password);
     }
 
-    @After("@import")
-    public void afterImport() {
+    @After("@import or @userCleanup")
+    public void clearUsers() {
         UserController.users.clear();
+    }
+
+    @After("@orderCleanup")
+    public void clearOrders() {
+        OrderController.orders.clear();
     }
 
 }

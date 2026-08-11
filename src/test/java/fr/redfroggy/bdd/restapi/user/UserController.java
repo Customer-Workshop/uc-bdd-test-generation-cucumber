@@ -2,6 +2,7 @@ package fr.redfroggy.bdd.restapi.user;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import fr.redfroggy.bdd.restapi.error.ApiError;
 import org.junit.Assert;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,7 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,14 +34,62 @@ public final class UserController {
 
     public static List<UserDTO> users = new ArrayList<>();
 
+    private static final Map<String, Comparator<UserDTO>> SORTS = new HashMap<>();
+
+    static {
+        SORTS.put("id", Comparator.comparing(UserDTO::getId));
+        SORTS.put("firstName", Comparator.comparing(UserDTO::getFirstName, String.CASE_INSENSITIVE_ORDER));
+        SORTS.put("lastName", Comparator.comparing(UserDTO::getLastName, String.CASE_INSENSITIVE_ORDER));
+        SORTS.put("age", Comparator.comparingInt(UserDTO::getAge));
+    }
+
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<Object> getAll(@RequestParam(value = "name", required = false) String name,
+                                         @RequestParam(value = "sort", required = false) String sort,
+                                         @RequestParam(value = "page", required = false) Integer page,
+                                         @RequestParam(value = "size", required = false) Integer size) {
+        List<UserDTO> matching = users;
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            matching = users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        if (StringUtils.isNotBlank(sort)) {
+            String[] sortParts = sort.split(",");
+            Comparator<UserDTO> comparator = SORTS.get(sortParts[0]);
+            if (comparator == null) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiError("sort", "unknown sort property " + sortParts[0]));
+            }
+            String direction = sortParts.length > 1 ? sortParts[1] : "asc";
+            if (!"asc".equalsIgnoreCase(direction) && !"desc".equalsIgnoreCase(direction)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiError("sort", "unknown sort direction " + direction));
+            }
+            matching = matching.stream()
+                    .sorted("desc".equalsIgnoreCase(direction) ? comparator.reversed() : comparator)
+                    .collect(Collectors.toList());
+        }
+
+        if (page != null || size != null) {
+            int pageNumber = page != null ? page : 0;
+            int pageSize = size != null ? size : 20;
+            if (pageNumber < 0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiError("page", "page cannot be negative"));
+            }
+            if (pageSize < 1) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiError("size", "size cannot be lower than 1"));
+            }
+            matching = matching.stream()
+                    .skip((long) pageNumber * pageSize)
+                    .limit(pageSize)
+                    .collect(Collectors.toList());
+        }
+
+        return ResponseEntity.ok(matching);
     }
 
     @GetMapping("/users/{id}")
@@ -64,7 +117,13 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<Object> addUser(@RequestBody  UserDTO user) {
+
+        Optional<ApiError> error = UserValidator.validate(user);
+        if (error.isPresent()) {
+            return ResponseEntity.badRequest()
+                    .body(error.get());
+        }
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(user.getId())).findFirst()
@@ -74,9 +133,8 @@ public final class UserController {
             return ResponseEntity.status(201)
                     .body(user);
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
+        return ResponseEntity.status(409)
+                .body(new ApiError("id", "a user already exists with id " + user.getId()));
 
     }
 
@@ -109,7 +167,13 @@ public final class UserController {
     }
 
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
+    public ResponseEntity<Object> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
+
+        Optional<ApiError> error = UserValidator.validate(user);
+        if (error.isPresent()) {
+            return ResponseEntity.badRequest()
+                    .body(error.get());
+        }
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()
@@ -123,6 +187,7 @@ public final class UserController {
             u.setFirstName(user.getFirstName());
             u.setLastName(user.getLastName());
             u.setAge(user.getAge());
+            u.setEmail(user.getEmail());
             u.setRelatedTo(user.getRelatedTo());
         });
 

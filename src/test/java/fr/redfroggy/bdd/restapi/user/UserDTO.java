@@ -10,6 +10,8 @@ public final class UserDTO extends PartialUserDTO {
 
     private int age;
 
+    private String email;
+
     private UserDTO relatedTo;
 
     private List<String> sessionIds;
@@ -38,6 +40,14 @@ public final class UserDTO extends PartialUserDTO {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public UserDTO getRelatedTo() {
