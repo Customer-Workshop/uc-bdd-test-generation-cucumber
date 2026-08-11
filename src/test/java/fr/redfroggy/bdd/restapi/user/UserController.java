@@ -2,8 +2,12 @@ package fr.redfroggy.bdd.restapi.user;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import fr.redfroggy.bdd.restapi.support.ApiError;
+import fr.redfroggy.bdd.restapi.support.Page;
+import fr.redfroggy.bdd.restapi.support.Sorting;
 import org.junit.Assert;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +18,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,14 +36,43 @@ public final class UserController {
 
     public static List<UserDTO> users = new ArrayList<>();
 
+    private static final Map<String, Comparator<UserDTO>> SORTS = new LinkedHashMap<>();
+
+    static {
+        SORTS.put("id", Comparator.comparing(UserDTO::getId));
+        SORTS.put("firstName", Comparator.comparing(UserDTO::getFirstName));
+        SORTS.put("lastName", Comparator.comparing(UserDTO::getLastName));
+        SORTS.put("age", Comparator.comparingInt(UserDTO::getAge));
+    }
+
     @GetMapping("/users")
-    public List<UserDTO> getAll(@RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<Object> getAll(@RequestParam(value = "name", required = false) String name,
+                                         @RequestParam(value = "page", required = false) Integer page,
+                                         @RequestParam(value = "size", required = false) Integer size,
+                                         @RequestParam(value = "sort", required = false) String sort) {
+
+        ApiError pageError = Page.validate(page, size);
+        if (pageError != null) {
+            return ResponseEntity.badRequest().body(pageError);
+        }
+
+        List<UserDTO> matching = new ArrayList<>(users);
         if (StringUtils.isNotBlank(name)) {
-            return users.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
+            matching = matching.stream().filter(u -> u.getFirstName().toLowerCase().contains(name.toLowerCase())
                     || u.getLastName().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toList());
         }
-        return users;
+
+        ApiError sortError = Sorting.sort(matching, sort, SORTS);
+        if (sortError != null) {
+            return ResponseEntity.badRequest().body(sortError);
+        }
+
+        if (page == null && size == null) {
+            return ResponseEntity.ok(matching);
+        }
+
+        return Page.of(matching, page, size);
     }
 
     @GetMapping("/users/{id}")
@@ -64,20 +100,23 @@ public final class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDTO> addUser(@RequestBody  UserDTO user) {
+    public ResponseEntity<Object> addUser(@RequestBody  UserDTO user) {
 
-        UserDTO currentUser = users.stream().filter(u -> u.getId()
-                .equals(user.getId())).findFirst()
-                .orElse(null);
-        if (currentUser == null) {
-            users.add(user);
-            return ResponseEntity.status(201)
-                    .body(user);
+        ApiError error = UserValidator.validate(user);
+        if (error != null) {
+            return ResponseEntity.badRequest()
+                    .body(error);
         }
-        return ResponseEntity.
-                badRequest()
-                .build();
 
+        boolean alreadyExists = users.stream().anyMatch(u -> user.getId().equals(u.getId()));
+        if (alreadyExists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ApiError("a user with id " + user.getId() + " already exists", "id"));
+        }
+
+        users.add(user);
+        return ResponseEntity.status(201)
+                .body(user);
     }
 
     @PostMapping(value = "/users", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -109,7 +148,7 @@ public final class UserController {
     }
 
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDTO> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
+    public ResponseEntity<Object> updateUser(@RequestBody  UserDTO user, @PathVariable String id) {
 
         UserDTO currentUser = users.stream().filter(u -> u.getId()
                 .equals(id)).findFirst()
@@ -117,6 +156,12 @@ public final class UserController {
         if (currentUser == null) {
             return ResponseEntity
                     .notFound().build();
+        }
+
+        ApiError error = UserValidator.validate(user);
+        if (error != null) {
+            return ResponseEntity.badRequest()
+                    .body(error);
         }
 
         users.stream().filter(u -> id.equals(u.getId())).forEach(u -> {
@@ -127,7 +172,7 @@ public final class UserController {
         });
 
         return ResponseEntity.
-                ok(user);
+                ok((Object) user);
     }
 
     @PatchMapping(value = "/users/{id}")

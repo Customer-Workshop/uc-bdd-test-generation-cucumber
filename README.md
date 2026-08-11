@@ -339,6 +339,24 @@ It relies on [WireMock](http://wiremock.org) for stubbing api calls.
 By default, the wiremock port is `8888`, if you need to override it you need to change the 
 `redfroggy.cucumber.restapi.wiremock.port` property in your project.
 
+## Sample apis used by the features
+
+The features under `src/test/resources/features` run against two in memory controllers living in `src/test/java`:
+
+| Api           | Endpoints                                                                                                            |
+|---------------|----------------------------------------------------------------------------------------------------------------------|
+| `/api/users`  | `GET` (filter `name`, paginate with `page`/`size`, sort with `sort=field[,asc\|desc]`), `GET /{id}`, `POST`, `PUT /{id}`, `PATCH /{id}`, `DELETE /{id}` |
+| `/api/orders` | `GET` (filter `customerId`/`status`, same pagination and sorting), `GET /{id}`, `POST`, `PUT /{id}`, `PATCH /{id}/status`, `DELETE /{id}` |
+
+Paginated responses stay plain json arrays, pagination metadata is returned through the `X-Total-Count`, `X-Page`,
+`X-Page-Size` and `X-Total-Pages` headers. Validation errors answer `400` with a `{"error": "...", "field": "..."}`
+body, duplicated ids answer `409`, and orders follow the `PENDING -> PAID -> SHIPPED -> DELIVERED` lifecycle
+(`CANCELLED` while not shipped), rejecting any other transition with a `409`.
+
+Both apis store their data in a static collection, so features that create data are tagged `@cleanup-users` or
+`@cleanup-orders`: the matching `@After` hook in `DefaultRestApiStepDefinitionTest` empties the collection after each
+scenario, keeping the feature files independent from each other.
+
 ## Run local unit tests
 
 ````bash
